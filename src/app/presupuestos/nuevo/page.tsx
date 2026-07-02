@@ -56,10 +56,36 @@ export default function NuevoPresupuestoPage() {
   };
 
   const addFromCatalog = (catalogItem: CatalogItem) => {
-    setItems([
-      ...items,
-      { description: catalogItem.name, quantity: 1, unit_price: catalogItem.unit_price },
-    ]);
+    // Si ya existe una línea con el mismo nombre, incrementar cantidad en 1
+    const existingIndex = items.findIndex(
+      (item) => item.description === catalogItem.name && item.unit_price === catalogItem.unit_price
+    );
+
+    if (existingIndex >= 0) {
+      const newItems = [...items];
+      newItems[existingIndex] = {
+        ...newItems[existingIndex],
+        quantity: newItems[existingIndex].quantity + 1,
+      };
+      setItems(newItems);
+    } else {
+      // Si la última línea está vacía, reemplazarla
+      const lastItem = items[items.length - 1];
+      if (lastItem && !lastItem.description && lastItem.unit_price === 0) {
+        const newItems = [...items];
+        newItems[newItems.length - 1] = {
+          description: catalogItem.name,
+          quantity: 1,
+          unit_price: catalogItem.unit_price,
+        };
+        setItems(newItems);
+      } else {
+        setItems([
+          ...items,
+          { description: catalogItem.name, quantity: 1, unit_price: catalogItem.unit_price },
+        ]);
+      }
+    }
   };
 
   const subtotal = items.reduce((acc, item) => acc + item.quantity * item.unit_price, 0);
