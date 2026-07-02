@@ -36,6 +36,35 @@ export async function GET() {
       "SELECT COUNT(*) as count FROM clients"
     );
 
+    // Monthly billing data for the last 6 months
+    const monthlyBilling = [];
+    const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+      const endD = new Date(year, month, 0);
+      const endDate = `${year}-${String(month).padStart(2, "0")}-${String(endD.getDate()).padStart(2, "0")}`;
+      
+      const monthTotal = await db.execute({
+        sql: "SELECT COALESCE(SUM(total), 0) as total FROM invoices WHERE date >= ? AND date <= ?",
+        args: [startDate, endDate],
+      });
+      
+      monthlyBilling.push({
+        month: monthNames[month - 1],
+        year,
+        total: monthTotal.rows[0].total as number,
+      });
+    }
+
+    // Pending amount (sent but not paid)
+    const pendienteCobro = await db.execute(
+      "SELECT COALESCE(SUM(total), 0) as total FROM invoices WHERE status = 'sent'"
+    );
+
     return NextResponse.json({
       totalFacturacion: totalFacturacion.rows[0].total as number,
       facturasPendientes: (facturasPendientes.rows[0].count as number),
@@ -43,6 +72,8 @@ export async function GET() {
       proximasVisitas: (proximasVisitas.rows[0].count as number),
       facturasEsteMes: (facturasEsteMes.rows[0].count as number),
       clientesActivos: (clientesActivos.rows[0].count as number),
+      monthlyBilling,
+      pendienteCobro: pendienteCobro.rows[0].total as number,
     });
   } catch {
     return NextResponse.json(

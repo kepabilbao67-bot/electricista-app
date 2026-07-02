@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Plus, Edit2, Trash2, Phone, Mail } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText } from "lucide-react";
+import { showToast } from "@/components/Toast";
 
 interface Client {
   id: string;
@@ -14,6 +15,7 @@ interface Client {
   postal_code: string;
   province: string;
   notes: string;
+  invoice_count?: number;
 }
 
 export default function ClientesPage() {
@@ -21,6 +23,7 @@ export default function ClientesPage() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
     nif: "",
@@ -37,8 +40,11 @@ export default function ClientesPage() {
     const url = search ? `/api/clients?search=${encodeURIComponent(search)}` : "/api/clients";
     fetch(url)
       .then((res) => res.json())
-      .then(setClients)
-      .catch(console.error);
+      .then((data) => {
+        setClients(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -50,16 +56,21 @@ export default function ClientesPage() {
     const url = editingClient ? `/api/clients/${editingClient.id}` : "/api/clients";
     const method = editingClient ? "PUT" : "POST";
 
-    await fetch(url, {
+    const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
 
-    setShowForm(false);
-    setEditingClient(null);
-    setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "" });
-    fetchClients();
+    if (res.ok) {
+      showToast("success", editingClient ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
+      setShowForm(false);
+      setEditingClient(null);
+      setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "" });
+      fetchClients();
+    } else {
+      showToast("error", "Error al guardar el cliente");
+    }
   };
 
   const handleEdit = (client: Client) => {
@@ -79,11 +90,35 @@ export default function ClientesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Seguro que desea eliminar este cliente?")) {
-      await fetch(`/api/clients/${id}`, { method: "DELETE" });
-      fetchClients();
+    if (confirm("Seguro que desea eliminar este cliente? Esta accion no se puede deshacer.")) {
+      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        showToast("success", "Cliente eliminado");
+        fetchClients();
+      } else {
+        showToast("error", "Error al eliminar el cliente");
+      }
     }
   };
+
+  const formatPhoneForWhatsApp = (phone: string) => {
+    // Remove spaces, dashes, and add Spain prefix if needed
+    let cleaned = phone.replace(/[\s\-\(\)]/g, "");
+    if (cleaned.startsWith("6") || cleaned.startsWith("7") || cleaned.startsWith("9")) {
+      cleaned = "34" + cleaned;
+    } else if (cleaned.startsWith("+")) {
+      cleaned = cleaned.substring(1);
+    }
+    return cleaned;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -227,44 +262,84 @@ export default function ClientesPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Nombre</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">NIF</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden sm:table-cell">Contacto</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Ciudad</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden sm:table-cell">Telefono</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Email</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">Facturas</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {clients.map((client) => (
                 <tr key={client.id} className="table-row">
-                  <td className="px-4 py-3.5 font-semibold text-slate-900">{client.name}</td>
-                  <td className="px-4 py-3.5 hidden md:table-cell text-slate-500">{client.nif}</td>
-                  <td className="px-4 py-3.5 hidden sm:table-cell">
-                    <div className="flex items-center gap-3 text-slate-500">
-                      {client.phone && (
-                        <span className="flex items-center gap-1 text-xs">
-                          <Phone className="h-3 w-3 text-slate-400" />
-                          {client.phone}
-                        </span>
-                      )}
-                      {client.email && (
-                        <span className="flex items-center gap-1 text-xs">
-                          <Mail className="h-3 w-3 text-slate-400" />
-                          {client.email}
-                        </span>
+                  <td className="px-4 py-3.5">
+                    <div>
+                      <span className="font-semibold text-slate-900">{client.name}</span>
+                      {client.city && (
+                        <p className="text-xs text-slate-400">{client.city}</p>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 hidden lg:table-cell text-slate-500">{client.city}</td>
+                  <td className="px-4 py-3.5 hidden md:table-cell text-slate-500">{client.nif || "-"}</td>
+                  <td className="px-4 py-3.5 hidden sm:table-cell">
+                    {client.phone ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-600">{client.phone}</span>
+                        <a
+                          href={`tel:${client.phone}`}
+                          className="rounded-md p-1 text-blue-500 hover:bg-blue-50 transition-colors"
+                          title="Llamar"
+                        >
+                          <Phone className="h-3.5 w-3.5" />
+                        </a>
+                        <a
+                          href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-md p-1 text-emerald-500 hover:bg-emerald-50 transition-colors"
+                          title="WhatsApp"
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-300">-</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 hidden lg:table-cell">
+                    {client.email ? (
+                      <a
+                        href={`mailto:${client.email}`}
+                        className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
+                      >
+                        {client.email}
+                      </a>
+                    ) : (
+                      <span className="text-xs text-slate-300">-</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5 text-center hidden md:table-cell">
+                    {client.invoice_count !== undefined && client.invoice_count > 0 ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 border border-indigo-100">
+                        <FileText className="h-3 w-3" />
+                        {client.invoice_count}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-300">0</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleEdit(client)}
                         className="rounded-lg p-2 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                        title="Editar"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(client.id)}
                         className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                        title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -274,7 +349,7 @@ export default function ClientesPage() {
               ))}
               {clients.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
                     No hay clientes registrados
                   </td>
                 </tr>

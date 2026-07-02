@@ -12,11 +12,22 @@ export async function GET(request: NextRequest) {
     let result;
     if (search) {
       result = await db.execute({
-        sql: "SELECT * FROM clients WHERE name LIKE ? OR nif LIKE ? OR email LIKE ? OR phone LIKE ? ORDER BY name",
+        sql: `SELECT clients.*, COALESCE(inv_count.count, 0) as invoice_count 
+              FROM clients 
+              LEFT JOIN (SELECT client_id, COUNT(*) as count FROM invoices GROUP BY client_id) inv_count 
+              ON clients.id = inv_count.client_id
+              WHERE clients.name LIKE ? OR clients.nif LIKE ? OR clients.email LIKE ? OR clients.phone LIKE ? 
+              ORDER BY clients.name`,
         args: [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`],
       });
     } else {
-      result = await db.execute("SELECT * FROM clients ORDER BY name");
+      result = await db.execute(
+        `SELECT clients.*, COALESCE(inv_count.count, 0) as invoice_count 
+         FROM clients 
+         LEFT JOIN (SELECT client_id, COUNT(*) as count FROM invoices GROUP BY client_id) inv_count 
+         ON clients.id = inv_count.client_id
+         ORDER BY clients.name`
+      );
     }
 
     return NextResponse.json(result.rows);

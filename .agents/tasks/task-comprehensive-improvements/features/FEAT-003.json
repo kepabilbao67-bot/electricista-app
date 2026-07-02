@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Comprehensive app improvements: enhanced dashboard with monthly billing chart (CSS bars), improved clients page with WhatsApp/call buttons and invoice count, invoice list with filters/search/totals, budget duplicate and validity indicator, enhanced communications with wa.me links and new templates, weekly calendar agenda with Google Maps links and colored status, catalog management page, and UX improvements (toast notifications, loading states, confirmation dialogs).",
+  "status": "in_progress",
+  "steps": [
+    "Create a reusable Toast notification component at src/components/Toast.tsx",
+    "Enhance src/app/page.tsx dashboard with monthly billing chart using CSS bars and quick access buttons",
+    "Enhance src/app/clientes/page.tsx with WhatsApp/call buttons (tel: and wa.me links), invoice count per client",
+    "Enhance src/app/facturas/page.tsx with status filters, search bar, and totals summary at top",
+    "Enhance src/app/presupuestos/page.tsx with duplicate button, validity indicator (expired in red), and direct convert-to-invoice button",
+    "Enhance src/app/comunicaciones/page.tsx with wa.me direct links, new templates (payment reminder, accepted budget), filter by client",
+    "Enhance src/app/agenda/page.tsx with weekly calendar view (Mon-Fri), Google Maps links for addresses, and colored visit status",
+    "Create src/app/catalogo/page.tsx for viewing and editing the materials/services catalog",
+    "Update src/components/Sidebar.tsx to add Catalogo navigation item",
+    "Update src/lib/templates.ts with new templates for payment reminder and accepted budget with wa.me links",
+    "Update src/app/api/dashboard/route.ts to return monthly billing data for the chart"
+  ],
+  "acceptance_criteria": [
+    "Dashboard shows monthly billing chart with CSS bars (no external library)",
+    "Dashboard has quick access buttons for common actions",
+    "Clients page shows WhatsApp and call buttons with tel: and wa.me links",
+    "Invoice list has status filters, search by client/number, and totals summary",
+    "Budget page has duplicate button, validity indicator (expired shown in red), and convert to invoice button",
+    "Communications page has wa.me direct links and includes payment reminder + accepted budget templates",
+    "Agenda page has weekly calendar view with colored status indicators and Google Maps links",
+    "Catalog page allows viewing and editing materials/services",
+    "Toast notifications appear for success/error actions across pages",
+    "npx next build completes without errors"
+  ],
+  "verification": ["Run `npx next build` in /projects/sandbox/electricista-app and confirm successful build"],
+  "blocked_reason": null,
+  "findings": null
+}

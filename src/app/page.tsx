@@ -6,12 +6,20 @@ import {
   FileText,
   ClipboardList,
   Calendar,
-  TrendingUp,
   Euro,
   Clock,
   ArrowRight,
   Users,
+  Plus,
+  BarChart3,
+  MessageSquare,
 } from "lucide-react";
+
+interface MonthlyBilling {
+  month: string;
+  year: number;
+  total: number;
+}
 
 interface DashboardData {
   totalFacturacion: number;
@@ -20,6 +28,8 @@ interface DashboardData {
   proximasVisitas: number;
   facturasEsteMes: number;
   clientesActivos: number;
+  monthlyBilling: MonthlyBilling[];
+  pendienteCobro: number;
   ultimasFacturas: Array<{
     id: string;
     number: string;
@@ -89,8 +99,13 @@ export default function Dashboard() {
       value: `${(data?.totalFacturacion ?? 0).toFixed(2)} EUR`,
       icon: Euro,
       gradient: "from-emerald-500 to-emerald-600",
-      bgColor: "bg-emerald-50",
-      textColor: "text-emerald-700",
+      href: "/facturas",
+    },
+    {
+      label: "Pendiente de cobro",
+      value: `${(data?.pendienteCobro ?? 0).toFixed(2)} EUR`,
+      icon: Clock,
+      gradient: "from-red-500 to-rose-600",
       href: "/facturas",
     },
     {
@@ -98,8 +113,6 @@ export default function Dashboard() {
       value: data?.facturasEsteMes ?? 0,
       icon: FileText,
       gradient: "from-blue-500 to-blue-600",
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-700",
       href: "/facturas",
     },
     {
@@ -107,8 +120,6 @@ export default function Dashboard() {
       value: data?.presupuestosPendientes ?? 0,
       icon: ClipboardList,
       gradient: "from-amber-500 to-orange-500",
-      bgColor: "bg-amber-50",
-      textColor: "text-amber-700",
       href: "/presupuestos",
     },
     {
@@ -116,28 +127,27 @@ export default function Dashboard() {
       value: data?.proximasVisitas ?? 0,
       icon: Calendar,
       gradient: "from-purple-500 to-purple-600",
-      bgColor: "bg-purple-50",
-      textColor: "text-purple-700",
       href: "/agenda",
-    },
-    {
-      label: "Facturas pendientes cobro",
-      value: data?.facturasPendientes ?? 0,
-      icon: Clock,
-      gradient: "from-red-500 to-rose-600",
-      bgColor: "bg-red-50",
-      textColor: "text-red-700",
-      href: "/facturas",
     },
     {
       label: "Clientes activos",
       value: data?.clientesActivos ?? 0,
       icon: Users,
       gradient: "from-indigo-500 to-indigo-600",
-      bgColor: "bg-indigo-50",
-      textColor: "text-indigo-700",
       href: "/clientes",
     },
+  ];
+
+  // Calculate max for the chart
+  const monthlyBilling = data?.monthlyBilling ?? [];
+  const maxBilling = Math.max(...monthlyBilling.map((m) => m.total), 1);
+
+  const quickActions = [
+    { label: "Nueva factura", href: "/facturas/nueva", icon: FileText, color: "bg-indigo-600 hover:bg-indigo-700" },
+    { label: "Nuevo presupuesto", href: "/presupuestos/nuevo", icon: ClipboardList, color: "bg-emerald-600 hover:bg-emerald-700" },
+    { label: "Nueva visita", href: "/agenda", icon: Calendar, color: "bg-purple-600 hover:bg-purple-700" },
+    { label: "Nuevo cliente", href: "/clientes", icon: Users, color: "bg-amber-600 hover:bg-amber-700" },
+    { label: "Enviar mensaje", href: "/comunicaciones", icon: MessageSquare, color: "bg-blue-600 hover:bg-blue-700" },
   ];
 
   return (
@@ -148,7 +158,24 @@ export default function Dashboard() {
         <p className="page-subtitle capitalize">{today}</p>
       </div>
 
-      {/* KPI Cards - Clickable */}
+      {/* Quick Actions */}
+      <div className="mb-6">
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Acciones rapidas</h2>
+        <div className="flex flex-wrap gap-2">
+          {quickActions.map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-white shadow-sm transition-all duration-200 ${action.color}`}
+            >
+              <action.icon className="h-3.5 w-3.5" />
+              {action.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-8">
         {kpis.map((kpi) => (
           <Link
@@ -165,6 +192,33 @@ export default function Dashboard() {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* Monthly Billing Chart */}
+      <div className="card mb-8">
+        <div className="flex items-center gap-2 mb-6">
+          <BarChart3 className="h-5 w-5 text-indigo-600" />
+          <h2 className="text-lg font-semibold text-slate-900">Facturacion mensual</h2>
+        </div>
+        <div className="flex items-end justify-between gap-2 h-48 px-2">
+          {monthlyBilling.map((month, idx) => {
+            const height = maxBilling > 0 ? (month.total / maxBilling) * 100 : 0;
+            return (
+              <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-medium text-slate-600">
+                  {month.total > 0 ? `${month.total.toFixed(0)}` : "0"}
+                </span>
+                <div className="w-full flex items-end justify-center" style={{ height: "140px" }}>
+                  <div
+                    className="w-full max-w-[40px] rounded-t-md bg-gradient-to-t from-indigo-600 to-indigo-400 transition-all duration-500 min-h-[4px]"
+                    style={{ height: `${Math.max(height, 2)}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium text-slate-500">{month.month}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Detail Sections */}

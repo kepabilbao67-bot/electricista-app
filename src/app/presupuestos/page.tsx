@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Eye, Copy, FileText, AlertTriangle } from "lucide-react";
+import { showToast } from "@/components/Toast";
 
 interface Budget {
   id: string;
   number: string;
+  client_id: string;
   client_name: string;
   date: string;
   valid_until: string;
   total: number;
   status: string;
+  converted_invoice_id: string | null;
 }
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -22,8 +26,11 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function PresupuestosPage() {
+  const router = useRouter();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [converting, setConverting] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/budgets")
@@ -34,6 +41,74 @@ export default function PresupuestosPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const isExpired = (validUntil: string) => {
+    if (!validUntil) return false;
+    const today = new Date().toISOString().split("T")[0];
+    return validUntil < today;
+  };
+
+  const handleDuplicate = async (budget: Budget) => {
+    setDuplicating(budget.id);
+    try {
+      // Get full budget details with items
+      const detailRes = await fetch(`/api/budgets/${budget.id}`);
+      const detail = await detailRes.json();
+
+      // Create new budget with same items
+      const res = await fetch("/api/budgets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: detail.client_id,
+          date: new Date().toISOString().split("T")[0],
+          valid_until: null,
+          notes: detail.notes || "",
+          tax_rate: detail.tax_rate || 21,
+          items: (detail.items || []).map((item: { description: string; quantity: number; unit_price: number }) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+          })),
+        }),
+      });
+
+      if (res.ok) {
+        const newBudget = await res.json();
+        showToast("success", `Presupuesto duplicado: ${newBudget.number}`);
+        router.push(`/presupuestos/${newBudget.id}`);
+      } else {
+        showToast("error", "Error al duplicar el presupuesto");
+      }
+    } catch {
+      showToast("error", "Error al duplicar el presupuesto");
+    }
+    setDuplicating(null);
+  };
+
+  const handleConvert = async (budgetId: string) => {
+    if (!confirm("Convertir este presupuesto a factura?")) return;
+    setConverting(budgetId);
+    try {
+      const res = await fetch("/api/budgets/convert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ budget_id: budgetId }),
+      });
+
+      if (res.ok) {
+        const invoice = await res.json();
+        showToast("success", `Factura creada: ${invoice.number}`);
+        router.push(`/facturas/${invoice.id}`);
+      } else {
+        const err = await res.json();
+        showToast("error", err.error || "Error al convertir");
+      }
+    } catch {
+      showToast("error", "Error al convertir el presupuesto");
+    }
+    setConverting(null);
+  };
 
   if (loading) {
     return (
@@ -73,12 +148,23 @@ export default function PresupuestosPage() {
             <tbody>
               {budgets.map((budget) => {
                 const status = statusLabels[budget.status] || statusLabels.draft;
+                const expired = isExpired(budget.valid_until) && budget.status !== "accepted" && budget.status !== "rejected";
                 return (
                   <tr key={budget.id} className="table-row">
                     <td className="px-4 py-3.5 font-semibold text-slate-900">{budget.number}</td>
                     <td className="px-4 py-3.5 text-slate-600">{budget.client_name}</td>
                     <td className="px-4 py-3.5 hidden sm:table-cell text-slate-500">{budget.date}</td>
-                    <td className="px-4 py-3.5 hidden md:table-cell text-slate-500">{budget.valid_until || "-"}</td>
+                    <td className="px-4 py-3.5 hidden md:table-cell">
+                      {budget.valid_until ? (
+                        <span className={`inline-flex items-center gap-1 text-xs ${expired ? "text-red-600 font-semibold" : "text-slate-500"}`}>
+                          {expired && <AlertTriangle className="h-3 w-3" />}
+                          {budget.valid_until}
+                          {expired && <span className="text-[10px] bg-red-50 rounded px-1 border border-red-200">Caducado</span>}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3.5 text-right font-semibold text-slate-900">{budget.total.toFixed(2)} EUR</td>
                     <td className="px-4 py-3.5 text-center">
                       <span className={`badge ${status.color}`}>
@@ -86,13 +172,33 @@ export default function PresupuestosPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      <Link
-                        href={`/presupuestos/${budget.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        Ver
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/presupuestos/${budget.id}`}
+                          className="rounded-lg p-1.5 text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          title="Ver detalle"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Link>
+                        <button
+                          onClick={() => handleDuplicate(budget)}
+                          disabled={duplicating === budget.id}
+                          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors disabled:opacity-50"
+                          title="Duplicar presupuesto"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                        {!budget.converted_invoice_id && budget.status !== "rejected" && (
+                          <button
+                            onClick={() => handleConvert(budget.id)}
+                            disabled={converting === budget.id}
+                            className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                            title="Convertir a factura"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

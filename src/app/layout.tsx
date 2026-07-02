@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
+import { ToastContainer } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "Electricista - Gestion Profesional",
@@ -25,6 +26,7 @@ export default function RootLayout({
             </main>
           </div>
         </div>
+        <ToastContainer />
       </body>
     </html>
   );

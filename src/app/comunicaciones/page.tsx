@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Send, MessageSquare, Mail, Phone } from "lucide-react";
+import { Send, MessageSquare, Mail, Phone, ExternalLink, Filter } from "lucide-react";
 import { templates } from "@/lib/templates";
+import { showToast } from "@/components/Toast";
 
 interface Client {
   id: string;
@@ -13,6 +14,7 @@ interface Client {
 
 interface Communication {
   id: string;
+  client_id: string;
   client_name: string;
   type: string;
   subject: string;
@@ -24,16 +26,34 @@ export default function ComunicacionesPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [selectedClient, setSelectedClient] = useState("");
+  const [filterClient, setFilterClient] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [messageType, setMessageType] = useState<"whatsapp" | "email" | "sms">("whatsapp");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/clients").then((r) => r.json()).then(setClients);
-    fetch("/api/communications").then((r) => r.json()).then(setCommunications);
+    Promise.all([
+      fetch("/api/clients").then((r) => r.json()),
+      fetch("/api/communications").then((r) => r.json()),
+    ]).then(([clientsData, commsData]) => {
+      setClients(clientsData);
+      setCommunications(commsData);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
+
+  const formatPhoneForWhatsApp = (phone: string) => {
+    let cleaned = phone.replace(/[\s\-\(\)]/g, "");
+    if (cleaned.startsWith("6") || cleaned.startsWith("7") || cleaned.startsWith("9")) {
+      cleaned = "34" + cleaned;
+    } else if (cleaned.startsWith("+")) {
+      cleaned = cleaned.substring(1);
+    }
+    return cleaned;
+  };
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -67,12 +87,23 @@ export default function ComunicacionesPage() {
     });
 
     if (res.ok) {
+      showToast("success", "Comunicacion registrada correctamente");
       setMessage("");
       setSubject("");
       setSelectedTemplate("");
       fetch("/api/communications").then((r) => r.json()).then(setCommunications);
+    } else {
+      showToast("error", "Error al registrar la comunicacion");
     }
     setSending(false);
+  };
+
+  const getWhatsAppLink = () => {
+    const client = clients.find((c) => c.id === selectedClient);
+    if (!client?.phone || !message) return null;
+    const phone = formatPhoneForWhatsApp(client.phone);
+    const text = encodeURIComponent(message);
+    return `https://wa.me/${phone}?text=${text}`;
   };
 
   const typeIcon = (type: string) => {
@@ -87,6 +118,21 @@ export default function ComunicacionesPage() {
         return <MessageSquare className="h-4 w-4" />;
     }
   };
+
+  // Filter communications by client
+  const filteredCommunications = filterClient
+    ? communications.filter((c) => c.client_id === filterClient)
+    : communications;
+
+  const waLink = getWhatsAppLink();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -110,7 +156,7 @@ export default function ComunicacionesPage() {
               >
                 <option value="">Seleccionar cliente</option>
                 {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ""}</option>
                 ))}
               </select>
             </div>
@@ -173,38 +219,75 @@ export default function ComunicacionesPage() {
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={sending}
-              className="btn-primary"
-            >
-              <Send className="h-4 w-4" />
-              {sending ? "Enviando..." : "Enviar"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="submit"
+                disabled={sending}
+                className="btn-primary"
+              >
+                <Send className="h-4 w-4" />
+                {sending ? "Registrando..." : "Registrar envio"}
+              </button>
+
+              {messageType === "whatsapp" && waLink && (
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-success"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Abrir WhatsApp
+                </a>
+              )}
+            </div>
           </form>
         </div>
 
         {/* History */}
         <div className="card">
-          <h2 className="text-base font-semibold text-slate-900 mb-4">Historial</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-slate-900">Historial</h2>
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5 text-slate-400" />
+              <select
+                value={filterClient}
+                onChange={(e) => setFilterClient(e.target.value)}
+                className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 focus:border-indigo-300 focus:outline-none"
+              >
+                <option value="">Todos los clientes</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="space-y-3 max-h-[600px] overflow-y-auto">
-            {communications.map((comm) => (
+            {filteredCommunications.map((comm) => (
               <div key={comm.id} className="border border-slate-100 rounded-lg p-3.5 hover:border-slate-200 hover:bg-slate-50/50 transition-all duration-150">
                 <div className="flex items-center gap-2 mb-1.5">
                   {typeIcon(comm.type)}
                   <span className="text-sm font-semibold text-slate-900">{comm.client_name}</span>
                   <span className="text-xs text-slate-400 ml-auto">
-                    {new Date(comm.created_at).toLocaleDateString("es-ES")}
+                    {new Date(comm.created_at).toLocaleDateString("es-ES", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
                 {comm.subject && (
                   <p className="text-xs font-medium text-slate-600 mb-1">{comm.subject}</p>
                 )}
-                <p className="text-xs text-slate-500 line-clamp-3">{comm.message}</p>
+                <p className="text-xs text-slate-500 line-clamp-3 whitespace-pre-line">{comm.message}</p>
               </div>
             ))}
-            {communications.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">No hay comunicaciones</p>
+            {filteredCommunications.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-8">
+                {filterClient ? "No hay comunicaciones con este cliente" : "No hay comunicaciones"}
+              </p>
             )}
           </div>
         </div>

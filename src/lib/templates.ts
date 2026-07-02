@@ -14,6 +14,12 @@ export const templates: MessageTemplate[] = [
     body: "Hola {nombre}, le envio el presupuesto solicitado por un importe de {total}EUR (IVA incluido). Quedo a su disposicion para cualquier consulta. Un saludo, Ivan Oyarzabal.",
   },
   {
+    id: "presupuesto_aceptado",
+    name: "Presupuesto aceptado",
+    type: "whatsapp",
+    body: "Hola {nombre}, le confirmo que hemos recibido la aceptacion de su presupuesto. Procedemos a organizar la ejecucion del trabajo. Le contactare para fijar fecha y hora. Un saludo, Ivan Oyarzabal.",
+  },
+  {
     id: "factura_enviada",
     name: "Factura enviada",
     type: "email",
@@ -27,10 +33,16 @@ export const templates: MessageTemplate[] = [
     body: "Hola {nombre}, le recuerdo que tiene pendiente el pago de la factura {numero} por importe de {total}EUR. Puede realizar la transferencia a BBVA ES66 0182 0450 1102 0150 3156. Gracias, Ivan.",
   },
   {
+    id: "recordatorio_pago_amable",
+    name: "Recordatorio de pago (amable)",
+    type: "whatsapp",
+    body: "Hola {nombre}, espero que este bien. Le escribo para recordarle amablemente que la factura {numero} por {total}EUR esta pendiente de pago. Si ya ha realizado la transferencia, disculpe la molestia. Datos bancarios: BBVA ES66 0182 0450 1102 0150 3156. Gracias, Ivan Oyarzabal.",
+  },
+  {
     id: "confirmar_visita",
     name: "Confirmar visita",
-    type: "sms",
-    body: "Hola {nombre}, le confirmo la visita para el {fecha} a las {hora}. Direccion: {direccion}. Si necesita cambiarla, contacteme. Ivan Oyarzabal.",
+    type: "whatsapp",
+    body: "Hola {nombre}, le confirmo la visita para el {fecha} a las {hora}. Direccion: {direccion}. Si necesita cambiarla, contacteme al 688 867 530. Ivan Oyarzabal.",
   },
   {
     id: "trabajo_finalizado",
@@ -43,6 +55,12 @@ export const templates: MessageTemplate[] = [
     name: "Seguimiento post-trabajo",
     type: "whatsapp",
     body: "Hola {nombre}, espero que todo funcione correctamente tras la instalacion realizada. Si tiene cualquier duda o incidencia, no dude en contactarme. Un saludo, Ivan Oyarzabal.",
+  },
+  {
+    id: "solicitar_resena",
+    name: "Solicitar resena",
+    type: "whatsapp",
+    body: "Hola {nombre}, espero que este satisfecho/a con el trabajo realizado. Si es asi, le agradeceria mucho una resena en Google. Esto me ayuda a seguir ofreciendo un buen servicio. Muchas gracias, Ivan Oyarzabal.",
   },
 ];
 
