@@ -1,27 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET(request: NextRequest) {
   try {
-    const db = getDb();
+    await initializeDatabase();
+    const db = getDbClient();
     const searchParams = request.nextUrl.searchParams;
     const clientId = searchParams.get("client_id");
 
-    let query = `
-      SELECT communications.*, clients.name as client_name 
-      FROM communications 
-      LEFT JOIN clients ON communications.client_id = clients.id
-    `;
-
+    let result;
     if (clientId) {
-      query += " WHERE communications.client_id = ?";
-      const comms = db.prepare(query + " ORDER BY communications.created_at DESC").all(clientId);
-      return NextResponse.json(comms);
+      result = await db.execute({
+        sql: `SELECT communications.*, clients.name as client_name 
+              FROM communications 
+              LEFT JOIN clients ON communications.client_id = clients.id
+              WHERE communications.client_id = ?
+              ORDER BY communications.created_at DESC`,
+        args: [clientId],
+      });
+    } else {
+      result = await db.execute(
+        `SELECT communications.*, clients.name as client_name 
+         FROM communications 
+         LEFT JOIN clients ON communications.client_id = clients.id
+         ORDER BY communications.created_at DESC`
+      );
     }
 
-    const comms = db.prepare(query + " ORDER BY communications.created_at DESC").all();
-    return NextResponse.json(comms);
+    return NextResponse.json(result.rows);
   } catch {
     return NextResponse.json(
       { error: "Error al obtener comunicaciones" },
@@ -32,24 +39,29 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const db = getDb();
+    await initializeDatabase();
+    const db = getDbClient();
     const body = await request.json();
     const id = uuidv4();
 
-    db.prepare(
-      `INSERT INTO communications (id, client_id, type, subject, message, status)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(
-      id,
-      body.client_id,
-      body.type,
-      body.subject || null,
-      body.message,
-      body.status || "sent"
-    );
+    await db.execute({
+      sql: `INSERT INTO communications (id, client_id, type, subject, message, status)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [
+        id,
+        body.client_id,
+        body.type,
+        body.subject || null,
+        body.message,
+        body.status || "sent",
+      ],
+    });
 
-    const comm = db.prepare("SELECT * FROM communications WHERE id = ?").get(id);
-    return NextResponse.json(comm, { status: 201 });
+    const result = await db.execute({
+      sql: "SELECT * FROM communications WHERE id = ?",
+      args: [id],
+    });
+    return NextResponse.json(result.rows[0], { status: 201 });
   } catch {
     return NextResponse.json(
       { error: "Error al crear comunicacion" },

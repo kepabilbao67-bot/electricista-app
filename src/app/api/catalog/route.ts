@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
   try {
-    const db = getDb();
-    const items = db
-      .prepare("SELECT * FROM catalog_items ORDER BY category, name")
-      .all();
-    return NextResponse.json(items);
+    await initializeDatabase();
+    const db = getDbClient();
+    const result = await db.execute(
+      "SELECT * FROM catalog_items ORDER BY category, name"
+    );
+    return NextResponse.json(result.rows);
   } catch {
     return NextResponse.json(
       { error: "Error al obtener catalogo" },
@@ -19,17 +20,22 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const db = getDb();
+    await initializeDatabase();
+    const db = getDbClient();
     const body = await request.json();
     const id = uuidv4();
 
-    db.prepare(
-      `INSERT INTO catalog_items (id, name, description, unit_price, category)
-       VALUES (?, ?, ?, ?, ?)`
-    ).run(id, body.name, body.description || null, body.unit_price, body.category || null);
+    await db.execute({
+      sql: `INSERT INTO catalog_items (id, name, description, unit_price, category)
+       VALUES (?, ?, ?, ?, ?)`,
+      args: [id, body.name, body.description || null, body.unit_price, body.category || null],
+    });
 
-    const item = db.prepare("SELECT * FROM catalog_items WHERE id = ?").get(id);
-    return NextResponse.json(item, { status: 201 });
+    const result = await db.execute({
+      sql: "SELECT * FROM catalog_items WHERE id = ?",
+      args: [id],
+    });
+    return NextResponse.json(result.rows[0], { status: 201 });
   } catch {
     return NextResponse.json(
       { error: "Error al crear item de catalogo" },

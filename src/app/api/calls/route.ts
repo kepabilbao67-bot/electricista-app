@@ -1,22 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET(request: NextRequest) {
   try {
-    const db = getDb();
+    await initializeDatabase();
+    const db = getDbClient();
     const searchParams = request.nextUrl.searchParams;
     const clientId = searchParams.get("client_id");
 
-    let query = "SELECT * FROM calls";
+    let result;
     if (clientId) {
-      query += " WHERE client_id = ?";
-      const calls = db.prepare(query + " ORDER BY created_at DESC").all(clientId);
-      return NextResponse.json(calls);
+      result = await db.execute({
+        sql: "SELECT * FROM calls WHERE client_id = ? ORDER BY created_at DESC",
+        args: [clientId],
+      });
+    } else {
+      result = await db.execute("SELECT * FROM calls ORDER BY created_at DESC");
     }
 
-    const calls = db.prepare(query + " ORDER BY created_at DESC").all();
-    return NextResponse.json(calls);
+    return NextResponse.json(result.rows);
   } catch {
     return NextResponse.json(
       { error: "Error al obtener llamadas" },
@@ -27,25 +30,30 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const db = getDb();
+    await initializeDatabase();
+    const db = getDbClient();
     const body = await request.json();
     const id = uuidv4();
 
-    db.prepare(
-      `INSERT INTO calls (id, client_id, client_name, phone, direction, duration, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      id,
-      body.client_id || null,
-      body.client_name || null,
-      body.phone || null,
-      body.direction || "incoming",
-      body.duration || null,
-      body.notes || null
-    );
+    await db.execute({
+      sql: `INSERT INTO calls (id, client_id, client_name, phone, direction, duration, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        id,
+        body.client_id || null,
+        body.client_name || null,
+        body.phone || null,
+        body.direction || "incoming",
+        body.duration || null,
+        body.notes || null,
+      ],
+    });
 
-    const call = db.prepare("SELECT * FROM calls WHERE id = ?").get(id);
-    return NextResponse.json(call, { status: 201 });
+    const result = await db.execute({
+      sql: "SELECT * FROM calls WHERE id = ?",
+      args: [id],
+    });
+    return NextResponse.json(result.rows[0], { status: 201 });
   } catch {
     return NextResponse.json(
       { error: "Error al registrar llamada" },

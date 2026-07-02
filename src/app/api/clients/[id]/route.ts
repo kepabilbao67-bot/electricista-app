@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDbClient, initializeDatabase } from "@/lib/db";
 
 export async function GET(
   _request: NextRequest,
@@ -7,17 +7,21 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = getDb();
-    const client = db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
+    await initializeDatabase();
+    const db = getDbClient();
+    const result = await db.execute({
+      sql: "SELECT * FROM clients WHERE id = ?",
+      args: [id],
+    });
 
-    if (!client) {
+    if (result.rows.length === 0) {
       return NextResponse.json(
         { error: "Cliente no encontrado" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(client);
+    return NextResponse.json(result.rows[0]);
   } catch {
     return NextResponse.json(
       { error: "Error al obtener cliente" },
@@ -32,27 +36,32 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const db = getDb();
+    await initializeDatabase();
+    const db = getDbClient();
     const body = await request.json();
 
-    db.prepare(
-      `UPDATE clients SET name = ?, nif = ?, email = ?, phone = ?, address = ?, city = ?, postal_code = ?, province = ?, notes = ?, updated_at = datetime('now')
-       WHERE id = ?`
-    ).run(
-      body.name,
-      body.nif || null,
-      body.email || null,
-      body.phone || null,
-      body.address || null,
-      body.city || null,
-      body.postal_code || null,
-      body.province || null,
-      body.notes || null,
-      id
-    );
+    await db.execute({
+      sql: `UPDATE clients SET name = ?, nif = ?, email = ?, phone = ?, address = ?, city = ?, postal_code = ?, province = ?, notes = ?, updated_at = datetime('now')
+       WHERE id = ?`,
+      args: [
+        body.name,
+        body.nif || null,
+        body.email || null,
+        body.phone || null,
+        body.address || null,
+        body.city || null,
+        body.postal_code || null,
+        body.province || null,
+        body.notes || null,
+        id,
+      ],
+    });
 
-    const client = db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
-    return NextResponse.json(client);
+    const result = await db.execute({
+      sql: "SELECT * FROM clients WHERE id = ?",
+      args: [id],
+    });
+    return NextResponse.json(result.rows[0]);
   } catch {
     return NextResponse.json(
       { error: "Error al actualizar cliente" },
@@ -67,8 +76,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const db = getDb();
-    db.prepare("DELETE FROM clients WHERE id = ?").run(id);
+    await initializeDatabase();
+    const db = getDbClient();
+    await db.execute({ sql: "DELETE FROM clients WHERE id = ?", args: [id] });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

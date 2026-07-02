@@ -1,22 +1,21 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { createClient, Client } from "@libsql/client";
 
-const DB_PATH = path.join(process.cwd(), "electricista.db");
+let client: Client;
 
-let db: Database.Database;
-
-export function getDb(): Database.Database {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma("journal_mode = WAL");
-    db.pragma("foreign_keys = ON");
-    initializeDatabase(db);
+export function getDbClient(): Client {
+  if (!client) {
+    client = createClient({
+      url: process.env.TURSO_DATABASE_URL || "file:electricista.db",
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
   }
-  return db;
+  return client;
 }
 
-function initializeDatabase(db: Database.Database) {
-  db.exec(`
+export async function initializeDatabase(): Promise<void> {
+  const db = getDbClient();
+
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS clients (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -142,11 +141,10 @@ function initializeDatabase(db: Database.Database) {
   `);
 
   // Seed catalog items if empty
-  const count = db.prepare("SELECT COUNT(*) as count FROM catalog_items").get() as { count: number };
-  if (count.count === 0) {
-    const insert = db.prepare(
-      "INSERT INTO catalog_items (id, name, unit_price, category) VALUES (?, ?, ?, ?)"
-    );
+  const result = await db.execute("SELECT COUNT(*) as count FROM catalog_items");
+  const count = result.rows[0].count as number;
+
+  if (count === 0) {
     const catalogItems = [
       ["cat_01", "Cableado estructural", 150, "Instalacion"],
       ["cat_02", "Cuadro electrico empotrar pladur", 130, "Cuadros"],
@@ -163,39 +161,39 @@ function initializeDatabase(db: Database.Database) {
       ["cat_13", "Apuntamiento proyectores", 800, "Instalacion"],
     ];
 
-    const insertMany = db.transaction((items: (string | number)[][]) => {
-      for (const item of items) {
-        insert.run(item[0], item[1], item[2], item[3]);
-      }
-    });
-    insertMany(catalogItems);
+    for (const item of catalogItems) {
+      await db.execute({
+        sql: "INSERT INTO catalog_items (id, name, unit_price, category) VALUES (?, ?, ?, ?)",
+        args: [item[0], item[1], item[2], item[3]],
+      });
+    }
   }
 }
 
-export function generateInvoiceNumber(): string {
-  const db = getDb();
-  const result = db.prepare(
+export async function generateInvoiceNumber(): Promise<string> {
+  const db = getDbClient();
+  const result = await db.execute(
     "SELECT number FROM invoices ORDER BY created_at DESC LIMIT 1"
-  ).get() as { number: string } | undefined;
+  );
 
-  if (!result) {
+  if (result.rows.length === 0) {
     return "DFB_0001";
   }
 
-  const lastNum = parseInt(result.number.replace("DFB_", ""), 10);
+  const lastNum = parseInt((result.rows[0].number as string).replace("DFB_", ""), 10);
   return `DFB_${String(lastNum + 1).padStart(4, "0")}`;
 }
 
-export function generateBudgetNumber(): string {
-  const db = getDb();
-  const result = db.prepare(
+export async function generateBudgetNumber(): Promise<string> {
+  const db = getDbClient();
+  const result = await db.execute(
     "SELECT number FROM budgets ORDER BY created_at DESC LIMIT 1"
-  ).get() as { number: string } | undefined;
+  );
 
-  if (!result) {
+  if (result.rows.length === 0) {
     return "PRES_0001";
   }
 
-  const lastNum = parseInt(result.number.replace("PRES_", ""), 10);
+  const lastNum = parseInt((result.rows[0].number as string).replace("PRES_", ""), 10);
   return `PRES_${String(lastNum + 1).padStart(4, "0")}`;
 }
