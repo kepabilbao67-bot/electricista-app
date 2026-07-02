@@ -1,0 +1,238 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, Trash2 } from "lucide-react";
+
+interface Client {
+  id: string;
+  name: string;
+}
+
+interface CatalogItem {
+  id: string;
+  name: string;
+  unit_price: number;
+}
+
+interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export default function NuevaFacturaPage() {
+  const router = useRouter();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [clientId, setClientId] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [notes, setNotes] = useState("");
+  const [items, setItems] = useState<InvoiceItem[]>([
+    { description: "", quantity: 1, unit_price: 0 },
+  ]);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/clients").then((r) => r.json()).then(setClients);
+    fetch("/api/catalog").then((r) => r.json()).then(setCatalog);
+  }, []);
+
+  const addItem = () => {
+    setItems([...items, { description: "", quantity: 1, unit_price: 0 }]);
+  };
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setItems(newItems);
+  };
+
+  const addFromCatalog = (catalogItem: CatalogItem) => {
+    setItems([
+      ...items,
+      { description: catalogItem.name, quantity: 1, unit_price: catalogItem.unit_price },
+    ]);
+  };
+
+  const subtotal = items.reduce((acc, item) => acc + item.quantity * item.unit_price, 0);
+  const taxAmount = subtotal * 0.21;
+  const total = subtotal + taxAmount;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientId || items.length === 0) return;
+    setSubmitting(true);
+
+    const res = await fetch("/api/invoices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: clientId,
+        date,
+        notes,
+        tax_rate: 21,
+        items: items.filter((i) => i.description && i.unit_price > 0),
+      }),
+    });
+
+    if (res.ok) {
+      const invoice = await res.json();
+      router.push(`/facturas/${invoice.id}`);
+    } else {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Nueva factura</h1>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Datos generales</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+              <select
+                required
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
+              >
+                <option value="">Seleccionar cliente</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Lineas de detalle</h2>
+            <button
+              type="button"
+              onClick={addItem}
+              className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              <Plus className="h-3 w-3" /> Linea
+            </button>
+          </div>
+
+          {catalog.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-medium text-gray-500 mb-2">Agregar desde catalogo:</p>
+              <div className="flex flex-wrap gap-2">
+                {catalog.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => addFromCatalog(item)}
+                    className="rounded-full border border-gray-200 px-3 py-1 text-xs hover:bg-yellow-50 hover:border-yellow-300 transition-colors"
+                  >
+                    {item.name} ({item.unit_price} EUR)
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {items.map((item, index) => (
+              <div key={index} className="flex gap-3 items-start">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Descripcion"
+                    value={item.description}
+                    onChange={(e) => updateItem(index, "description", e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
+                  />
+                </div>
+                <div className="w-20">
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    placeholder="Cant."
+                    value={item.quantity}
+                    onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
+                  />
+                </div>
+                <div className="w-28">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Precio"
+                    value={item.unit_price}
+                    onChange={(e) => updateItem(index, "unit_price", parseFloat(e.target.value) || 0)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none"
+                  />
+                </div>
+                <div className="w-24 text-right py-2 text-sm font-medium">
+                  {(item.quantity * item.unit_price).toFixed(2)} EUR
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeItem(index)}
+                  className="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 border-t pt-4 text-right space-y-1">
+            <p className="text-sm text-gray-500">Subtotal: {subtotal.toFixed(2)} EUR</p>
+            <p className="text-sm text-gray-500">IVA 21%: {taxAmount.toFixed(2)} EUR</p>
+            <p className="text-lg font-bold">Total: {total.toFixed(2)} EUR</p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-lg bg-yellow-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-yellow-600 disabled:opacity-50"
+          >
+            {submitting ? "Creando..." : "Crear factura"}
+          </button>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
