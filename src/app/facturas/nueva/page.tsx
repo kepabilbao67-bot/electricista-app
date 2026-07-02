@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Shield, FileCode } from "lucide-react";
 
 interface Client {
   id: string;
@@ -32,6 +32,11 @@ export default function NuevaFacturaPage() {
     { description: "", quantity: 1, unit_price: 0 },
   ]);
   const [submitting, setSubmitting] = useState(false);
+
+  // TicketBAI fields
+  const [ticketbaiDescription, setTicketbaiDescription] = useState("Servicios electricos");
+  const [ticketbaiTipoOperacion, setTicketbaiTipoOperacion] = useState("prestacion_servicios");
+  const [autoGenerateTbai, setAutoGenerateTbai] = useState(false);
 
   useEffect(() => {
     fetch("/api/clients").then((r) => r.json()).then(setClients);
@@ -77,6 +82,9 @@ export default function NuevaFacturaPage() {
         notes,
         tax_rate: 21,
         items: items.filter((i) => i.description && i.unit_price > 0),
+        ticketbai_description: ticketbaiDescription,
+        ticketbai_tipo_operacion: ticketbaiTipoOperacion,
+        auto_generate_tbai: autoGenerateTbai,
       }),
     });
 
@@ -224,6 +232,61 @@ export default function NuevaFacturaPage() {
             <p className="text-sm text-slate-500">Subtotal: <span className="font-medium text-slate-700">{subtotal.toFixed(2)} EUR</span></p>
             <p className="text-sm text-slate-500">IVA 21%: <span className="font-medium text-slate-700">{taxAmount.toFixed(2)} EUR</span></p>
             <p className="text-xl font-bold text-slate-900 mt-2">Total: {total.toFixed(2)} EUR</p>
+          </div>
+        </div>
+
+        {/* TicketBAI Section */}
+        <div className="card border-indigo-100 bg-gradient-to-br from-white to-indigo-50/30">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+              <Shield className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Datos TicketBAI</h2>
+              <p className="text-xs text-slate-500">Configuracion para la emision fiscal obligatoria</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <FileCode className="h-3.5 w-3.5 inline-block mr-1 text-slate-400" />
+                Descripcion de la operacion
+              </label>
+              <input
+                type="text"
+                value={ticketbaiDescription}
+                onChange={(e) => setTicketbaiDescription(e.target.value)}
+                placeholder="Servicios electricos"
+                className="input-field"
+              />
+              <p className="text-xs text-slate-400 mt-1">Se incluira en el XML de TicketBAI como descripcion de la factura</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de operacion</label>
+              <select
+                value={ticketbaiTipoOperacion}
+                onChange={(e) => setTicketbaiTipoOperacion(e.target.value)}
+                className="input-field"
+              >
+                <option value="prestacion_servicios">Prestacion de servicios</option>
+                <option value="entrega_bienes">Entrega de bienes</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50/50 transition-colors w-full">
+                <input
+                  type="checkbox"
+                  checked={autoGenerateTbai}
+                  onChange={(e) => setAutoGenerateTbai(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-slate-700">Generar automaticamente</span>
+                  <p className="text-xs text-slate-400">Emitir TicketBAI al crear la factura</p>
+                </div>
+              </label>
+            </div>
           </div>
         </div>
 

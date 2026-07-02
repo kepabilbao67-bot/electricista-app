@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Send, CheckCircle, Shield } from "lucide-react";
+import { ArrowLeft, Printer, Send, CheckCircle, Shield, Download, ExternalLink, QrCode, FileCode } from "lucide-react";
 
 interface InvoiceDetail {
   id: string;
@@ -23,6 +23,11 @@ interface InvoiceDetail {
   notes: string;
   ticketbai_id: string | null;
   ticketbai_qr: string | null;
+  ticketbai_signature: string | null;
+  ticketbai_description: string | null;
+  ticketbai_tipo_operacion: string | null;
+  created_at: string;
+  updated_at: string;
   items: Array<{
     id: string;
     description: string;
@@ -73,6 +78,7 @@ export default function FacturaDetailPage() {
           ...invoice,
           ticketbai_id: data.ticketbaiId,
           ticketbai_qr: data.qrCode,
+          ticketbai_signature: data.signature,
           status: "sent",
         });
       }
@@ -80,6 +86,11 @@ export default function FacturaDetailPage() {
       console.error(err);
     }
     setGenerating(false);
+  };
+
+  const downloadXml = () => {
+    if (!invoice) return;
+    window.open(`/api/invoices/${invoice.id}/ticketbai-xml`, "_blank");
   };
 
   const markPaid = async () => {
@@ -150,6 +161,84 @@ export default function FacturaDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* TicketBAI Section - Prominent */}
+      {invoice.ticketbai_id && (
+        <div className="card mb-6 border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100/40 rounded-full -translate-y-8 translate-x-8"></div>
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 shadow-sm">
+                <Shield className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-emerald-800">TicketBAI Verificado</h2>
+                <p className="text-xs text-emerald-600">Factura registrada en el sistema fiscal de Bizkaia (DFB)</p>
+              </div>
+            </div>
+
+            {/* TBAI Code */}
+            <div className="bg-white rounded-lg border border-emerald-200 p-4 mb-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Codigo de identificacion TBAI</p>
+              <p className="text-base md:text-lg font-mono font-bold text-slate-800 break-all leading-relaxed">
+                {invoice.ticketbai_id}
+              </p>
+            </div>
+
+            {/* QR and Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* QR Link */}
+              {invoice.ticketbai_qr && (
+                <div className="bg-white rounded-lg border border-emerald-200 p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <QrCode className="h-4 w-4 text-emerald-600" />
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Codigo QR de verificacion</p>
+                  </div>
+                  <a
+                    href={invoice.ticketbai_qr}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all duration-200 w-full justify-center"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Verificar en Batuz
+                  </a>
+                  <p className="text-xs text-slate-400 mt-2 break-all font-mono">{invoice.ticketbai_qr}</p>
+                </div>
+              )}
+
+              {/* Download XML */}
+              <div className="bg-white rounded-lg border border-emerald-200 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileCode className="h-4 w-4 text-emerald-600" />
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Documento XML</p>
+                </div>
+                <button
+                  onClick={downloadXml}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 transition-all duration-200 w-full justify-center"
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar XML TicketBAI
+                </button>
+                <p className="text-xs text-slate-400 mt-2">Fichero XML con la firma digital de la factura</p>
+              </div>
+            </div>
+
+            {/* Metadata */}
+            <div className="mt-4 pt-3 border-t border-emerald-100 flex flex-wrap gap-4 text-xs text-emerald-700">
+              {invoice.ticketbai_description && (
+                <span><span className="font-medium">Operacion:</span> {invoice.ticketbai_description}</span>
+              )}
+              {invoice.ticketbai_tipo_operacion && (
+                <span><span className="font-medium">Tipo:</span> {invoice.ticketbai_tipo_operacion === "prestacion_servicios" ? "Prestacion de servicios" : "Entrega de bienes"}</span>
+              )}
+              {invoice.updated_at && (
+                <span><span className="font-medium">Generado:</span> {new Date(invoice.updated_at).toLocaleString("es-ES")}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card p-8 print:shadow-none print:border-none">
         {/* Header */}
@@ -227,20 +316,6 @@ export default function FacturaDetailPage() {
             </div>
           </div>
         </div>
-
-        {/* TicketBAI info */}
-        {invoice.ticketbai_id && (
-          <div className="mt-8 p-4 rounded-lg bg-emerald-50 border border-emerald-100">
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="h-4 w-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">TicketBAI Verificado</span>
-            </div>
-            <p className="text-xs text-emerald-600 font-mono">{invoice.ticketbai_id}</p>
-            {invoice.ticketbai_qr && (
-              <p className="text-xs text-emerald-600 font-mono mt-1">QR: {invoice.ticketbai_qr}</p>
-            )}
-          </div>
-        )}
 
         {/* Notes */}
         {invoice.notes && (

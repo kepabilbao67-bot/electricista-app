@@ -46,6 +46,8 @@ export async function initializeDatabase(): Promise<void> {
       ticketbai_id TEXT,
       ticketbai_signature TEXT,
       ticketbai_qr TEXT,
+      ticketbai_description TEXT,
+      ticketbai_tipo_operacion TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (client_id) REFERENCES clients(id)
