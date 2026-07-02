@@ -23,20 +23,10 @@ export async function GET(
     });
 
     if (invoiceResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: "Factura no encontrada" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Factura no encontrada" }, { status: 404 });
     }
 
     const invoice = invoiceResult.rows[0];
-
-    if (!invoice.ticketbai_id) {
-      return NextResponse.json(
-        { error: "Esta factura no tiene TicketBAI generado" },
-        { status: 404 }
-      );
-    }
 
     const itemsResult = await db.execute({
       sql: "SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order",
@@ -53,14 +43,12 @@ export async function GET(
     const now = new Date();
     const hora = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 
-    const descripcion = (invoice.ticketbai_description as string) || `Factura ${invoice.number} - Servicios electricos`;
-
     const ticketbaiInvoice: TicketBAIInvoice = {
       serie: TICKETBAI_CONFIG.serie,
       numero: (invoice.number as string).replace(TICKETBAI_CONFIG.serie, ""),
       fecha: invoice.date as string,
       hora,
-      descripcion,
+      descripcion: invoice.notes as string || `Factura ${invoice.number} - Servicios electricos`,
       emisor: {
         nif: TICKETBAI_CONFIG.emisor.nif,
         nombre: TICKETBAI_CONFIG.emisor.nombre,
@@ -97,17 +85,17 @@ export async function GET(
 
     const result = generateTicketBAIXml(ticketbaiInvoice);
 
+    // Devolver como archivo XML descargable
     return new NextResponse(result.xml, {
-      status: 200,
       headers: {
         "Content-Type": "application/xml",
-        "Content-Disposition": `attachment; filename="ticketbai-${invoice.number}.xml"`,
+        "Content-Disposition": `attachment; filename="TicketBAI_${invoice.number}_${invoice.date}.xml"`,
       },
     });
   } catch (error) {
-    console.error("TicketBAI XML error:", error);
+    console.error("Error generating XML:", error);
     return NextResponse.json(
-      { error: "Error al generar XML TicketBAI" },
+      { error: "Error al generar XML" },
       { status: 500 }
     );
   }

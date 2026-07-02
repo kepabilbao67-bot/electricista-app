@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Professional UI redesign - upgrade colors, typography, spacing, and overall visual polish across all pages. Change from basic yellow/gray theme to a more professional blue/slate color scheme with better gradients, card depth, spacing, and modern input styling.",
+  "status": "completed",
+  "steps": [
+    "Update src/app/globals.css to add custom CSS variables for the new professional color palette, smooth font rendering settings, and any global utility classes needed.",
+    "Redesign src/components/Sidebar.tsx - change from dark gray bg-gray-900 to a professional gradient sidebar (slate-900 to slate-800), add a proper logo area with gradient accent, improve nav item styling with better hover/active states using indigo/blue tones instead of yellow, add subtle border styling.",
+    "Redesign src/components/MobileNav.tsx - match the new sidebar color scheme, improve mobile menu appearance with backdrop blur and smoother transitions.",
+    "Redesign src/app/layout.tsx - update body background, improve overall layout spacing and use Inter or system font stack.",
+    "Redesign src/app/page.tsx (Dashboard) - improve KPI cards with gradient accents, better shadow depth, subtle border coloring per card type, improve header area with a welcome message and date display.",
+    "Redesign src/app/facturas/page.tsx - improve table styling with better row hover states, upgrade status badges with more polished styling, improve the header area and button styling to use blue/indigo primary color.",
+    "Redesign src/app/facturas/nueva/page.tsx - improve form card styling with better borders and focus states, upgrade buttons to use indigo/blue primary, improve the line items section with better visual separation.",
+    "Redesign src/app/facturas/[id]/page.tsx - improve the invoice detail view with better card styling, improve the header/FACTURA title area, better TicketBAI info display section, improve action buttons.",
+    "Redesign src/app/clientes/page.tsx - improve search bar styling, upgrade table appearance, improve form card when adding/editing clients.",
+    "Redesign src/app/presupuestos/page.tsx - improve table styling consistent with facturas page.",
+    "Redesign src/app/comunicaciones/page.tsx - improve the two-column layout cards, better message type selector buttons, improve communication history items.",
+    "Redesign src/app/agenda/page.tsx - improve visit cards with better status indicators, improve the form for new visits."
+  ],
+  "acceptance_criteria": [
+    "All pages use a cohesive professional color scheme (blues/indigo/slate instead of plain yellow/gray)",
+    "Cards have proper shadows, borders, and spacing giving depth",
+    "Input fields have improved focus states with ring styling",
+    "Status badges look polished with subtle gradients or improved coloring",
+    "Sidebar looks professional with gradient or improved dark theme",
+    "Typography is crisp with proper hierarchy (font sizes, weights, colors)",
+    "npx next build completes without errors"
+  ],
+  "verification": ["Run `npx next build` in /projects/sandbox/electricista-app and confirm successful build"],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly. Dashboard KPI cards are now clickable links that navigate to respective pages. Added recent invoices and upcoming visits detail sections to dashboard. All pages use consistent indigo/slate professional theme with reusable CSS component classes. User steering about Excel/Airtable and AI error handling are separate features outside this scope."
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Send, CheckCircle, Shield, Download, ExternalLink, QrCode, FileCode } from "lucide-react";
+import { ArrowLeft, Printer, Send, CheckCircle, Shield, Download, ExternalLink, QrCode, FileCode, AlertCircle, Upload } from "lucide-react";
 
 interface InvoiceDetail {
   id: string;
@@ -24,8 +24,6 @@ interface InvoiceDetail {
   ticketbai_id: string | null;
   ticketbai_qr: string | null;
   ticketbai_signature: string | null;
-  ticketbai_description: string | null;
-  ticketbai_tipo_operacion: string | null;
   created_at: string;
   updated_at: string;
   items: Array<{
@@ -39,7 +37,8 @@ interface InvoiceDetail {
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   draft: { label: "Borrador", color: "bg-slate-100 text-slate-600" },
-  sent: { label: "Enviada", color: "bg-blue-50 text-blue-700 border border-blue-100" },
+  pending_batuz: { label: "Pendiente Batuz", color: "bg-amber-50 text-amber-700 border border-amber-200" },
+  sent: { label: "Enviada/TBAI", color: "bg-blue-50 text-blue-700 border border-blue-100" },
   paid: { label: "Cobrada", color: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
   overdue: { label: "Vencida", color: "bg-red-50 text-red-700 border border-red-100" },
 };
@@ -50,6 +49,9 @@ export default function FacturaDetailPage() {
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState({ ticketbai_id: "", ticketbai_signature: "", ticketbai_qr: "" });
+  const [tbaiResult, setTbaiResult] = useState<{ xml: string; instructions: string[] } | null>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -79,8 +81,9 @@ export default function FacturaDetailPage() {
           ticketbai_id: data.ticketbaiId,
           ticketbai_qr: data.qrCode,
           ticketbai_signature: data.signature,
-          status: "sent",
+          status: "pending_batuz",
         });
+        setTbaiResult({ xml: data.xml, instructions: data.instructions });
       }
     } catch (err) {
       console.error(err);
@@ -91,6 +94,36 @@ export default function FacturaDetailPage() {
   const downloadXml = () => {
     if (!invoice) return;
     window.open(`/api/invoices/${invoice.id}/ticketbai-xml`, "_blank");
+  };
+
+  const confirmBatuz = async () => {
+    if (!invoice) return;
+    try {
+      const res = await fetch("/api/ticketbai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoice_id: invoice.id,
+          action: "confirm",
+          ticketbai_id: confirmData.ticketbai_id || invoice.ticketbai_id,
+          ticketbai_signature: confirmData.ticketbai_signature || invoice.ticketbai_signature,
+          ticketbai_qr: confirmData.ticketbai_qr || invoice.ticketbai_qr,
+        }),
+      });
+      if (res.ok) {
+        setInvoice({
+          ...invoice,
+          ticketbai_id: confirmData.ticketbai_id || invoice.ticketbai_id,
+          ticketbai_signature: confirmData.ticketbai_signature || invoice.ticketbai_signature,
+          ticketbai_qr: confirmData.ticketbai_qr || invoice.ticketbai_qr,
+          status: "sent",
+        });
+        setShowConfirmModal(false);
+        setTbaiResult(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const markPaid = async () => {
@@ -119,6 +152,7 @@ export default function FacturaDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => router.back()}
@@ -128,33 +162,23 @@ export default function FacturaDetailPage() {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="page-title">Factura {invoice.number}</h1>
-            <span className={`badge ${status.color}`}>{status.label}</span>
+            <h1 className="text-2xl font-bold text-slate-900">Factura {invoice.number}</h1>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${status.color}`}>{status.label}</span>
           </div>
         </div>
-        <div className="flex gap-2">
-          {!invoice.ticketbai_id && (
-            <button
-              onClick={generateTicketBAI}
-              disabled={generating}
-              className="btn-primary"
-            >
-              <Send className="h-4 w-4" />
-              {generating ? "Generando..." : "Generar TicketBAI"}
-            </button>
-          )}
+        <div className="flex gap-2 flex-wrap">
           {invoice.status !== "paid" && (
             <button
               onClick={markPaid}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all duration-200"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all"
             >
               <CheckCircle className="h-4 w-4" />
-              Marcar cobrada
+              Cobrada
             </button>
           )}
           <button
             onClick={() => window.print()}
-            className="btn-secondary"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
           >
             <Printer className="h-4 w-4" />
             Imprimir
@@ -162,84 +186,233 @@ export default function FacturaDetailPage() {
         </div>
       </div>
 
-      {/* TicketBAI Section - Prominent */}
-      {invoice.ticketbai_id && (
-        <div className="card mb-6 border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100/40 rounded-full -translate-y-8 translate-x-8"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 shadow-sm">
-                <Shield className="h-6 w-6 text-emerald-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-emerald-800">TicketBAI Verificado</h2>
-                <p className="text-xs text-emerald-600">Factura registrada en el sistema fiscal de Bizkaia (DFB)</p>
-              </div>
+      {/* FLUJO BATUZ - Panel principal */}
+      <div className="card mb-6 border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100">
+              <Shield className="h-6 w-6 text-indigo-600" />
             </div>
-
-            {/* TBAI Code */}
-            <div className="bg-white rounded-lg border border-emerald-200 p-4 mb-4">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Codigo de identificacion TBAI</p>
-              <p className="text-base md:text-lg font-mono font-bold text-slate-800 break-all leading-relaxed">
-                {invoice.ticketbai_id}
-              </p>
+            <div>
+              <h2 className="text-lg font-bold text-indigo-900">TicketBAI / Batuz</h2>
+              <p className="text-xs text-indigo-600">Sistema fiscal Diputacion Foral de Bizkaia</p>
             </div>
+          </div>
 
-            {/* QR and Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* QR Link */}
-              {invoice.ticketbai_qr && (
-                <div className="bg-white rounded-lg border border-emerald-200 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <QrCode className="h-4 w-4 text-emerald-600" />
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Codigo QR de verificacion</p>
+          {/* Estado: Sin generar */}
+          {!invoice.ticketbai_id && invoice.status === "draft" && (
+            <div className="bg-white rounded-lg border border-slate-200 p-5">
+              <div className="flex items-start gap-3 mb-4">
+                <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-slate-900">Factura en borrador</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Genera el XML de TicketBAI para subirlo a Batuz y convertir este borrador en factura oficial.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={generateTicketBAI}
+                disabled={generating}
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-all w-full justify-center"
+              >
+                <Send className="h-4 w-4" />
+                {generating ? "Generando XML..." : "Generar XML para Batuz"}
+              </button>
+            </div>
+          )}
+
+          {/* Estado: Pendiente de subir a Batuz */}
+          {invoice.ticketbai_id && invoice.status === "pending_batuz" && (
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-800">Pendiente de subir a Batuz</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      El XML esta generado. Sigue estos pasos:
+                    </p>
                   </div>
-                  <a
-                    href={invoice.ticketbai_qr}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all duration-200 w-full justify-center"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Verificar en Batuz
-                  </a>
-                  <p className="text-xs text-slate-400 mt-2 break-all font-mono">{invoice.ticketbai_qr}</p>
                 </div>
-              )}
+              </div>
 
-              {/* Download XML */}
-              <div className="bg-white rounded-lg border border-emerald-200 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileCode className="h-4 w-4 text-emerald-600" />
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Documento XML</p>
-                </div>
+              {/* Instrucciones paso a paso */}
+              <div className="bg-white rounded-lg border border-slate-200 p-5">
+                <h3 className="font-semibold text-slate-900 mb-3">Pasos para completar en Batuz:</h3>
+                <ol className="space-y-3 text-sm text-slate-700">
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 shrink-0">1</span>
+                    <span><strong>Descarga el XML</strong> pulsando el boton de abajo</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 shrink-0">2</span>
+                    <span>Entra en <strong>Batuz</strong> con tu certificado digital (batuz.eus o BizkaiBai)</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 shrink-0">3</span>
+                    <span>Sube el XML en <strong>&quot;Alta de facturas emitidas&quot;</strong></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 shrink-0">4</span>
+                    <span>Batuz genera la <strong>firma digital y codigo TBAI</strong> definitivo</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 shrink-0">5</span>
+                    <span>Copia el <strong>codigo TBAI</strong> que te da Batuz y confirmalo aqui abajo</span>
+                  </li>
+                </ol>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <button
                   onClick={downloadXml}
-                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 transition-all duration-200 w-full justify-center"
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-all justify-center"
                 >
                   <Download className="h-4 w-4" />
                   Descargar XML TicketBAI
                 </button>
-                <p className="text-xs text-slate-400 mt-2">Fichero XML con la firma digital de la factura</p>
+                <button
+                  onClick={() => setShowConfirmModal(true)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition-all justify-center"
+                >
+                  <Upload className="h-4 w-4" />
+                  Confirmar datos de Batuz
+                </button>
+              </div>
+
+              {/* Código TBAI provisional */}
+              <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Codigo TBAI provisional (se actualizara con el de Batuz)</p>
+                <p className="text-sm font-mono text-slate-600 break-all">{invoice.ticketbai_id}</p>
               </div>
             </div>
+          )}
 
-            {/* Metadata */}
-            <div className="mt-4 pt-3 border-t border-emerald-100 flex flex-wrap gap-4 text-xs text-emerald-700">
-              {invoice.ticketbai_description && (
-                <span><span className="font-medium">Operacion:</span> {invoice.ticketbai_description}</span>
+          {/* Estado: Confirmado en Batuz */}
+          {invoice.ticketbai_id && invoice.status !== "pending_batuz" && invoice.status !== "draft" && (
+            <div className="space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-emerald-600" />
+                  <div>
+                    <p className="font-semibold text-emerald-800">Factura registrada en Batuz</p>
+                    <p className="text-xs text-emerald-600">TicketBAI confirmado y valido</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Código TBAI */}
+              <div className="bg-white rounded-lg border border-emerald-200 p-4">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Codigo TBAI</p>
+                <p className="text-base font-mono font-bold text-slate-800 break-all">{invoice.ticketbai_id}</p>
+              </div>
+
+              {/* QR y acciones */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {invoice.ticketbai_qr && (
+                  <a
+                    href={invoice.ticketbai_qr}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-4 py-3 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-all justify-center"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    Verificar QR en Batuz
+                  </a>
+                )}
+                <button
+                  onClick={downloadXml}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all justify-center"
+                >
+                  <FileCode className="h-4 w-4" />
+                  Descargar XML
+                </button>
+              </div>
+
+              {/* Firma */}
+              {invoice.ticketbai_signature && (
+                <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Firma digital</p>
+                  <p className="text-xs font-mono text-slate-500 break-all">{invoice.ticketbai_signature}</p>
+                </div>
               )}
-              {invoice.ticketbai_tipo_operacion && (
-                <span><span className="font-medium">Tipo:</span> {invoice.ticketbai_tipo_operacion === "prestacion_servicios" ? "Prestacion de servicios" : "Entrega de bienes"}</span>
-              )}
-              {invoice.updated_at && (
-                <span><span className="font-medium">Generado:</span> {new Date(invoice.updated_at).toLocaleString("es-ES")}</span>
-              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal confirmar datos Batuz */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Confirmar datos de Batuz</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              Pega aqui los datos que te ha dado Batuz al procesar la factura. Si no los cambias, se mantienen los generados.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Codigo TBAI (de Batuz)</label>
+                <input
+                  type="text"
+                  value={confirmData.ticketbai_id}
+                  onChange={(e) => setConfirmData({ ...confirmData, ticketbai_id: e.target.value })}
+                  placeholder={invoice.ticketbai_id || "TBAI-16063731W-..."}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Firma digital</label>
+                <input
+                  type="text"
+                  value={confirmData.ticketbai_signature}
+                  onChange={(e) => setConfirmData({ ...confirmData, ticketbai_signature: e.target.value })}
+                  placeholder={invoice.ticketbai_signature || "Firma de Batuz..."}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">URL del QR</label>
+                <input
+                  type="text"
+                  value={confirmData.ticketbai_qr}
+                  onChange={(e) => setConfirmData({ ...confirmData, ticketbai_qr: e.target.value })}
+                  placeholder={invoice.ticketbai_qr || "https://batuz.eus/TBAI/?..."}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-mono"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmBatuz}
+                className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+              >
+                Confirmar TBAI
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* XML Preview */}
+      {tbaiResult && (
+        <div className="card mb-6 border-slate-200">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-semibold text-slate-900">XML TicketBAI generado</h3>
+            <button onClick={() => setTbaiResult(null)} className="text-sm text-slate-400 hover:text-slate-600">Cerrar</button>
+          </div>
+          <pre className="p-4 text-xs font-mono text-slate-600 overflow-x-auto max-h-64 bg-slate-50">{tbaiResult.xml}</pre>
+        </div>
+      )}
+
+      {/* Factura imprimible */}
       <div className="card p-8 print:shadow-none print:border-none">
         {/* Header */}
         <div className="flex justify-between mb-8 pb-6 border-b border-slate-100">
@@ -252,19 +425,18 @@ export default function FacturaDetailPage() {
           </div>
           <div className="text-right">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-50 border border-indigo-100 mb-2">
-              <span className="text-lg font-bold text-indigo-700">FACTURA</span>
+              <span className="text-lg font-bold text-indigo-700">
+                {invoice.status === "draft" || invoice.status === "pending_batuz" ? "BORRADOR" : "FACTURA"}
+              </span>
             </div>
             <p className="text-lg font-semibold text-slate-900">{invoice.number}</p>
             <p className="text-sm text-slate-500 mt-2">Fecha: {invoice.date}</p>
-            {invoice.due_date && (
-              <p className="text-sm text-slate-500">Vencimiento: {invoice.due_date}</p>
-            )}
           </div>
         </div>
 
         {/* Client */}
         <div className="mb-8 p-4 bg-slate-50 rounded-lg border border-slate-100">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Datos del cliente</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Destinatario</p>
           <p className="font-semibold text-slate-900">{invoice.client_name}</p>
           {invoice.client_nif && <p className="text-sm text-slate-600">NIF: {invoice.client_nif}</p>}
           {invoice.client_address && <p className="text-sm text-slate-600">{invoice.client_address}</p>}
@@ -275,24 +447,34 @@ export default function FacturaDetailPage() {
           )}
         </div>
 
+        {/* Description */}
+        {invoice.notes && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+            <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">Descripcion</p>
+            <p className="text-sm text-blue-800">{invoice.notes}</p>
+          </div>
+        )}
+
         {/* Items */}
         <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Descripcion</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Cant.</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Precio</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Importe</th>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Detalle</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">Cant.</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Importe unit.</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Dto.</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Total sin IVA</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {invoice.items.map((item) => (
                 <tr key={item.id}>
                   <td className="px-4 py-3 text-slate-700">{item.description}</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
-                  <td className="px-4 py-3 text-right font-medium text-slate-900">{item.total.toFixed(2)} EUR</td>
+                  <td className="px-4 py-3 text-right text-slate-600">{item.quantity.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)}&euro;</td>
+                  <td className="px-4 py-3 text-right text-slate-400">0,00&euro;</td>
+                  <td className="px-4 py-3 text-right font-medium text-slate-900">{item.total.toFixed(2)}&euro;</td>
                 </tr>
               ))}
             </tbody>
@@ -301,29 +483,42 @@ export default function FacturaDetailPage() {
 
         {/* Totals */}
         <div className="flex justify-end">
-          <div className="w-64 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Base imponible</span>
-              <span className="font-medium text-slate-700">{invoice.subtotal.toFixed(2)} EUR</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">IVA {invoice.tax_rate}%</span>
-              <span className="font-medium text-slate-700">{invoice.tax_amount.toFixed(2)} EUR</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold border-t border-slate-200 pt-2 mt-2">
-              <span className="text-slate-900">Total</span>
-              <span className="text-slate-900">{invoice.total.toFixed(2)} EUR</span>
+          <div className="w-72">
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="flex justify-between px-4 py-2 text-sm bg-slate-50">
+                <span className="text-slate-500">Base imponible</span>
+                <span className="font-medium text-slate-700">{invoice.subtotal.toFixed(2)}&euro;</span>
+              </div>
+              <div className="flex justify-between px-4 py-2 text-sm border-t border-slate-100">
+                <span className="text-slate-500">Tipo IVA</span>
+                <span className="text-slate-600">{invoice.tax_rate.toFixed(2)}%</span>
+              </div>
+              <div className="flex justify-between px-4 py-2 text-sm border-t border-slate-100">
+                <span className="text-slate-500">Cuota IVA</span>
+                <span className="font-medium text-slate-700">{invoice.tax_amount.toFixed(2)}&euro;</span>
+              </div>
+              <div className="flex justify-between px-4 py-3 text-lg font-bold border-t-2 border-slate-300 bg-slate-50">
+                <span className="text-slate-900">TOTAL</span>
+                <span className="text-slate-900">{invoice.total.toFixed(2)}&euro;</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Notes */}
-        {invoice.notes && (
-          <div className="mt-6 pt-4 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Notas</p>
-            <p className="text-sm text-slate-600">{invoice.notes}</p>
+        {/* TBAI footer (for print) */}
+        {invoice.ticketbai_id && invoice.status === "sent" && (
+          <div className="mt-8 pt-4 border-t border-slate-200">
+            <p className="text-xs font-mono text-slate-500">{invoice.ticketbai_id}</p>
+            {invoice.ticketbai_qr && (
+              <p className="text-xs font-mono text-slate-400 mt-1">{invoice.ticketbai_qr}</p>
+            )}
           </div>
         )}
+
+        {/* Observaciones */}
+        <div className="mt-6 pt-4 border-t border-slate-100">
+          <p className="text-xs text-slate-400">BBVA N: ES66.0182.0450.1102.0150.3156</p>
+        </div>
       </div>
     </div>
   );

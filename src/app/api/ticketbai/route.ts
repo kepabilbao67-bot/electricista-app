@@ -1,15 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
-import { generateTicketBAIXml, TICKETBAI_CONFIG } from "@/lib/ticketbai";
+import { generateTicketBAIXml, generateLROEXml, TICKETBAI_CONFIG } from "@/lib/ticketbai";
 import type { TicketBAIInvoice } from "@/lib/ticketbai";
 
+// POST - Generar XML TicketBAI para subir a Batuz
 export async function POST(request: NextRequest) {
   try {
     await initializeDatabase();
     const db = getDbClient();
     const body = await request.json();
     const invoiceId = body.invoice_id;
+    const action = body.action || "generate"; // "generate" | "confirm"
 
+    // Si es confirmar TBAI desde Batuz (meter el código real)
+    if (action === "confirm") {
+      await db.execute({
+        sql: `UPDATE invoices SET 
+          ticketbai_id = ?, 
+          ticketbai_signature = ?, 
+          ticketbai_qr = ?, 
+          status = 'sent', 
+          updated_at = datetime('now') 
+        WHERE id = ?`,
+        args: [body.ticketbai_id, body.ticketbai_signature, body.ticketbai_qr, invoiceId],
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Datos TicketBAI confirmados desde Batuz",
+      });
+    }
+
+    // Obtener factura con datos del cliente
     const invoiceResult = await db.execute({
       sql: `SELECT invoices.*, clients.name as client_name, clients.nif as client_nif,
          clients.address as client_address, clients.city as client_city,
@@ -29,11 +51,13 @@ export async function POST(request: NextRequest) {
 
     const invoice = invoiceResult.rows[0];
 
+    // Obtener items de la factura
     const itemsResult = await db.execute({
       sql: "SELECT * FROM invoice_items WHERE invoice_id = ? ORDER BY sort_order",
       args: [invoiceId],
     });
 
+    // Obtener factura anterior para encadenamiento
     const previousResult = await db.execute({
       sql: "SELECT number, date, ticketbai_signature FROM invoices WHERE created_at < (SELECT created_at FROM invoices WHERE id = ?) AND ticketbai_signature IS NOT NULL ORDER BY created_at DESC LIMIT 1",
       args: [invoiceId],
@@ -49,7 +73,7 @@ export async function POST(request: NextRequest) {
       numero: (invoice.number as string).replace(TICKETBAI_CONFIG.serie, ""),
       fecha: invoice.date as string,
       hora,
-      descripcion: `Factura ${invoice.number} - Servicios electricos`,
+      descripcion: invoice.notes as string || `Factura ${invoice.number} - Servicios electricos`,
       emisor: {
         nif: TICKETBAI_CONFIG.emisor.nif,
         nombre: TICKETBAI_CONFIG.emisor.nombre,
@@ -84,10 +108,21 @@ export async function POST(request: NextRequest) {
         : undefined,
     };
 
+    // Generar XML TicketBAI
     const result = generateTicketBAIXml(ticketbaiInvoice);
 
+    // Generar XML LROE para envío a Batuz
+    const lroeXml = generateLROEXml(ticketbaiInvoice, result.ticketbaiId, result.signature);
+
+    // Guardar datos provisionales (se actualizarán cuando Batuz confirme)
     await db.execute({
-      sql: `UPDATE invoices SET ticketbai_id = ?, ticketbai_signature = ?, ticketbai_qr = ?, status = 'sent', updated_at = datetime('now') WHERE id = ?`,
+      sql: `UPDATE invoices SET 
+        ticketbai_id = ?, 
+        ticketbai_signature = ?, 
+        ticketbai_qr = ?, 
+        status = 'pending_batuz',
+        updated_at = datetime('now') 
+      WHERE id = ?`,
       args: [result.ticketbaiId, result.signature, result.qrCode, invoiceId],
     });
 
@@ -96,6 +131,16 @@ export async function POST(request: NextRequest) {
       signature: result.signature,
       qrCode: result.qrCode,
       xml: result.xml,
+      lroeXml: lroeXml,
+      message: "XML generado. Descarga y sube a Batuz para confirmar la factura.",
+      instructions: [
+        "1. Descarga el archivo XML de TicketBAI",
+        "2. Entra en Batuz (https://batuz.eus) con tu certificado digital",
+        "3. Sube el XML en 'Alta de facturas emitidas'",
+        "4. Batuz generará la firma digital y el QR definitivo",
+        "5. Copia el código TBAI y firma que te da Batuz",
+        "6. Vuelve aquí y confirma los datos reales de Batuz",
+      ],
     });
   } catch (error) {
     console.error("TicketBAI error:", error);

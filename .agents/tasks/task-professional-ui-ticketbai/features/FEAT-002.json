@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "TicketBAI integration improvement - add ability to input TicketBAI-specific data when creating invoices (operation description, specific time, etc.), auto-generate TicketBAI on invoice creation, and show TicketBAI code and QR prominently on invoice detail page.",
+  "status": "completed",
+  "steps": [
+    "Modify src/app/facturas/nueva/page.tsx to add a 'Datos TicketBAI' section in the invoice creation form. Add fields for: operation description (defaults to 'Servicios electricos'), and a toggle to auto-generate TicketBAI upon creation. Also add an option to select 'Tipo de operacion' (e.g., prestacion de servicios, entrega de bienes).",
+    "Modify src/app/api/invoices/route.ts POST handler to accept the new TicketBAI fields (descripcion_ticketbai, auto_generate_tbai, tipo_operacion). If auto_generate_tbai is true, call the TicketBAI generation logic after creating the invoice (same logic as the existing /api/ticketbai route) and store the result.",
+    "Modify src/app/facturas/[id]/page.tsx to prominently display TicketBAI information: show the TBAI identification code in a styled box, render a visual QR code representation (using the QR URL in a clearly formatted section with a link), show the generation timestamp, and add a 'Descargar XML' button that links to a new endpoint.",
+    "Create src/app/api/invoices/[id]/ticketbai-xml/route.ts - a GET endpoint that regenerates and returns the TicketBAI XML for a given invoice (for download/viewing purposes).",
+    "Update the database schema or handling in the invoices POST to also store the ticketbai description and tipo_operacion. Add columns ticketbai_description and ticketbai_tipo_operacion to the invoices table creation in src/lib/db.ts if they dont exist (use ALTER TABLE IF NOT EXISTS pattern or just add to CREATE TABLE IF NOT EXISTS)."
+  ],
+  "acceptance_criteria": [
+    "Invoice creation form has a TicketBAI section with description field and auto-generate toggle",
+    "When auto-generate is enabled, creating an invoice also generates TicketBAI data automatically",
+    "Invoice detail page shows TBAI code prominently in a styled section",
+    "Invoice detail page shows QR code URL as a clickable link in a dedicated area",
+    "A new API endpoint allows downloading/viewing the TicketBAI XML for any invoice",
+    "npx next build completes without errors"
+  ],
+  "verification": ["Run `npx next build` in /projects/sandbox/electricista-app and confirm successful build"],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly. All acceptance criteria met: invoice creation form has TicketBAI section with description/tipo fields and auto-generate toggle; auto-generate creates TBAI data inline when creating invoices; invoice detail page shows TBAI code prominently with QR link and XML download button; new GET endpoint at /api/invoices/[id]/ticketbai-xml returns XML directly. DB schema updated with ticketbai_description and ticketbai_tipo_operacion columns."
+}
