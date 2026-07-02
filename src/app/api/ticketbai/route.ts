@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
-import { generateTicketBAIXml, generateLROEXml, TICKETBAI_CONFIG } from "@/lib/ticketbai";
+import { generateTicketBAIXml, generateLROEXml, TICKETBAI_CONFIG, signTicketBAIXml, isCertificateConfigured } from "@/lib/ticketbai";
 import type { TicketBAIInvoice } from "@/lib/ticketbai";
 
 // POST - Generar XML TicketBAI para subir a Batuz
@@ -111,10 +111,27 @@ export async function POST(request: NextRequest) {
     // Generar XML TicketBAI
     const result = generateTicketBAIXml(ticketbaiInvoice);
 
-    // Generar XML LROE para envío a Batuz
-    const lroeXml = generateLROEXml(ticketbaiInvoice, result.ticketbaiId, result.signature);
+    // Si hay certificado configurado, firmar con XAdES-EPES real
+    let finalXml = result.xml;
+    let finalSignature = result.signature;
+    let firmadoConCertificado = false;
 
-    // Guardar datos provisionales (se actualizarán cuando Batuz confirme)
+    if (isCertificateConfigured()) {
+      try {
+        const signed = signTicketBAIXml(result.xml);
+        finalXml = signed.signedXml;
+        finalSignature = signed.signatureValue;
+        firmadoConCertificado = true;
+      } catch (error) {
+        console.error("Error firmando con certificado:", error);
+        // Si falla la firma, seguimos con la versión sin firma XAdES
+      }
+    }
+
+    // Generar XML LROE para envío a Batuz
+    const lroeXml = generateLROEXml(ticketbaiInvoice, result.ticketbaiId, finalSignature);
+
+    // Guardar datos provisionales
     await db.execute({
       sql: `UPDATE invoices SET 
         ticketbai_id = ?, 
@@ -123,24 +140,35 @@ export async function POST(request: NextRequest) {
         status = 'pending_batuz',
         updated_at = datetime('now') 
       WHERE id = ?`,
-      args: [result.ticketbaiId, result.signature, result.qrCode, invoiceId],
+      args: [result.ticketbaiId, finalSignature, result.qrCode, invoiceId],
     });
 
     return NextResponse.json({
       ticketbaiId: result.ticketbaiId,
-      signature: result.signature,
+      signature: finalSignature,
       qrCode: result.qrCode,
-      xml: result.xml,
+      xml: finalXml,
       lroeXml: lroeXml,
-      message: "XML generado. Descarga y sube a Batuz para confirmar la factura.",
-      instructions: [
-        "1. Descarga el archivo XML de TicketBAI",
-        "2. Entra en Batuz (https://batuz.eus) con tu certificado digital",
-        "3. Sube el XML en 'Alta de facturas emitidas'",
-        "4. Batuz generará la firma digital y el QR definitivo",
-        "5. Copia el código TBAI y firma que te da Batuz",
-        "6. Vuelve aquí y confirma los datos reales de Batuz",
-      ],
+      firmadoConCertificado,
+      message: firmadoConCertificado 
+        ? "XML firmado con certificado digital XAdES-EPES. Listo para enviar a Batuz."
+        : "XML generado sin firma digital. Descarga y sube a Batuz para que lo firme.",
+      instructions: firmadoConCertificado
+        ? [
+            "1. El XML ya esta firmado con tu certificado digital",
+            "2. Descarga el XML firmado",
+            "3. Subelo a Batuz (https://batuz.eus) en 'Alta de facturas emitidas'",
+            "4. Batuz validara la firma y registrara la factura",
+            "5. Confirma los datos cuando Batuz acepte la factura",
+          ]
+        : [
+            "1. Descarga el archivo XML de TicketBAI",
+            "2. Entra en Batuz (https://batuz.eus) con tu certificado digital",
+            "3. Sube el XML en 'Alta de facturas emitidas'",
+            "4. Batuz generara la firma digital y el QR definitivo",
+            "5. Copia el codigo TBAI y firma que te da Batuz",
+            "6. Vuelve aqui y confirma los datos reales de Batuz",
+          ],
     });
   } catch (error) {
     console.error("TicketBAI error:", error);
