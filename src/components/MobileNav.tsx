@@ -32,12 +32,12 @@ export function MobileNav() {
 
   return (
     <div className="md:hidden">
-      <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-lg px-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
-            <Zap className="h-3.5 w-3.5 text-white" />
+      <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-lg px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 shadow-sm">
+            <Zap className="h-4 w-4 text-amber-400" />
           </div>
-          <span className="font-bold text-slate-900">Electricista</span>
+          <span className="font-bold text-slate-900 text-sm">ElectricistApp</span>
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -52,7 +52,7 @@ export function MobileNav() {
             className="fixed inset-0 top-14 z-40 bg-slate-900/20 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute inset-x-0 top-14 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-lg shadow-xl rounded-b-2xl mx-2">
+          <div className="absolute inset-x-0 top-14 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-lg shadow-xl rounded-b-2xl mx-2 animate-scale-in">
             <nav className="p-3 space-y-1">
               {navItems.map((item) => {
                 const isActive =
@@ -65,11 +65,11 @@ export function MobileNav() {
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-indigo-50 text-indigo-700 border border-indigo-100"
+                        ? "bg-blue-50 text-blue-800 border border-blue-100"
                         : "text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    <item.icon className={`h-5 w-5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+                    <item.icon className={`h-5 w-5 ${isActive ? "text-blue-700" : "text-slate-400"}`} />
                     {item.label}
                   </Link>
                 );

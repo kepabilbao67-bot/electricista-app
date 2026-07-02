@@ -18,6 +18,13 @@ interface Budget {
   converted_invoice_id: string | null;
 }
 
+function formatDate(dateStr: string): string {
+  if (!dateStr) return "-";
+  const parts = dateStr.split("-");
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return dateStr;
+}
+
 const statusLabels: Record<string, { label: string; color: string }> = {
   draft: { label: "Borrador", color: "bg-slate-100 text-slate-600" },
   sent: { label: "Enviado", color: "bg-blue-50 text-blue-700 border border-blue-100" },
@@ -151,14 +158,14 @@ export default function PresupuestosPage() {
                 const expired = isExpired(budget.valid_until) && budget.status !== "accepted" && budget.status !== "rejected";
                 return (
                   <tr key={budget.id} className="table-row">
-                    <td className="px-4 py-3.5 font-semibold text-slate-900">{budget.number}</td>
+                    <td className="px-4 py-3.5"><span className="text-base font-bold text-blue-800">{budget.number}</span></td>
                     <td className="px-4 py-3.5 text-slate-600">{budget.client_name}</td>
-                    <td className="px-4 py-3.5 hidden sm:table-cell text-slate-500">{budget.date}</td>
+                    <td className="px-4 py-3.5 hidden sm:table-cell text-slate-500">{formatDate(budget.date)}</td>
                     <td className="px-4 py-3.5 hidden md:table-cell">
                       {budget.valid_until ? (
                         <span className={`inline-flex items-center gap-1 text-xs ${expired ? "text-red-600 font-semibold" : "text-slate-500"}`}>
                           {expired && <AlertTriangle className="h-3 w-3" />}
-                          {budget.valid_until}
+                          {formatDate(budget.valid_until)}
                           {expired && <span className="text-[10px] bg-red-50 rounded px-1 border border-red-200">Caducado</span>}
                         </span>
                       ) : (

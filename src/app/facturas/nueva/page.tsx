@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ArrowLeft, Shield, FileCode } from "lucide-react";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 interface Client {
   id: string;
@@ -19,6 +20,8 @@ interface InvoiceItem {
   description: string;
   quantity: number;
   unit_price: number;
+  discount: number;
+  discount_type: "percent" | "eur";
 }
 
 export default function NuevaFacturaPage() {
@@ -28,8 +31,9 @@ export default function NuevaFacturaPage() {
   const [clientId, setClientId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("transferencia");
   const [items, setItems] = useState<InvoiceItem[]>([
-    { description: "", quantity: 1, unit_price: 0 },
+    { description: "", quantity: 1, unit_price: 0, discount: 0, discount_type: "percent" },
   ]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,7 +48,7 @@ export default function NuevaFacturaPage() {
   }, []);
 
   const addItem = () => {
-    setItems([...items, { description: "", quantity: 1, unit_price: 0 }]);
+    setItems([...items, { description: "", quantity: 1, unit_price: 0, discount: 0, discount_type: "percent" }]);
   };
 
   const removeItem = (index: number) => {
@@ -58,7 +62,6 @@ export default function NuevaFacturaPage() {
   };
 
   const addFromCatalog = (catalogItem: CatalogItem) => {
-    // Si ya existe una línea con el mismo nombre, incrementar cantidad
     const existingIndex = items.findIndex(
       (item) => item.description === catalogItem.name && item.unit_price === catalogItem.unit_price
     );
@@ -71,7 +74,6 @@ export default function NuevaFacturaPage() {
       };
       setItems(newItems);
     } else {
-      // Si la última línea está vacía, reemplazarla
       const lastItem = items[items.length - 1];
       if (lastItem && !lastItem.description && lastItem.unit_price === 0) {
         const newItems = [...items];
@@ -79,18 +81,29 @@ export default function NuevaFacturaPage() {
           description: catalogItem.name,
           quantity: 1,
           unit_price: catalogItem.unit_price,
+          discount: 0,
+          discount_type: "percent",
         };
         setItems(newItems);
       } else {
         setItems([
           ...items,
-          { description: catalogItem.name, quantity: 1, unit_price: catalogItem.unit_price },
+          { description: catalogItem.name, quantity: 1, unit_price: catalogItem.unit_price, discount: 0, discount_type: "percent" },
         ]);
       }
     }
   };
 
-  const subtotal = items.reduce((acc, item) => acc + item.quantity * item.unit_price, 0);
+  const getItemTotal = (item: InvoiceItem) => {
+    const gross = item.quantity * item.unit_price;
+    if (item.discount <= 0) return gross;
+    if (item.discount_type === "percent") {
+      return gross * (1 - item.discount / 100);
+    }
+    return gross - item.discount;
+  };
+
+  const subtotal = items.reduce((acc, item) => acc + getItemTotal(item), 0);
   const taxAmount = subtotal * 0.21;
   const total = subtotal + taxAmount;
 
@@ -107,7 +120,14 @@ export default function NuevaFacturaPage() {
         date,
         notes,
         tax_rate: 21,
-        items: items.filter((i) => i.description && i.unit_price > 0),
+        payment_method: paymentMethod,
+        items: items.filter((i) => i.description && i.unit_price > 0).map((i) => ({
+          description: i.description,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
+          discount: i.discount,
+          discount_type: i.discount_type,
+        })),
         ticketbai_description: ticketbaiDescription,
         ticketbai_tipo_operacion: ticketbaiTipoOperacion,
         auto_generate_tbai: autoGenerateTbai,
@@ -123,7 +143,9 @@ export default function NuevaFacturaPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto animate-fade-in">
+      <Breadcrumbs items={[{ label: "Facturas", href: "/facturas" }, { label: "Nueva factura" }]} />
+
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => router.back()}
@@ -138,7 +160,7 @@ export default function NuevaFacturaPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="card">
+        <div className="card-static">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Datos generales</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -164,7 +186,19 @@ export default function NuevaFacturaPage() {
                 className="input-field"
               />
             </div>
-            <div className="md:col-span-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Forma de pago</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="input-field"
+              >
+                <option value="transferencia">Transferencia bancaria</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="bizum">Bizum</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Notas</label>
               <textarea
                 value={notes}
@@ -176,13 +210,13 @@ export default function NuevaFacturaPage() {
           </div>
         </div>
 
-        <div className="card">
+        <div className="card-static">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-900">Lineas de detalle</h2>
             <button
               type="button"
               onClick={addItem}
-              className="btn-secondary !py-1.5 !px-3 text-xs"
+              className="btn-primary !py-1.5 !px-3 text-xs"
             >
               <Plus className="h-3 w-3" /> Linea
             </button>
@@ -197,7 +231,7 @@ export default function NuevaFacturaPage() {
                     key={item.id}
                     type="button"
                     onClick={() => addFromCatalog(item)}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-all duration-200 shadow-sm"
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-800 transition-all duration-200 shadow-sm"
                   >
                     {item.name} ({item.unit_price} EUR)
                   </button>
@@ -207,8 +241,17 @@ export default function NuevaFacturaPage() {
           )}
 
           <div className="space-y-3">
+            {/* Header row */}
+            <div className="hidden md:flex gap-3 items-center px-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              <div className="flex-1">Descripcion</div>
+              <div className="w-16 text-center">Cant.</div>
+              <div className="w-24 text-center">Precio</div>
+              <div className="w-28 text-center">Descuento</div>
+              <div className="w-24 text-right">Total</div>
+              <div className="w-8"></div>
+            </div>
             {items.map((item, index) => (
-              <div key={index} className="flex gap-3 items-start p-3 rounded-lg border border-slate-100 bg-slate-50/50">
+              <div key={index} className="flex gap-2 md:gap-3 items-start p-3 rounded-lg border border-slate-100 bg-slate-50/50">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -218,18 +261,18 @@ export default function NuevaFacturaPage() {
                     className="input-field"
                   />
                 </div>
-                <div className="w-20">
+                <div className="w-16">
                   <input
                     type="number"
-                    min="1"
+                    min="0.01"
                     step="0.01"
                     placeholder="Cant."
                     value={item.quantity}
                     onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
-                    className="input-field"
+                    className="input-field text-center"
                   />
                 </div>
-                <div className="w-28">
+                <div className="w-24">
                   <input
                     type="number"
                     min="0"
@@ -237,11 +280,30 @@ export default function NuevaFacturaPage() {
                     placeholder="Precio"
                     value={item.unit_price}
                     onChange={(e) => updateItem(index, "unit_price", parseFloat(e.target.value) || 0)}
-                    className="input-field"
+                    className="input-field text-center"
                   />
                 </div>
-                <div className="w-24 text-right py-2 text-sm font-semibold text-slate-700">
-                  {(item.quantity * item.unit_price).toFixed(2)} EUR
+                <div className="w-28 flex gap-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Dto."
+                    value={item.discount || ""}
+                    onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)}
+                    className="input-field text-center !px-1 flex-1"
+                  />
+                  <select
+                    value={item.discount_type}
+                    onChange={(e) => updateItem(index, "discount_type", e.target.value)}
+                    className="input-field !w-14 !px-0.5 text-xs text-center"
+                  >
+                    <option value="percent">%</option>
+                    <option value="eur">EUR</option>
+                  </select>
+                </div>
+                <div className="w-24 text-right py-2 text-sm font-bold text-slate-700">
+                  {getItemTotal(item).toFixed(2)}
                 </div>
                 <button
                   type="button"
@@ -255,17 +317,17 @@ export default function NuevaFacturaPage() {
           </div>
 
           <div className="mt-6 border-t border-slate-200 pt-4 text-right space-y-1">
-            <p className="text-sm text-slate-500">Subtotal: <span className="font-medium text-slate-700">{subtotal.toFixed(2)} EUR</span></p>
-            <p className="text-sm text-slate-500">IVA 21%: <span className="font-medium text-slate-700">{taxAmount.toFixed(2)} EUR</span></p>
+            <p className="text-sm text-slate-500">Subtotal: <span className="font-semibold text-slate-700">{subtotal.toFixed(2)} EUR</span></p>
+            <p className="text-sm text-slate-500">IVA 21%: <span className="font-semibold text-slate-700">{taxAmount.toFixed(2)} EUR</span></p>
             <p className="text-xl font-bold text-slate-900 mt-2">Total: {total.toFixed(2)} EUR</p>
           </div>
         </div>
 
         {/* TicketBAI Section */}
-        <div className="card border-indigo-100 bg-gradient-to-br from-white to-indigo-50/30">
+        <div className="card-static border-blue-100 bg-gradient-to-br from-white to-blue-50/30">
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
-              <Shield className="h-5 w-5 text-indigo-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <Shield className="h-5 w-5 text-blue-800" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-slate-900">Datos TicketBAI</h2>
@@ -300,12 +362,12 @@ export default function NuevaFacturaPage() {
               </select>
             </div>
             <div className="flex items-end">
-              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 bg-white hover:bg-indigo-50/50 transition-colors w-full">
+              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 bg-white hover:bg-blue-50/50 transition-colors w-full">
                 <input
                   type="checkbox"
                   checked={autoGenerateTbai}
                   onChange={(e) => setAutoGenerateTbai(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-800 focus:ring-blue-700"
                 />
                 <div>
                   <span className="text-sm font-medium text-slate-700">Generar automaticamente</span>

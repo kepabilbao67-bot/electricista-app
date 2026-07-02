@@ -27,6 +27,7 @@ export async function initializeDatabase(): Promise<void> {
       postal_code TEXT,
       province TEXT,
       notes TEXT,
+      client_type TEXT DEFAULT 'particular',
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
     );
@@ -43,6 +44,7 @@ export async function initializeDatabase(): Promise<void> {
       tax_amount REAL DEFAULT 0,
       total REAL DEFAULT 0,
       notes TEXT,
+      payment_method TEXT DEFAULT 'transferencia',
       ticketbai_id TEXT,
       ticketbai_signature TEXT,
       ticketbai_qr TEXT,
@@ -60,6 +62,8 @@ export async function initializeDatabase(): Promise<void> {
       quantity REAL DEFAULT 1,
       unit_price REAL NOT NULL,
       total REAL NOT NULL,
+      discount REAL DEFAULT 0,
+      discount_type TEXT DEFAULT 'percent',
       sort_order INTEGER DEFAULT 0,
       FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
     );

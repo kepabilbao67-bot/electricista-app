@@ -27,14 +27,20 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col bg-gradient-to-b from-slate-900 to-slate-800">
-      <div className="flex h-16 items-center gap-3 px-6 border-b border-slate-700/50">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 shadow-lg shadow-indigo-600/30">
-          <Zap className="h-4 w-4 text-white" />
+    <aside className="hidden md:flex md:w-64 md:flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 border-r border-slate-700/30">
+      {/* Brand Logo */}
+      <div className="flex h-16 items-center gap-3 px-5 border-b border-slate-700/40">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 shadow-lg shadow-blue-900/40 ring-1 ring-blue-500/20">
+          <Zap className="h-5 w-5 text-amber-400" />
         </div>
-        <span className="text-lg font-bold text-white tracking-tight">Electricista</span>
+        <div className="flex flex-col">
+          <span className="text-base font-bold text-white tracking-tight leading-tight">ElectricistApp</span>
+          <span className="text-[10px] text-slate-500 font-medium tracking-wide">GESTION PROFESIONAL</span>
+        </div>
       </div>
-      <nav className="flex-1 px-3 py-4 space-y-1">
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -43,26 +49,31 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group ${
                 isActive
-                  ? "bg-indigo-600/20 text-indigo-300 shadow-sm border border-indigo-500/20"
-                  : "text-slate-400 hover:bg-slate-700/50 hover:text-white"
+                  ? "bg-blue-800/30 text-blue-200 shadow-sm border border-blue-700/30"
+                  : "text-slate-400 hover:bg-slate-700/40 hover:text-slate-200"
               }`}
             >
-              <item.icon className={`h-5 w-5 ${isActive ? "text-indigo-400" : ""}`} />
+              <item.icon className={`h-[18px] w-[18px] transition-colors ${isActive ? "text-amber-400" : "text-slate-500 group-hover:text-slate-300"}`} />
               {item.label}
+              {isActive && (
+                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-amber-400"></div>
+              )}
             </Link>
           );
         })}
       </nav>
-      <div className="border-t border-slate-700/50 p-4">
+
+      {/* User Info */}
+      <div className="border-t border-slate-700/40 p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-slate-300">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-700 to-blue-900 text-xs font-bold text-blue-200 ring-1 ring-blue-600/30">
             IM
           </div>
-          <div>
-            <p className="text-xs font-medium text-slate-300">Ivan Martin Oyarzabal</p>
-            <p className="text-xs text-slate-500">NIF: 16063731W</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-slate-300 truncate">Ivan Martin Oyarzabal</p>
+            <p className="text-[10px] text-slate-500">NIF: 16063731W</p>
           </div>
         </div>
       </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText } from "lucide-react";
+import Link from "next/link";
+import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText, Users, Eye } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Client {
@@ -15,6 +16,7 @@ interface Client {
   postal_code: string;
   province: string;
   notes: string;
+  client_type: string;
   invoice_count?: number;
 }
 
@@ -34,6 +36,7 @@ export default function ClientesPage() {
     postal_code: "",
     province: "",
     notes: "",
+    client_type: "particular",
   });
 
   const fetchClients = () => {
@@ -66,7 +69,7 @@ export default function ClientesPage() {
       showToast("success", editingClient ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
       setShowForm(false);
       setEditingClient(null);
-      setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "" });
+      setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular" });
       fetchClients();
     } else {
       showToast("error", "Error al guardar el cliente");
@@ -85,6 +88,7 @@ export default function ClientesPage() {
       postal_code: client.postal_code || "",
       province: client.province || "",
       notes: client.notes || "",
+      client_type: client.client_type || "particular",
     });
     setShowForm(true);
   };
@@ -102,7 +106,6 @@ export default function ClientesPage() {
   };
 
   const formatPhoneForWhatsApp = (phone: string) => {
-    // Remove spaces, dashes, and add Spain prefix if needed
     let cleaned = phone.replace(/[\s\-\(\)]/g, "");
     if (cleaned.startsWith("6") || cleaned.startsWith("7") || cleaned.startsWith("9")) {
       cleaned = "34" + cleaned;
@@ -115,13 +118,13 @@ export default function ClientesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-800 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="page-title">Clientes</h1>
@@ -130,7 +133,7 @@ export default function ClientesPage() {
         <button
           onClick={() => {
             setEditingClient(null);
-            setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "" });
+            setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular" });
             setShowForm(true);
           }}
           className="btn-primary"
@@ -152,104 +155,59 @@ export default function ClientesPage() {
       </div>
 
       {showForm && (
-        <div className="mb-6 card">
+        <div className="mb-6 card-static animate-scale-in">
           <h2 className="text-base font-semibold text-slate-900 mb-4">
             {editingClient ? "Editar cliente" : "Nuevo cliente"}
           </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Nombre *</label>
-              <input
-                type="text"
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="input-field"
-              />
+              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo</label>
+              <select value={form.client_type} onChange={(e) => setForm({ ...form, client_type: e.target.value })} className="input-field">
+                <option value="particular">Particular</option>
+                <option value="empresa">Empresa</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">NIF</label>
-              <input
-                type="text"
-                value={form.nif}
-                onChange={(e) => setForm({ ...form, nif: e.target.value })}
-                className="input-field"
-              />
+              <input type="text" value={form.nif} onChange={(e) => setForm({ ...form, nif: e.target.value })} className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="input-field"
-              />
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Telefono</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="input-field"
-              />
+              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Direccion</label>
-              <input
-                type="text"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                className="input-field"
-              />
+              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Ciudad</label>
-              <input
-                type="text"
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                className="input-field"
-              />
+              <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Codigo postal</label>
-              <input
-                type="text"
-                value={form.postal_code}
-                onChange={(e) => setForm({ ...form, postal_code: e.target.value })}
-                className="input-field"
-              />
+              <input type="text" value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Provincia</label>
-              <input
-                type="text"
-                value={form.province}
-                onChange={(e) => setForm({ ...form, province: e.target.value })}
-                className="input-field"
-              />
+              <input type="text" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} className="input-field" />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Notas</label>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                rows={2}
-                className="input-field"
-              />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Notas rapidas</label>
+              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="input-field" placeholder="Ej: llaves del portal en porteria" />
             </div>
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" className="btn-primary">
                 {editingClient ? "Guardar cambios" : "Crear cliente"}
               </button>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="btn-secondary"
-              >
-                Cancelar
-              </button>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancelar</button>
             </div>
           </form>
         </div>
@@ -261,7 +219,7 @@ export default function ClientesPage() {
             <thead className="table-header">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Nombre</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">NIF</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">Tipo</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden sm:table-cell">Telefono</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Email</th>
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">Facturas</th>
@@ -273,31 +231,25 @@ export default function ClientesPage() {
                 <tr key={client.id} className="table-row">
                   <td className="px-4 py-3.5">
                     <div>
-                      <span className="font-semibold text-slate-900">{client.name}</span>
-                      {client.city && (
-                        <p className="text-xs text-slate-400">{client.city}</p>
-                      )}
+                      <Link href={`/clientes/${client.id}`} className="font-semibold text-slate-900 hover:text-blue-800 transition-colors">
+                        {client.name}
+                      </Link>
+                      {client.city && <p className="text-xs text-slate-400">{client.city}</p>}
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 hidden md:table-cell text-slate-500">{client.nif || "-"}</td>
+                  <td className="px-4 py-3.5 hidden md:table-cell">
+                    <span className={`badge text-[10px] ${client.client_type === "empresa" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
+                      {client.client_type === "empresa" ? "Empresa" : "Particular"}
+                    </span>
+                  </td>
                   <td className="px-4 py-3.5 hidden sm:table-cell">
                     {client.phone ? (
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-slate-600">{client.phone}</span>
-                        <a
-                          href={`tel:${client.phone}`}
-                          className="rounded-md p-1 text-blue-500 hover:bg-blue-50 transition-colors"
-                          title="Llamar"
-                        >
+                        <a href={`tel:${client.phone}`} className="rounded-md p-1 text-blue-500 hover:bg-blue-50 transition-colors" title="Llamar">
                           <Phone className="h-3.5 w-3.5" />
                         </a>
-                        <a
-                          href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-md p-1 text-emerald-500 hover:bg-emerald-50 transition-colors"
-                          title="WhatsApp"
-                        >
+                        <a href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`} target="_blank" rel="noopener noreferrer" className="rounded-md p-1 text-emerald-500 hover:bg-emerald-50 transition-colors" title="WhatsApp">
                           <MessageCircle className="h-3.5 w-3.5" />
                         </a>
                       </div>
@@ -307,19 +259,14 @@ export default function ClientesPage() {
                   </td>
                   <td className="px-4 py-3.5 hidden lg:table-cell">
                     {client.email ? (
-                      <a
-                        href={`mailto:${client.email}`}
-                        className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
-                      >
-                        {client.email}
-                      </a>
+                      <a href={`mailto:${client.email}`} className="text-xs text-blue-700 hover:underline">{client.email}</a>
                     ) : (
                       <span className="text-xs text-slate-300">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3.5 text-center hidden md:table-cell">
                     {client.invoice_count !== undefined && client.invoice_count > 0 ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 border border-indigo-100">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-100">
                         <FileText className="h-3 w-3" />
                         {client.invoice_count}
                       </span>
@@ -329,18 +276,13 @@ export default function ClientesPage() {
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleEdit(client)}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                        title="Editar"
-                      >
+                      <Link href={`/clientes/${client.id}`} className="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700 transition-colors" title="Ver detalle">
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                      <button onClick={() => handleEdit(client)} className="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700 transition-colors" title="Editar">
                         <Edit2 className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(client.id)}
-                        className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        title="Eliminar"
-                      >
+                      <button onClick={() => handleDelete(client.id)} className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Eliminar">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -349,8 +291,12 @@ export default function ClientesPage() {
               ))}
               {clients.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
-                    No hay clientes registrados
+                  <td colSpan={6} className="px-4 py-16 text-center">
+                    <div className="empty-state">
+                      <Users className="empty-state-icon" />
+                      <p className="empty-state-title">Sin clientes</p>
+                      <p className="empty-state-text">Agrega tu primer cliente para empezar</p>
+                    </div>
                   </td>
                 </tr>
               )}

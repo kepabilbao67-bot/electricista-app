@@ -1,0 +1,42 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Comprehensive professional improvements: brand redesign (ElectricistApp logo, blue #1e40af primary, yellow #f59e0b accent), discount field in invoice/budget lines, duplicate invoice, mark-as-paid in list, email send button, client detail page with type field, payment method field, DD/MM/YYYY dates, breadcrumbs, copy-to-clipboard in comms, catalog inline editing with category headers, enhanced empty states, print watermarks, and dashboard top clients stats.",
+  "status": "in_progress",
+  "steps": [
+    "Update globals.css with new brand colors (#1e40af primary, #f59e0b accent), better typography, animations",
+    "Update Sidebar and MobileNav with ElectricistApp branding and blue/yellow accent",
+    "Update invoice list with DD/MM/YYYY dates, mark-as-paid button, duplicate button, prominent invoice numbers",
+    "Update invoice creation form with discount field per line, payment method selector",
+    "Update invoice detail with email send button, print watermarks, footer with electrician data",
+    "Add client detail page with all invoices/budgets/communications",
+    "Update clients page/API with type field (particular/empresa)",
+    "Update communications page with copy-to-clipboard and new templates",
+    "Update catalog page with category headers and inline price editing",
+    "Update dashboard with top 3 clients by billing and month comparison stats",
+    "Update budget creation with 15-day default validity",
+    "Add breadcrumb components to detail pages",
+    "Enhance empty states with icons across all pages"
+  ],
+  "acceptance_criteria": [
+    "Brand colors are #1e40af (primary blue) and #f59e0b (accent yellow)",
+    "Sidebar shows ElectricistApp with lightning bolt logo",
+    "Invoice lines support discount field (% or EUR)",
+    "Invoices can be duplicated from the list",
+    "Mark as paid button visible in invoice list",
+    "Send by email button on invoice detail (generates mailto:)",
+    "Client detail page shows all related data",
+    "DD/MM/YYYY date format throughout the app",
+    "Payment method field (Transferencia, Efectivo, Bizum) on invoices",
+    "Print shows BORRADOR/PAGADO watermark",
+    "Breadcrumbs on detail pages",
+    "Copy message to clipboard in communications",
+    "Catalog grouped by categories with inline price editing",
+    "Dashboard shows top 3 clients and month vs previous comparison",
+    "Budget default validity 15 days",
+    "npx next build completes without errors"
+  ],
+  "verification": ["Run `npx next build` in /projects/sandbox/electricista-app and confirm successful build"],
+  "blocked_reason": null,
+  "findings": null
+}

@@ -27,6 +27,13 @@ export const templates: MessageTemplate[] = [
     body: "Estimado/a {nombre},\n\nAdjunto le remito la factura {numero} por importe de {total}EUR.\n\nDatos de pago:\nBBVA: ES66 0182 0450 1102 0150 3156\n\nQuedo a su disposicion.\n\nUn saludo,\nIvan Martin Oyarzabal\nTfno: 688 867 530",
   },
   {
+    id: "factura_adjunta",
+    name: "Factura adjunta",
+    type: "email",
+    subject: "Factura adjunta - Ivan Martin Oyarzabal Electricista",
+    body: "Estimado/a {nombre},\n\nLe adjunto la factura correspondiente al trabajo realizado.\n\nForma de pago: Transferencia bancaria\nBBVA: ES66 0182 0450 1102 0150 3156\nTitular: MARTIN OYARZABAL IVAN\n\nSi tiene alguna duda no dude en contactarme.\n\nUn saludo,\nIvan Martin Oyarzabal\nTfno: 688 867 530",
+  },
+  {
     id: "recordatorio_pago",
     name: "Recordatorio de pago",
     type: "whatsapp",
@@ -48,7 +55,7 @@ export const templates: MessageTemplate[] = [
     id: "trabajo_finalizado",
     name: "Trabajo finalizado",
     type: "whatsapp",
-    body: "Hola {nombre}, le informo que el trabajo ha sido finalizado correctamente. Proximamente le enviare la factura correspondiente. Gracias por su confianza. Un saludo, Ivan.",
+    body: "Hola {nombre}, le informo que el trabajo ha sido finalizado correctamente. Todo queda funcionando en perfecto estado. Proximamente le enviare la factura correspondiente. Gracias por su confianza. Un saludo, Ivan Oyarzabal. Tel: 688 867 530.",
   },
   {
     id: "seguimiento",

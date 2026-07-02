@@ -53,8 +53,12 @@ export async function POST(request: NextRequest) {
     const number = await generateInvoiceNumber();
 
     const subtotal = body.items.reduce(
-      (acc: number, item: { quantity: number; unit_price: number }) =>
-        acc + item.quantity * item.unit_price,
+      (acc: number, item: { quantity: number; unit_price: number; discount?: number; discount_type?: string }) => {
+        const gross = item.quantity * item.unit_price;
+        if (!item.discount || item.discount <= 0) return acc + gross;
+        if (item.discount_type === "eur") return acc + gross - item.discount;
+        return acc + gross * (1 - item.discount / 100);
+      },
       0
     );
     const taxRate = body.tax_rate ?? 21;
@@ -65,10 +69,11 @@ export async function POST(request: NextRequest) {
     const ticketbaiDescription = body.ticketbai_description || null;
     const ticketbaiTipoOperacion = body.ticketbai_tipo_operacion || null;
     const autoGenerateTbai = body.auto_generate_tbai || false;
+    const paymentMethod = body.payment_method || "transferencia";
 
     await db.execute({
-      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, ticketbai_description, ticketbai_tipo_operacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, payment_method, ticketbai_description, ticketbai_tipo_operacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         number,
@@ -81,6 +86,7 @@ export async function POST(request: NextRequest) {
         taxAmount,
         total,
         body.notes || null,
+        paymentMethod,
         ticketbaiDescription,
         ticketbaiTipoOperacion,
       ],
@@ -88,16 +94,27 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < body.items.length; i++) {
       const item = body.items[i];
+      const gross = item.quantity * item.unit_price;
+      let itemTotal = gross;
+      if (item.discount && item.discount > 0) {
+        if (item.discount_type === "eur") {
+          itemTotal = gross - item.discount;
+        } else {
+          itemTotal = gross * (1 - item.discount / 100);
+        }
+      }
       await db.execute({
-        sql: `INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, total, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, total, discount, discount_type, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           uuidv4(),
           id,
           item.description,
           item.quantity,
           item.unit_price,
-          item.quantity * item.unit_price,
+          itemTotal,
+          item.discount || 0,
+          item.discount_type || "percent",
           i,
         ],
       });

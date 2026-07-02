@@ -29,7 +29,11 @@ export default function NuevoPresupuestoPage() {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [clientId, setClientId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [validUntil, setValidUntil] = useState("");
+  const [validUntil, setValidUntil] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 15);
+    return d.toISOString().split("T")[0];
+  });
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<BudgetItem[]>([
     { description: "", quantity: 1, unit_price: 0 },

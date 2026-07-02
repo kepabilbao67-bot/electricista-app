@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Send, MessageSquare, Mail, Phone, ExternalLink, Filter } from "lucide-react";
+import { Send, MessageSquare, Mail, Phone, ExternalLink, Filter, Copy, CheckCircle2 } from "lucide-react";
 import { templates } from "@/lib/templates";
 import { showToast } from "@/components/Toast";
 
@@ -33,6 +33,7 @@ export default function ComunicacionesPage() {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -98,6 +99,18 @@ export default function ComunicacionesPage() {
     setSending(false);
   };
 
+  const copyToClipboard = async () => {
+    if (!message) return;
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      showToast("success", "Mensaje copiado al portapapeles");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast("error", "No se pudo copiar el mensaje");
+    }
+  };
+
   const getWhatsAppLink = () => {
     const client = clients.find((c) => c.id === selectedClient);
     if (!client?.phone || !message) return null;
@@ -108,18 +121,13 @@ export default function ComunicacionesPage() {
 
   const typeIcon = (type: string) => {
     switch (type) {
-      case "whatsapp":
-        return <MessageSquare className="h-4 w-4 text-emerald-500" />;
-      case "email":
-        return <Mail className="h-4 w-4 text-blue-500" />;
-      case "sms":
-        return <Phone className="h-4 w-4 text-purple-500" />;
-      default:
-        return <MessageSquare className="h-4 w-4" />;
+      case "whatsapp": return <MessageSquare className="h-4 w-4 text-emerald-500" />;
+      case "email": return <Mail className="h-4 w-4 text-blue-500" />;
+      case "sms": return <Phone className="h-4 w-4 text-purple-500" />;
+      default: return <MessageSquare className="h-4 w-4" />;
     }
   };
 
-  // Filter communications by client
   const filteredCommunications = filterClient
     ? communications.filter((c) => c.client_id === filterClient)
     : communications;
@@ -129,13 +137,13 @@ export default function ComunicacionesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-800 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="mb-6">
         <h1 className="page-title">Comunicaciones</h1>
         <p className="page-subtitle">Envia mensajes a tus clientes</p>
@@ -143,17 +151,12 @@ export default function ComunicacionesPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Form */}
-        <div className="card">
+        <div className="card-static">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Nuevo mensaje</h2>
           <form onSubmit={handleSend} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
-              <select
-                required
-                value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
-                className="input-field"
-              >
+              <select required value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="input-field">
                 <option value="">Seleccionar cliente</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ""}</option>
@@ -163,11 +166,7 @@ export default function ComunicacionesPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Plantilla</label>
-              <select
-                value={selectedTemplate}
-                onChange={(e) => handleTemplateChange(e.target.value)}
-                className="input-field"
-              >
+              <select value={selectedTemplate} onChange={(e) => handleTemplateChange(e.target.value)} className="input-field">
                 <option value="">Escribir manualmente</option>
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>{t.name} ({t.type})</option>
@@ -185,7 +184,7 @@ export default function ComunicacionesPage() {
                     onClick={() => setMessageType(type)}
                     className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium border transition-all duration-200 ${
                       messageType === type
-                        ? "border-indigo-300 bg-indigo-50 text-indigo-700 shadow-sm"
+                        ? "border-blue-300 bg-blue-50 text-blue-800 shadow-sm"
                         : "border-slate-200 text-slate-600 hover:bg-slate-50"
                     }`}
                   >
@@ -199,43 +198,28 @@ export default function ComunicacionesPage() {
             {messageType === "email" && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Asunto</label>
-                <input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="input-field"
-                />
+                <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="input-field" />
               </div>
             )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Mensaje *</label>
-              <textarea
-                required
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={5}
-                className="input-field"
-              />
+              <textarea required value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className="input-field" />
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <button
-                type="submit"
-                disabled={sending}
-                className="btn-primary"
-              >
+              <button type="submit" disabled={sending} className="btn-primary">
                 <Send className="h-4 w-4" />
                 {sending ? "Registrando..." : "Registrar envio"}
               </button>
 
+              <button type="button" onClick={copyToClipboard} disabled={!message} className="btn-secondary">
+                {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copiado" : "Copiar"}
+              </button>
+
               {messageType === "whatsapp" && waLink && (
-                <a
-                  href={waLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-success"
-                >
+                <a href={waLink} target="_blank" rel="noopener noreferrer" className="btn-success">
                   <ExternalLink className="h-4 w-4" />
                   Abrir WhatsApp
                 </a>
@@ -245,16 +229,12 @@ export default function ComunicacionesPage() {
         </div>
 
         {/* History */}
-        <div className="card">
+        <div className="card-static">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-900">Historial</h2>
             <div className="flex items-center gap-2">
               <Filter className="h-3.5 w-3.5 text-slate-400" />
-              <select
-                value={filterClient}
-                onChange={(e) => setFilterClient(e.target.value)}
-                className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 focus:border-indigo-300 focus:outline-none"
-              >
+              <select value={filterClient} onChange={(e) => setFilterClient(e.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 focus:border-blue-300 focus:outline-none">
                 <option value="">Todos los clientes</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -269,25 +249,20 @@ export default function ComunicacionesPage() {
                   {typeIcon(comm.type)}
                   <span className="text-sm font-semibold text-slate-900">{comm.client_name}</span>
                   <span className="text-xs text-slate-400 ml-auto">
-                    {new Date(comm.created_at).toLocaleDateString("es-ES", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {new Date(comm.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
-                {comm.subject && (
-                  <p className="text-xs font-medium text-slate-600 mb-1">{comm.subject}</p>
-                )}
+                {comm.subject && <p className="text-xs font-medium text-slate-600 mb-1">{comm.subject}</p>}
                 <p className="text-xs text-slate-500 line-clamp-3 whitespace-pre-line">{comm.message}</p>
               </div>
             ))}
             {filteredCommunications.length === 0 && (
-              <p className="text-sm text-slate-400 text-center py-8">
-                {filterClient ? "No hay comunicaciones con este cliente" : "No hay comunicaciones"}
-              </p>
+              <div className="empty-state py-12">
+                <MessageSquare className="h-12 w-12 text-slate-200 mb-3" />
+                <p className="text-sm text-slate-400">
+                  {filterClient ? "No hay comunicaciones con este cliente" : "No hay comunicaciones"}
+                </p>
+              </div>
             )}
           </div>
         </div>
