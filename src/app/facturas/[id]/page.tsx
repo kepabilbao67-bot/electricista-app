@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Send, CheckCircle } from "lucide-react";
+import { ArrowLeft, Printer, Send, CheckCircle, Shield } from "lucide-react";
 
 interface InvoiceDetail {
   id: string;
@@ -31,6 +31,13 @@ interface InvoiceDetail {
     total: number;
   }>;
 }
+
+const statusLabels: Record<string, { label: string; color: string }> = {
+  draft: { label: "Borrador", color: "bg-slate-100 text-slate-600" },
+  sent: { label: "Enviada", color: "bg-blue-50 text-blue-700 border border-blue-100" },
+  paid: { label: "Cobrada", color: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
+  overdue: { label: "Vencida", color: "bg-red-50 text-red-700 border border-red-100" },
+};
 
 export default function FacturaDetailPage() {
   const params = useParams();
@@ -88,28 +95,38 @@ export default function FacturaDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div>
       </div>
     );
   }
 
   if (!invoice) {
-    return <div className="text-center py-8 text-gray-500">Factura no encontrada</div>;
+    return <div className="text-center py-8 text-slate-500">Factura no encontrada</div>;
   }
+
+  const status = statusLabels[invoice.status] || statusLabels.draft;
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="rounded-lg p-2 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5" />
+        <button
+          onClick={() => router.back()}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-2xl font-bold">Factura {invoice.number}</h1>
-        <div className="ml-auto flex gap-2">
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h1 className="page-title">Factura {invoice.number}</h1>
+            <span className={`badge ${status.color}`}>{status.label}</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
           {!invoice.ticketbai_id && (
             <button
               onClick={generateTicketBAI}
               disabled={generating}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+              className="btn-primary"
             >
               <Send className="h-4 w-4" />
               {generating ? "Generando..." : "Generar TicketBAI"}
@@ -118,7 +135,7 @@ export default function FacturaDetailPage() {
           {invoice.status !== "paid" && (
             <button
               onClick={markPaid}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all duration-200"
             >
               <CheckCircle className="h-4 w-4" />
               Marcar cobrada
@@ -126,7 +143,7 @@ export default function FacturaDetailPage() {
           )}
           <button
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="btn-secondary"
           >
             <Printer className="h-4 w-4" />
             Imprimir
@@ -134,82 +151,102 @@ export default function FacturaDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none">
+      <div className="card p-8 print:shadow-none print:border-none">
         {/* Header */}
-        <div className="flex justify-between mb-8">
+        <div className="flex justify-between mb-8 pb-6 border-b border-slate-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">MARTIN OYARZABAL, IVAN</h2>
-            <p className="text-sm text-gray-500">NIF: 16063731W</p>
-            <p className="text-sm text-gray-500">Lehendakari Aguirre 7b 2 derecha</p>
-            <p className="text-sm text-gray-500">48640 Berango, Bizkaia</p>
-            <p className="text-sm text-gray-500 mt-2">BBVA: ES66 0182 0450 1102 0150 3156</p>
+            <h2 className="text-xl font-bold text-slate-900">MARTIN OYARZABAL, IVAN</h2>
+            <p className="text-sm text-slate-500 mt-1">NIF: 16063731W</p>
+            <p className="text-sm text-slate-500">Lehendakari Aguirre 7b 2 derecha</p>
+            <p className="text-sm text-slate-500">48640 Berango, Bizkaia</p>
+            <p className="text-sm text-slate-500 mt-2 font-medium">BBVA: ES66 0182 0450 1102 0150 3156</p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-yellow-600">FACTURA</p>
-            <p className="text-lg font-medium">{invoice.number}</p>
-            <p className="text-sm text-gray-500 mt-2">Fecha: {invoice.date}</p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-50 border border-indigo-100 mb-2">
+              <span className="text-lg font-bold text-indigo-700">FACTURA</span>
+            </div>
+            <p className="text-lg font-semibold text-slate-900">{invoice.number}</p>
+            <p className="text-sm text-slate-500 mt-2">Fecha: {invoice.date}</p>
             {invoice.due_date && (
-              <p className="text-sm text-gray-500">Vencimiento: {invoice.due_date}</p>
+              <p className="text-sm text-slate-500">Vencimiento: {invoice.due_date}</p>
             )}
           </div>
         </div>
 
         {/* Client */}
-        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-gray-500 mb-1">Cliente:</p>
-          <p className="font-medium">{invoice.client_name}</p>
-          {invoice.client_nif && <p className="text-sm text-gray-600">NIF: {invoice.client_nif}</p>}
-          {invoice.client_address && <p className="text-sm text-gray-600">{invoice.client_address}</p>}
+        <div className="mb-8 p-4 bg-slate-50 rounded-lg border border-slate-100">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Datos del cliente</p>
+          <p className="font-semibold text-slate-900">{invoice.client_name}</p>
+          {invoice.client_nif && <p className="text-sm text-slate-600">NIF: {invoice.client_nif}</p>}
+          {invoice.client_address && <p className="text-sm text-slate-600">{invoice.client_address}</p>}
           {invoice.client_city && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-slate-600">
               {invoice.client_postal_code} {invoice.client_city}, {invoice.client_province}
             </p>
           )}
         </div>
 
         {/* Items */}
-        <table className="w-full text-sm mb-6">
-          <thead className="border-b-2 border-gray-200">
-            <tr>
-              <th className="pb-2 text-left font-medium">Descripcion</th>
-              <th className="pb-2 text-right font-medium w-20">Cant.</th>
-              <th className="pb-2 text-right font-medium w-28">Precio</th>
-              <th className="pb-2 text-right font-medium w-28">Importe</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {invoice.items.map((item) => (
-              <tr key={item.id}>
-                <td className="py-2">{item.description}</td>
-                <td className="py-2 text-right">{item.quantity}</td>
-                <td className="py-2 text-right">{item.unit_price.toFixed(2)} EUR</td>
-                <td className="py-2 text-right">{item.total.toFixed(2)} EUR</td>
+        <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Descripcion</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Cant.</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Precio</th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Importe</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {invoice.items.map((item) => (
+                <tr key={item.id}>
+                  <td className="px-4 py-3 text-slate-700">{item.description}</td>
+                  <td className="px-4 py-3 text-right text-slate-600">{item.quantity}</td>
+                  <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
+                  <td className="px-4 py-3 text-right font-medium text-slate-900">{item.total.toFixed(2)} EUR</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {/* Totals */}
-        <div className="border-t-2 border-gray-200 pt-4 text-right space-y-1">
-          <p className="text-sm">Base imponible: {invoice.subtotal.toFixed(2)} EUR</p>
-          <p className="text-sm">IVA {invoice.tax_rate}%: {invoice.tax_amount.toFixed(2)} EUR</p>
-          <p className="text-xl font-bold">Total: {invoice.total.toFixed(2)} EUR</p>
+        <div className="flex justify-end">
+          <div className="w-64 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Base imponible</span>
+              <span className="font-medium text-slate-700">{invoice.subtotal.toFixed(2)} EUR</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">IVA {invoice.tax_rate}%</span>
+              <span className="font-medium text-slate-700">{invoice.tax_amount.toFixed(2)} EUR</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold border-t border-slate-200 pt-2 mt-2">
+              <span className="text-slate-900">Total</span>
+              <span className="text-slate-900">{invoice.total.toFixed(2)} EUR</span>
+            </div>
+          </div>
         </div>
 
         {/* TicketBAI info */}
         {invoice.ticketbai_id && (
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-400">TicketBAI: {invoice.ticketbai_id}</p>
+          <div className="mt-8 p-4 rounded-lg bg-emerald-50 border border-emerald-100">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-4 w-4 text-emerald-600" />
+              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">TicketBAI Verificado</span>
+            </div>
+            <p className="text-xs text-emerald-600 font-mono">{invoice.ticketbai_id}</p>
             {invoice.ticketbai_qr && (
-              <p className="text-xs text-gray-400 mt-1">QR: {invoice.ticketbai_qr}</p>
+              <p className="text-xs text-emerald-600 font-mono mt-1">QR: {invoice.ticketbai_qr}</p>
             )}
           </div>
         )}
 
         {/* Notes */}
         {invoice.notes && (
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-500">{invoice.notes}</p>
+          <div className="mt-6 pt-4 border-t border-slate-100">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Notas</p>
+            <p className="text-sm text-slate-600">{invoice.notes}</p>
           </div>
         )}
       </div>

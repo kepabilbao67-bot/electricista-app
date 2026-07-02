@@ -4,8 +4,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 
 export const metadata: Metadata = {
-  title: "Electricista - Gestión Profesional",
-  description: "Aplicación de gestión para electricista profesional",
+  title: "Electricista - Gestion Profesional",
+  description: "Aplicacion de gestion para electricista profesional",
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className="bg-gray-50 text-gray-900 antialiased">
+      <body className="bg-slate-50 text-slate-900 antialiased">
         <div className="flex h-screen overflow-hidden">
           <Sidebar />
           <div className="flex flex-1 flex-col overflow-hidden">
