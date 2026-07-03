@@ -15,6 +15,7 @@ import {
   Zap,
   Package,
   Download,
+  BookOpen,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { href: "/comunicaciones", label: "Comunicaciones", icon: MessageSquare },
   { href: "/agenda", label: "Agenda", icon: Calendar },
   { href: "/catalogo", label: "Catalogo", icon: Package },
+  { href: "/normativa", label: "Normativa REBT", icon: BookOpen },
   { href: "/exportar", label: "Exportar", icon: Download },
 ];
 

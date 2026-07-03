@@ -1,0 +1,8 @@
+{
+  "task_id": "task-zones-normativa",
+  "task_description": "Add zone-based budgets and REBT normativa page with keyword-based assistant",
+  "status": "in_progress",
+  "feature_order": ["FEAT-005"],
+  "blocked_reason": null,
+  "verification": null
+}

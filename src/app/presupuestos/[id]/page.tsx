@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Printer, FileText, Send } from "lucide-react";
 
+interface BudgetItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+}
+
 interface BudgetDetail {
   id: string;
   number: string;
@@ -22,13 +30,39 @@ interface BudgetDetail {
   total: number;
   notes: string;
   converted_invoice_id: string | null;
-  items: Array<{
-    id: string;
-    description: string;
-    quantity: number;
-    unit_price: number;
-    total: number;
-  }>;
+  items: BudgetItem[];
+}
+
+interface ZoneGroup {
+  name: string;
+  items: BudgetItem[];
+  subtotal: number;
+}
+
+function parseZoneFromDescription(description: string): { zone: string; desc: string } {
+  const match = description.match(/^\[([^\]]+)\]\s*(.*)$/);
+  if (match) {
+    return { zone: match[1], desc: match[2] };
+  }
+  return { zone: "General", desc: description };
+}
+
+function groupItemsByZone(items: BudgetItem[]): ZoneGroup[] {
+  const groups: Map<string, BudgetItem[]> = new Map();
+
+  for (const item of items) {
+    const { zone } = parseZoneFromDescription(item.description);
+    if (!groups.has(zone)) {
+      groups.set(zone, []);
+    }
+    groups.get(zone)!.push(item);
+  }
+
+  return Array.from(groups.entries()).map(([name, zoneItems]) => ({
+    name,
+    items: zoneItems,
+    subtotal: zoneItems.reduce((acc, i) => acc + i.total, 0),
+  }));
 }
 
 export default function PresupuestoDetailPage() {
@@ -90,6 +124,10 @@ export default function PresupuestoDetailPage() {
   if (!budget) {
     return <div className="text-center py-8 text-gray-500">Presupuesto no encontrado</div>;
   }
+
+  // Check if items have zone prefixes
+  const hasZones = budget.items.some((item) => item.description.match(/^\[([^\]]+)\]/));
+  const zoneGroups = hasZones ? groupItemsByZone(budget.items) : null;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -158,26 +196,63 @@ export default function PresupuestoDetailPage() {
           )}
         </div>
 
-        <table className="w-full text-sm mb-6">
-          <thead className="border-b-2 border-gray-200">
-            <tr>
-              <th className="pb-2 text-left font-medium">Descripcion</th>
-              <th className="pb-2 text-right font-medium w-20">Cant.</th>
-              <th className="pb-2 text-right font-medium w-28">Precio</th>
-              <th className="pb-2 text-right font-medium w-28">Importe</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {budget.items.map((item) => (
-              <tr key={item.id}>
-                <td className="py-2">{item.description}</td>
-                <td className="py-2 text-right">{item.quantity}</td>
-                <td className="py-2 text-right">{item.unit_price.toFixed(2)} EUR</td>
-                <td className="py-2 text-right">{item.total.toFixed(2)} EUR</td>
-              </tr>
+        {/* Grouped by zones */}
+        {zoneGroups ? (
+          <div className="space-y-6 mb-6">
+            {zoneGroups.map((group) => (
+              <div key={group.name}>
+                <div className="flex items-center justify-between mb-2 pb-1 border-b border-blue-100">
+                  <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wide">{group.name}</h3>
+                  <span className="text-sm font-medium text-blue-600">{group.subtotal.toFixed(2)} EUR</span>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="border-b border-gray-100">
+                    <tr>
+                      <th className="pb-1 text-left font-medium text-gray-500 text-xs">Descripcion</th>
+                      <th className="pb-1 text-right font-medium text-gray-500 text-xs w-16">Cant.</th>
+                      <th className="pb-1 text-right font-medium text-gray-500 text-xs w-24">Precio</th>
+                      <th className="pb-1 text-right font-medium text-gray-500 text-xs w-24">Importe</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {group.items.map((item) => {
+                      const { desc } = parseZoneFromDescription(item.description);
+                      return (
+                        <tr key={item.id}>
+                          <td className="py-1.5">{desc}</td>
+                          <td className="py-1.5 text-right">{item.quantity}</td>
+                          <td className="py-1.5 text-right">{item.unit_price.toFixed(2)} EUR</td>
+                          <td className="py-1.5 text-right">{item.total.toFixed(2)} EUR</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        ) : (
+          <table className="w-full text-sm mb-6">
+            <thead className="border-b-2 border-gray-200">
+              <tr>
+                <th className="pb-2 text-left font-medium">Descripcion</th>
+                <th className="pb-2 text-right font-medium w-20">Cant.</th>
+                <th className="pb-2 text-right font-medium w-28">Precio</th>
+                <th className="pb-2 text-right font-medium w-28">Importe</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {budget.items.map((item) => (
+                <tr key={item.id}>
+                  <td className="py-2">{item.description}</td>
+                  <td className="py-2 text-right">{item.quantity}</td>
+                  <td className="py-2 text-right">{item.unit_price.toFixed(2)} EUR</td>
+                  <td className="py-2 text-right">{item.total.toFixed(2)} EUR</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         <div className="border-t-2 border-gray-200 pt-4 text-right space-y-1">
           <p className="text-sm">Base imponible: {budget.subtotal.toFixed(2)} EUR</p>

@@ -1,0 +1,11 @@
+{
+  "project_type": "Next.js 16 + TypeScript + Tailwind CSS 4 + Turso/libsql electrician business management app",
+  "language": "TypeScript/React",
+  "build_system": "Next.js (npx next build). No npm install allowed.",
+  "test_framework": "No test framework - verification via build only",
+  "build_command": "npx next build",
+  "test_command": "npx next build",
+  "verification_instructions": "Run npx next build in /projects/sandbox/electricista-app and confirm it passes with no errors.",
+  "setup_instructions": "No setup needed - node_modules already present. DO NOT run npm install.",
+  "environment_constraints": "OPEN_INTERNET network. Cannot install new packages."
+}

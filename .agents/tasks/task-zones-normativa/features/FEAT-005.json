@@ -1,0 +1,21 @@
+{
+  "id": "FEAT-005",
+  "title": "Zone-based budgets and REBT Normativa page",
+  "status": "in_progress",
+  "description": "Reorganize budget form by zones/rooms and create REBT normativa page with keyword-based assistant",
+  "acceptance_criteria": [
+    "Budget form organized by collapsible zones with subtotals",
+    "Predefined zones list with custom zone support",
+    "Duplicate zone functionality",
+    "Catalog shown within each zone",
+    "Budget detail view groups items by zone",
+    "Zone stored as [ZONA] prefix in description field",
+    "New /normativa page with REBT knowledge base",
+    "Keyword-based search/question answering",
+    "Reference tables for circuits, cable sections, circuit breakers",
+    "Budget validation against mandatory circuits",
+    "Normativa REBT link in sidebar"
+  ],
+  "blocked_reason": null,
+  "findings": []
+}
