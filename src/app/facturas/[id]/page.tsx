@@ -407,36 +407,95 @@ export default function FacturaDetailPage() {
           </div>
         )}
 
-        {/* Items */}
-        <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Detalle</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">Cant.</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-24">Precio</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Dto.</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {invoice.items.map((item) => {
-                const discountDisplay = item.discount && item.discount > 0
-                  ? (item.discount_type === "percent" ? `${item.discount}%` : `${item.discount.toFixed(2)} EUR`)
-                  : "-";
-                return (
-                  <tr key={item.id}>
-                    <td className="px-4 py-3 text-slate-700">{item.description}</td>
-                    <td className="px-4 py-3 text-right text-slate-600">{item.quantity.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
-                    <td className="px-4 py-3 text-right text-slate-400">{discountDisplay}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">{item.total.toFixed(2)} EUR</td>
+        {/* Items - Grouped by zone if applicable */}
+        {(() => {
+          const hasZones = invoice.items.some((item) => item.description.match(/^\[([^\]]+)\]/));
+          
+          if (hasZones) {
+            // Group items by zone
+            const zoneGroups: { name: string; items: typeof invoice.items; subtotal: number }[] = [];
+            const zoneMap = new Map<string, typeof invoice.items>();
+            
+            for (const item of invoice.items) {
+              const match = item.description.match(/^\[([^\]]+)\]\s*(.*)$/);
+              const zoneName = match ? match[1] : "General";
+              if (!zoneMap.has(zoneName)) zoneMap.set(zoneName, []);
+              zoneMap.get(zoneName)!.push({ ...item, description: match ? match[2] : item.description });
+            }
+            
+            zoneMap.forEach((items, name) => {
+              zoneGroups.push({ name, items, subtotal: items.reduce((acc, i) => acc + i.total, 0) });
+            });
+
+            return (
+              <div className="space-y-6 mb-6">
+                {zoneGroups.map((group) => (
+                  <div key={group.name}>
+                    <div className="flex items-center justify-between mb-2 pb-1 border-b-2 border-indigo-100">
+                      <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wide">{group.name}</h3>
+                      <span className="text-sm font-semibold text-indigo-600">{group.subtotal.toFixed(2)} EUR</span>
+                    </div>
+                    <div className="overflow-hidden rounded-lg border border-slate-200">
+                      <table className="w-full text-sm">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Descripcion</th>
+                            <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">Cant.</th>
+                            <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-24">Precio</th>
+                            <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Importe</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {group.items.map((item) => (
+                            <tr key={item.id}>
+                              <td className="px-4 py-2.5 text-slate-700">{item.description}</td>
+                              <td className="px-4 py-2.5 text-right text-slate-600">{item.quantity}</td>
+                              <td className="px-4 py-2.5 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
+                              <td className="px-4 py-2.5 text-right font-semibold text-slate-900">{item.total.toFixed(2)} EUR</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          }
+
+          // No zones - flat table
+          return (
+            <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Detalle</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">Cant.</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-24">Precio</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Dto.</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Total</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {invoice.items.map((item) => {
+                    const discountDisplay = item.discount && item.discount > 0
+                      ? (item.discount_type === "percent" ? `${item.discount}%` : `${item.discount.toFixed(2)} EUR`)
+                      : "-";
+                    return (
+                      <tr key={item.id}>
+                        <td className="px-4 py-3 text-slate-700">{item.description}</td>
+                        <td className="px-4 py-3 text-right text-slate-600">{item.quantity.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
+                        <td className="px-4 py-3 text-right text-slate-400">{discountDisplay}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-slate-900">{item.total.toFixed(2)} EUR</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
 
         {/* Totals */}
         <div className="flex justify-end">
