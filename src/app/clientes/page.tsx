@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText, Users, Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText, Users, Eye, Upload } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Client {
@@ -21,6 +22,7 @@ interface Client {
 }
 
 export default function ClientesPage() {
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -130,17 +132,26 @@ export default function ClientesPage() {
           <h1 className="page-title">Clientes</h1>
           <p className="page-subtitle">{clients.length} clientes registrados</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingClient(null);
-            setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular" });
-            setShowForm(true);
-          }}
-          className="btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo cliente
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push("/clientes/importar")}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
+          >
+            <Upload className="h-4 w-4" />
+            Importar
+          </button>
+          <button
+            onClick={() => {
+              setEditingClient(null);
+              setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular" });
+              setShowForm(true);
+            }}
+            className="btn-primary"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo cliente
+          </button>
+        </div>
       </div>
 
       <div className="relative mb-6">
