@@ -1,7 +1,7 @@
 {
   "id": "FEAT-005",
   "title": "Zone-based budgets and REBT Normativa page",
-  "status": "in_progress",
+  "status": "completed",
   "description": "Reorganize budget form by zones/rooms and create REBT normativa page with keyword-based assistant",
   "acceptance_criteria": [
     "Budget form organized by collapsible zones with subtotals",
