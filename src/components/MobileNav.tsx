@@ -16,6 +16,7 @@ import {
   Package,
   Download,
   BookOpen,
+  Receipt,
 } from "lucide-react";
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/facturas", label: "Facturas", icon: FileText },
   { href: "/presupuestos", label: "Presupuestos", icon: ClipboardList },
+  { href: "/gastos", label: "Gastos", icon: Receipt },
   { href: "/comunicaciones", label: "Comunicaciones", icon: MessageSquare },
   { href: "/agenda", label: "Agenda", icon: Calendar },
   { href: "/catalogo", label: "Catalogo", icon: Package },
