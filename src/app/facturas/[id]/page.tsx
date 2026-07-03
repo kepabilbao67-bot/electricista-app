@@ -525,22 +525,9 @@ export default function FacturaDetailPage() {
           </div>
         )}
 
-        {/* Footer with electrician data */}
-        <div className="mt-8 pt-4 border-t border-slate-200">
-          <div className="flex justify-between text-xs text-slate-400">
-            <div>
-              <p className="font-semibold text-slate-500">MARTIN OYARZABAL, IVAN</p>
-              <p>NIF: 16063731W | Tel: 688 867 530</p>
-              <p>Lehendakari Aguirre 7b 2 dcha, 48640 Berango, Bizkaia</p>
-            </div>
-            <div className="text-right">
-              <p className="font-semibold text-slate-500">Datos bancarios</p>
-              <p>BBVA: ES66 0182 0450 1102 0150 3156</p>
-              {invoice.payment_method && (
-                <p>Forma de pago: {paymentMethodLabels[invoice.payment_method] || invoice.payment_method}</p>
-              )}
-            </div>
-          </div>
+        {/* Footer - solo cuenta bancaria */}
+        <div className="mt-6 pt-4 border-t border-slate-100">
+          <p className="text-xs text-slate-400">BBVA: ES66 0182 0450 1102 0150 3156</p>
         </div>
       </div>
     </div>
