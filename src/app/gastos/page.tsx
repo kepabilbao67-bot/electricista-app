@@ -46,9 +46,33 @@ export default function GastosPage() {
   const [dueDate, setDueDate] = useState("");
   const [obra, setObra] = useState("");
   const [notes, setNotes] = useState("");
+  const [category, setCategory] = useState("");
   const [items, setItems] = useState<ExpenseItem[]>([
     { article_code: "", description: "", quantity: 1, unit_price: 0, discount: 0 },
   ]);
+
+  const EXPENSE_CATEGORIES = [
+    { id: "material", label: "Material eléctrico", supplier: "SOKOEL S.A.", icon: "🔌" },
+    { id: "gasolina", label: "Gasolina/Gasoleo", supplier: "", icon: "⛽" },
+    { id: "dietas", label: "Dietas/Comida", supplier: "", icon: "🍽️" },
+    { id: "peajes", label: "Peajes/Autopista", supplier: "BAT/BIDEGI", icon: "🛣️" },
+    { id: "parking", label: "Parking/OTA", supplier: "OTA", icon: "🅿️" },
+    { id: "ropa", label: "Ropa de trabajo/EPIs", supplier: "", icon: "👷" },
+    { id: "herramientas", label: "Herramientas", supplier: "", icon: "🔧" },
+    { id: "vehiculo", label: "Vehiculo (ITV, seguro, reparacion)", supplier: "", icon: "🚐" },
+    { id: "telefono", label: "Telefono/Internet", supplier: "", icon: "📱" },
+    { id: "seguros", label: "Seguros (RC, accidentes)", supplier: "", icon: "🛡️" },
+    { id: "formacion", label: "Formacion/Cursos", supplier: "", icon: "📚" },
+    { id: "otros", label: "Otros gastos", supplier: "", icon: "📋" },
+  ];
+
+  const selectCategory = (cat: typeof EXPENSE_CATEGORIES[0]) => {
+    setCategory(cat.id);
+    if (cat.supplier) setSupplierName(cat.supplier);
+    if (items.length === 1 && !items[0].description) {
+      setItems([{ article_code: "", description: cat.label, quantity: 1, unit_price: 0, discount: 0 }]);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/expenses").then((r) => r.json()).then((data) => {
@@ -108,7 +132,7 @@ export default function GastosPage() {
   const resetForm = () => {
     setSupplierName(""); setSupplierNif(""); setInvoiceNumber("");
     setDate(new Date().toISOString().split("T")[0]); setDueDate("");
-    setObra(""); setNotes("");
+    setObra(""); setNotes(""); setCategory("");
     setItems([{ article_code: "", description: "", quantity: 1, unit_price: 0, discount: 0 }]);
   };
 
@@ -177,7 +201,25 @@ export default function GastosPage() {
       {/* Form */}
       {showForm && (
         <div className="card mb-6 border-indigo-200 bg-indigo-50/30">
-          <h2 className="text-base font-semibold text-slate-900 mb-4">Registrar factura de compra</h2>
+          <h2 className="text-base font-semibold text-slate-900 mb-4">Registrar gasto</h2>
+
+          {/* Quick category buttons */}
+          <div className="mb-5 p-3 rounded-lg bg-white border border-slate-200">
+            <p className="text-xs font-medium text-slate-500 mb-2">Tipo de gasto (selecciona rapido):</p>
+            <div className="flex flex-wrap gap-2">
+              {EXPENSE_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => selectCategory(cat)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${category === cat.id ? "border-indigo-400 bg-indigo-100 text-indigo-700" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}
+                >
+                  {cat.icon} {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
