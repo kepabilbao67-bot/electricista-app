@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, FileText, Send } from "lucide-react";
+import { ArrowLeft, Printer, FileText, Send, Pencil } from "lucide-react";
 
 interface BudgetItem {
   id: string;
@@ -137,6 +137,13 @@ export default function PresupuestoDetailPage() {
         </button>
         <h1 className="text-2xl font-bold">Presupuesto {budget.number}</h1>
         <div className="ml-auto flex gap-2">
+          <button
+            onClick={() => router.push(`/presupuestos/${budget.id}/editar`)}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar
+          </button>
           {budget.status === "draft" && (
             <button
               onClick={markSent}
