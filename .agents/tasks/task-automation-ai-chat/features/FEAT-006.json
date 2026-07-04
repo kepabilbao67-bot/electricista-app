@@ -2,7 +2,7 @@
   "id": "FEAT-006",
   "type": "feat",
   "description": "Automation features and AI chat: auto budget generator by housing type, dashboard alerts (overdue invoices, expiring budgets, today visits), and rewrite normativa page as chat interface with keyword-based intelligent responses.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Add auto budget modal to presupuestos/nuevo with housing type, rooms, bathrooms, kitchen options and price generation logic",
     "Add alerts section to dashboard (overdue invoices >30 days, budgets expiring <3 days, today visits)",
@@ -20,5 +20,5 @@
   ],
   "verification": ["Run `npx next build` in /projects/sandbox/electricista-app and confirm successful build"],
   "blocked_reason": null,
-  "findings": null
+  "findings": "Build passes cleanly with all 40 routes. Implemented: (1) Auto budget modal in presupuestos/nuevo with housing type selector (piso/chalet/local), rooms 1-6, bathrooms 1-3, kitchen toggle - generates all zones with specified prices. (2) Dashboard alerts section showing overdue invoices >30 days (red), expiring budgets <3 days (orange), and today visits (blue). (3) Complete rewrite of normativa page as chat interface with message bubbles (user indigo right, assistant white left), welcome message, 5 suggestion chips, and comprehensive keyword-based response system covering all specified topics."
 }
