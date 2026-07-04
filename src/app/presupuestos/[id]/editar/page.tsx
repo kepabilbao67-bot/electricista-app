@@ -300,7 +300,7 @@ export default function EditarPresupuestoPage() {
                       <div key={itemIndex} className="flex gap-2 items-center">
                         <input type="text" placeholder="Descripcion" value={item.description} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "description", e.target.value)} className="input-field flex-1 !py-1.5 text-sm" />
                         <input type="number" min="1" step="1" value={item.quantity} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "quantity", parseFloat(e.target.value) || 0)} className="input-field w-16 !py-1.5 text-sm text-center" />
-                        <input type="number" min="0" step="1" value={item.unit_price} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "unit_price", parseFloat(e.target.value) || 0)} className="input-field w-20 !py-1.5 text-sm text-center" />
+                        <input type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "unit_price", parseFloat(e.target.value) || 0)} className="input-field w-20 !py-1.5 text-sm text-center" />
                         <span className="text-xs font-medium text-slate-600 w-20 text-right">{(item.quantity * item.unit_price).toFixed(2)}€</span>
                         <button type="button" onClick={() => removeItemFromZone(zoneIndex, itemIndex)} className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600">
                           <Trash2 className="h-3.5 w-3.5" />

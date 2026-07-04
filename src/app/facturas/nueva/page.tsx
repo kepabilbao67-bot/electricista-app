@@ -276,7 +276,7 @@ export default function NuevaFacturaPage() {
                   <input
                     type="number"
                     min="0"
-                    step="1"
+                    step="0.01"
                     placeholder="Precio"
                     value={item.unit_price}
                     onChange={(e) => updateItem(index, "unit_price", parseFloat(e.target.value) || 0)}
