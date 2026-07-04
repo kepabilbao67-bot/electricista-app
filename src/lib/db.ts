@@ -1,11 +1,47 @@
 import { createClient, Client } from "@libsql/client";
+import { tmpdir } from "os";
+import { join } from "path";
 
 let client: Client;
+
+/**
+ * Resolves the database URL.
+ *
+ * - If TURSO_DATABASE_URL is configured, use it (persistent, recommended for
+ *   production).
+ * - Otherwise fall back to a local SQLite file. On serverless platforms such as
+ *   Vercel the project directory is READ-ONLY, so writing to "file:electricista.db"
+ *   throws and every API route fails with a 500 (the app appears "stuck"). In
+ *   that case we write to a writable temp directory so the app keeps working.
+ *
+ *   NOTE: the temp file is ephemeral and is NOT shared between serverless
+ *   instances or preserved across deployments. Configure TURSO_DATABASE_URL for
+ *   durable storage.
+ */
+function resolveDatabaseUrl(): string {
+  const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
+  if (tursoUrl) {
+    return tursoUrl;
+  }
+
+  const isServerless = Boolean(
+    process.env.VERCEL ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.AWS_REGION ||
+      process.env.NETLIFY
+  );
+
+  if (isServerless) {
+    return `file:${join(tmpdir(), "electricista.db")}`;
+  }
+
+  return "file:electricista.db";
+}
 
 export function getDbClient(): Client {
   if (!client) {
     client = createClient({
-      url: process.env.TURSO_DATABASE_URL || "file:electricista.db",
+      url: resolveDatabaseUrl(),
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
   }
