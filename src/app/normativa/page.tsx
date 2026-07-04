@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Zap, Bot, User } from "lucide-react";
+import { Send, Zap, Bot, User, Sparkles } from "lucide-react";
+import { KNOWLEDGE_BASE, EXTRA_SUGGESTION_CHIPS } from "@/lib/ai-knowledge";
 
 interface Message {
   id: string;
@@ -292,6 +293,15 @@ e = (2x20x16x1) / (56x2.5x230) x 100 = 1.98% (OK, <5%)`;
     return response;
   }
 
+  // ============ BASE DE CONOCIMIENTO AMPLIADA ============
+  // Negocio, fiscalidad, seguridad, herramientas, tramites, averias, domotica,
+  // fotovoltaica, vehiculo electrico, locales especiales, etc.
+  for (const topic of KNOWLEDGE_BASE) {
+    if (topic.keywords.test(q)) {
+      return topic.response;
+    }
+  }
+
   // Piso / vivienda / habitaciones
   if (q.match(/piso|vivienda|habitaci|chalet|local/)) {
     return `**Circuitos segun tipo de vivienda (ITC-BT-25):**
@@ -317,23 +327,30 @@ Usa el boton "Generar presupuesto automatico" en la seccion de presupuestos para
   }
 
   // Default
-  return `No tengo informacion especifica sobre eso. Puedo ayudarte con estos temas:
+  return `No tengo informacion especifica sobre eso todavia. Puedo ayudarte con muchos temas, por ejemplo:
 
-- **Secciones de cable** - Tabla completa por circuito
-- **Circuitos minimos** - Obligatorios segun ITC-BT-25
-- **Protecciones** - Magnetotermicos y diferenciales
-- **Horno/vitro** - Seccion y proteccion necesaria
-- **Lavadora/lavavajillas** - Circuito C4
-- **Alumbrado** - Circuito C1
-- **Enchufes** - Tomas generales C2
-- **Puesta a tierra** - ITC-BT-17
-- **Derivacion individual** - ITC-BT-10
-- **Electrificacion** - Basica vs elevada
-- **Caida de tension** - Formulas y limites
-- **Precios** - Tarifas orientativas del catalogo
-- **Viviendas** - Circuitos segun tipo
+**Normativa tecnica (REBT):**
+secciones de cable, protecciones, circuitos minimos, banos, piscinas, garajes, locales comerciales, obras, instalaciones agricolas, puesta a tierra, derivacion individual, caida de tension.
 
-Escribe tu pregunta o pulsa una de las sugerencias de abajo.`;
+**Precios y negocio:**
+tu catalogo de materiales, margenes de beneficio, como calcular presupuestos, IRPF y modelo 130, cuota de autonomo, clientes morosos, ayudas y subvenciones.
+
+**Tramites:**
+boletin electrico/CIE, inspecciones OCA, carnet de instalador (REI).
+
+**Seguridad:**
+EPIs, primeros auxilios ante accidente electrico, riesgo de arco electrico.
+
+**Tecnologia:**
+domotica KNX, cargadores de coche electrico, fotovoltaica y autoconsumo, eficiencia energetica.
+
+**Averias:**
+salta el diferencial, no hay luz, parpadeo de luces.
+
+**Herramientas:**
+que comprar, uso del multimetro.
+
+Prueba a reformular tu pregunta o usa una de las sugerencias de abajo.`;
 }
 
 export default function NormativaPage() {
@@ -341,7 +358,7 @@ export default function NormativaPage() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hola! Soy tu asistente de normativa electrica (REBT) y precios. Puedo ayudarte con:\n\n- **Normativa**: secciones de cable, protecciones, circuitos obligatorios, caidas de tension\n- **Precios**: consultar tu catalogo, precios de compra/venta, margenes de beneficio\n- **Materiales**: que necesitas para cada circuito y cuanto cobrar\n\nEscribe tu pregunta o usa las sugerencias rapidas de abajo.",
+      content: "Hola! Soy tu asistente completo para el negocio: normativa electrica, precios y mucho mas.\n\n- **Normativa REBT**: cable, protecciones, circuitos, banos, piscinas, garajes, locales, obras...\n- **Precios**: tu catalogo, margenes, como calcular presupuestos\n- **Negocio**: IRPF, cuota autonomo, morosos, ayudas, boletines, carnet instalador\n- **Seguridad**: EPIs, primeros auxilios, arco electrico\n- **Tecnico**: averias, domotica KNX, fotovoltaica, cargadores de coche, herramientas\n\nPreguntame lo que necesites o usa las sugerencias rapidas.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -387,8 +404,10 @@ export default function NormativaPage() {
           <Zap className="h-5 w-5 text-amber-600" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-slate-900">Asistente REBT</h1>
-          <p className="text-xs text-slate-500">Normativa electrica - Consulta rapida</p>
+          <h1 className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
+            Asistente Electricista <Sparkles className="h-4 w-4 text-amber-500" />
+          </h1>
+          <p className="text-xs text-slate-500">Normativa, negocio, seguridad, tecnica y precios</p>
         </div>
       </div>
 
@@ -433,8 +452,8 @@ export default function NormativaPage() {
       </div>
 
       {/* Suggestion Chips */}
-      <div className="flex flex-wrap gap-2 pb-3 flex-shrink-0">
-        {SUGGESTION_CHIPS.map((chip) => (
+      <div className="flex flex-wrap gap-2 pb-3 flex-shrink-0 max-h-20 overflow-y-auto">
+        {[...SUGGESTION_CHIPS, ...EXTRA_SUGGESTION_CHIPS].map((chip) => (
           <button
             key={chip}
             onClick={() => handleSend(chip)}
