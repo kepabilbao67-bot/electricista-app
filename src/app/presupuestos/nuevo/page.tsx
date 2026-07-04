@@ -76,92 +76,118 @@ export default function NuevoPresupuestoPage() {
   const generateAutoBudget = () => {
     const newZones: Zone[] = [];
 
-    // Cuadro electrico
-    const totalCircuits = 5 + autoRooms + autoBathrooms + (autoKitchen ? 3 : 0);
+    // Calcular circuitos totales según REBT
+    // C1: alumbrado (1 por cada 30 puntos de luz)
+    // C2: enchufes generales
+    // C3: cocina/horno
+    // C4: lavadora/lavavajillas/termo
+    // C5: enchufes baño/cocina
+    // + adicionales por habitaciones
+    const circuitosAlumbrado = Math.ceil((autoRooms * 6 + autoBathrooms * 4 + 8 + 4 + (autoKitchen ? 3 : 0)) / 30) + 1;
+    const circuitosEnchufe = Math.ceil(autoRooms / 2) + 1;
+    const circuitosCocina = autoKitchen ? 1 : 0;
+    const circuitosElectrodomesticos = autoKitchen ? 4 : 1; // lavadora, lavavajillas, microondas, frigo
+    const circuitosHumedos = 1;
+    const totalCircuits = circuitosAlumbrado + circuitosEnchufe + circuitosCocina + circuitosElectrodomesticos + circuitosHumedos;
     const numDiferenciales = Math.ceil(totalCircuits / 5);
+    const numMagnetos2x16 = circuitosEnchufe + circuitosElectrodomesticos + circuitosHumedos;
+    const numMagnetos2x10 = circuitosAlumbrado;
+
+    // CUADRO ELECTRICO
     const cuadroItems: BudgetItem[] = [
-      { description: "Derivacion individual", quantity: 1, unit_price: 475 },
-      { description: "Cuadro electrico", quantity: 1, unit_price: 225 },
-      { description: "Protector sobretensiones", quantity: 1, unit_price: 110.90 },
-      { description: "Magnetotermico general", quantity: 1, unit_price: 57.60 },
-      { description: "Diferencial 30mA", quantity: numDiferenciales, unit_price: 45.50 },
-      { description: "Magnetotermico 2x16A", quantity: Math.ceil(totalCircuits * 0.6), unit_price: 47.50 },
-      { description: "Magnetotermico 2x10A (alumbrado)", quantity: Math.ceil(totalCircuits * 0.4), unit_price: 45.50 },
-      { description: "Timbre", quantity: 1, unit_price: 97 },
-      { description: "Peines conexion", quantity: 1, unit_price: 125 },
-      { description: "Rotulacion cuadro", quantity: 1, unit_price: 55 },
-    ];
+      { description: "Cambiar derivacion individual de la vivienda desde el cuadro electrico al modulo de contadores", quantity: 1, unit_price: 475 },
+      { description: "Suministro y colocado de cuadro electrico de empotrar con puerta", quantity: 1, unit_price: 225 },
+      { description: "Suministro y colocado de sobre tensiones", quantity: 1, unit_price: 110.90 },
+      { description: "Suministro y colocado de magnetotermico general de la vivienda", quantity: 1, unit_price: 57.60 },
+      { description: "Suministro y colocado de diferenciales", quantity: numDiferenciales, unit_price: 45.50 },
+      { description: "Suministro y colocado de magnetotermico para vitro/horno", quantity: autoKitchen ? 1 : 0, unit_price: 59.60 },
+      { description: "Suministro y colocado de magnetotermicos de 2x16", quantity: numMagnetos2x16, unit_price: 47.50 },
+      { description: "Suministro y colocado de magnetotermico de 2x10", quantity: numMagnetos2x10, unit_price: 45.50 },
+      { description: "Suministro y colocado de timbre de carril", quantity: 1, unit_price: 97 },
+      { description: "Suministro y colocado de peines para cuadro electrico", quantity: 1, unit_price: 125 },
+      { description: "Rotulacion de cuadro electrico y esquema unifilar", quantity: 1, unit_price: 55 },
+    ].filter(item => item.quantity > 0);
     newZones.push({ name: "Cuadro electrico", items: cuadroItems, collapsed: false });
 
-    // Habitaciones
+    // LINEAS (Instalacion general de cables)
+    const lineasItems: BudgetItem[] = [
+      { description: "Suministro y colocado de linea de alumbrado de toda la casa", quantity: circuitosAlumbrado, unit_price: 68.50 },
+      { description: "Suministro y colocado de linea de enchufes normales", quantity: circuitosEnchufe, unit_price: 75.50 },
+      { description: "Suministro y colocado de enchufes humedos", quantity: 1, unit_price: 75.50 },
+      { description: "Suministro y colocado de linea para caldera", quantity: 1, unit_price: 75.50 },
+      { description: "Suministro y colocado de linea para lavadora", quantity: 1, unit_price: 75.50 },
+    ];
+    if (autoKitchen) {
+      lineasItems.push(
+        { description: "Suministro y colocado de linea para lavavajillas", quantity: 1, unit_price: 75.50 },
+        { description: "Suministro y colocado de linea para microondas", quantity: 1, unit_price: 75.50 },
+        { description: "Suministro y colocado de linea para frigorifico", quantity: 1, unit_price: 75.50 },
+        { description: "Suministro y colocado de linea horno-vitro", quantity: 1, unit_price: 102.50 },
+        { description: "Suministro y colocado de linea de campana", quantity: 1, unit_price: 68.50 },
+      );
+    }
+    lineasItems.push({ description: "Suministro y colocado de linea de rack", quantity: 1, unit_price: 75.50 });
+    newZones.push({ name: "Lineas", items: lineasItems, collapsed: false });
+
+    // HABITACIONES
     for (let i = 1; i <= autoRooms; i++) {
       const roomItems: BudgetItem[] = [
-        { description: "Enchufe", quantity: 5, unit_price: 67.50 },
-        { description: "Conmutador", quantity: 3, unit_price: 57.50 },
-        { description: "Interruptor", quantity: 2, unit_price: 57.60 },
-        { description: "Toma TV", quantity: 1, unit_price: 85.60 },
-        { description: "Toma RJ45", quantity: 1, unit_price: 85.65 },
-        { description: "Foco/punto de luz", quantity: 6, unit_price: 67.50 },
+        { description: "Enchufes en la habitacion", quantity: 5, unit_price: 67.50 },
+        { description: "Conmutadores en la habitacion", quantity: 3, unit_price: 57.50 },
+        { description: "Interruptores habitacion", quantity: 2, unit_price: 57.60 },
+        { description: "Toma de TV habitacion", quantity: 1, unit_price: 85.60 },
+        { description: "Toma de RJ45 habitacion", quantity: 1, unit_price: 85.65 },
+        { description: "Focos en habitacion", quantity: 6, unit_price: 67.50 },
       ];
       newZones.push({ name: `Habitacion ${i}`, items: roomItems, collapsed: false });
     }
 
-    // Cocina
+    // COCINA
     if (autoKitchen) {
       const kitchenItems: BudgetItem[] = [
-        { description: "Enchufe encimera", quantity: 4, unit_price: 67.50 },
-        { description: "Interruptor", quantity: 1, unit_price: 57.60 },
-        { description: "Foco/punto de luz", quantity: 3, unit_price: 67.50 },
-        { description: "Linea horno-vitroceramica", quantity: 1, unit_price: 102.50 },
-        { description: "Linea lavadora", quantity: 1, unit_price: 75.50 },
-        { description: "Linea lavavajillas", quantity: 1, unit_price: 75.50 },
-        { description: "Linea microondas", quantity: 1, unit_price: 75.50 },
-        { description: "Linea frigorifico", quantity: 1, unit_price: 75.50 },
-        { description: "Linea campana extractora", quantity: 1, unit_price: 68.50 },
+        { description: "Enchufes en encimera de cocina", quantity: 4, unit_price: 67.50 },
+        { description: "Interruptores en cocina", quantity: 1, unit_price: 57.60 },
+        { description: "Focos en cocina", quantity: 3, unit_price: 67.50 },
       ];
       newZones.push({ name: "Cocina", items: kitchenItems, collapsed: false });
     }
 
-    // Banos
-    for (let i = 1; i <= autoBathrooms; i++) {
-      const bathroomItems: BudgetItem[] = [
-        { description: "Enchufe", quantity: 2, unit_price: 67.50 },
-        { description: "Interruptor", quantity: 2, unit_price: 57.60 },
-        { description: "Foco/punto de luz", quantity: 4, unit_price: 67.50 },
-      ];
-      const name = autoBathrooms === 1 ? "Bano" : (i === 1 ? "Bano principal" : `Bano ${i}`);
-      newZones.push({ name, items: bathroomItems, collapsed: false });
-    }
-
-    // Salon
+    // SALON
     const salonItems: BudgetItem[] = [
-      { description: "Enchufe", quantity: 6, unit_price: 67.50 },
-      { description: "Conmutador", quantity: 4, unit_price: 57.50 },
-      { description: "Interruptor", quantity: 2, unit_price: 57.60 },
-      { description: "Foco/punto de luz", quantity: 8, unit_price: 67.50 },
-      { description: "Toma TV", quantity: 1, unit_price: 85.60 },
-      { description: "Toma RJ45", quantity: 2, unit_price: 85.65 },
+      { description: "Enchufes en el salon", quantity: 6, unit_price: 67.50 },
+      { description: "Tomas TV salon", quantity: 1, unit_price: 85.60 },
+      { description: "Toma de RJ45 en el salon", quantity: 2, unit_price: 85.65 },
+      { description: "Conmutadores en el salon", quantity: 4, unit_price: 57.50 },
+      { description: "Interruptores en el salon", quantity: 2, unit_price: 57.60 },
+      { description: "Focos en el salon", quantity: 8, unit_price: 67.50 },
     ];
     newZones.push({ name: "Salon", items: salonItems, collapsed: false });
 
-    // Entrada/Pasillo
+    // BAÑOS
+    for (let i = 1; i <= autoBathrooms; i++) {
+      const bathroomItems: BudgetItem[] = [
+        { description: `Enchufes de WC`, quantity: 2, unit_price: 67.50 },
+        { description: `Interruptores en WC`, quantity: 2, unit_price: 57.60 },
+        { description: `Focos WC`, quantity: 4, unit_price: 67.50 },
+      ];
+      const name = autoBathrooms === 1 ? "WC" : (i === 1 ? "WC principal" : "WC secundario");
+      newZones.push({ name, items: bathroomItems, collapsed: false });
+    }
+
+    // ENTRADA / PASILLO
     const entradaItems: BudgetItem[] = [
-      { description: "Enchufe", quantity: 3, unit_price: 67.50 },
-      { description: "Conmutador", quantity: 3, unit_price: 57.50 },
-      { description: "Foco/punto de luz", quantity: 4, unit_price: 67.50 },
+      { description: "Conmutadores en la entrada", quantity: 3, unit_price: 57.50 },
+      { description: "Enchufes en la entrada", quantity: 3, unit_price: 67.50 },
+      { description: "Focos en la entrada", quantity: 4, unit_price: 67.50 },
     ];
     newZones.push({ name: "Entrada/Pasillo", items: entradaItems, collapsed: false });
 
-    // Instalacion general
+    // INSTALACION GENERAL (obra civil + telecomunicaciones)
     const generalItems: BudgetItem[] = [
-      { description: "Linea alumbrado", quantity: 1, unit_price: 68.50 },
-      { description: "Linea enchufes normales", quantity: 1, unit_price: 75.50 },
-      { description: "Linea enchufes humedos", quantity: 1, unit_price: 75.50 },
-      { description: "Linea caldera", quantity: 1, unit_price: 75.50 },
+      { description: "Cuadro de telecomunicaciones en el salon", quantity: 1, unit_price: 140 },
+      { description: "Switch", quantity: 1, unit_price: 155 },
       { description: "Picado de rozas", quantity: 1, unit_price: 780 },
-      { description: "Material instalacion", quantity: 1, unit_price: 485 },
-      { description: "Cuadro telecomunicaciones", quantity: 1, unit_price: 140 },
-      { description: "Switch red", quantity: 1, unit_price: 155 },
+      { description: "Cajas de mecanismos universales, de derivaciones, pequeño material electrico", quantity: 1, unit_price: 485 },
     ];
     newZones.push({ name: "Instalacion general", items: generalItems, collapsed: false });
 
