@@ -158,6 +158,69 @@
   animation: scale-in 0.3s ease-out;
 }
 
+/* Mobile improvements */
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 1.25rem !important;
+  }
+
+  .card {
+    padding: 1rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .card-static {
+    padding: 1rem !important;
+  }
+
+  .btn-primary, .btn-secondary, .btn-accent, .btn-danger, .btn-success {
+    padding: 0.625rem 0.875rem !important;
+    font-size: 0.8125rem !important;
+    min-height: 44px;
+  }
+
+  .input-field {
+    min-height: 44px;
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+
+  select.input-field {
+    font-size: 16px !important;
+  }
+
+  table {
+    font-size: 0.75rem !important;
+  }
+
+  table th, table td {
+    padding: 0.5rem 0.375rem !important;
+  }
+
+  /* Make tables scrollable horizontally on mobile */
+  .overflow-hidden {
+    overflow-x: auto !important;
+  }
+}
+
+/* Touch targets */
+@media (pointer: coarse) {
+  button, a, select, input[type="checkbox"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input[type="number"] {
+    min-height: 44px;
+  }
+}
+
+/* Safe area for notch phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  main {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
+
 /* Print styles */
 @media print {
   .no-print {
