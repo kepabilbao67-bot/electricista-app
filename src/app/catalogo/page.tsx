@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Package, Search, Save, TrendingUp } from "lucide-react";
+import { Plus, Trash2, Package, Search, Save, TrendingUp, Calculator } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { showToast } from "@/components/Toast";
 
 interface CatalogItem {
@@ -14,6 +15,7 @@ interface CatalogItem {
 }
 
 export default function CatalogoPage() {
+  const router = useRouter();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -122,10 +124,16 @@ export default function CatalogoPage() {
           <h1 className="text-2xl font-bold text-slate-900">Catalogo de materiales</h1>
           <p className="text-sm text-slate-500">{items.length} items - Precio compra, venta y margen</p>
         </div>
-        <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" }); }} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition-all">
-          <Plus className="h-4 w-4" />
-          Anadir item
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => router.push("/catalogo/calculadora")} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
+            <Calculator className="h-4 w-4" />
+            Calculadora
+          </button>
+          <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" }); }} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition-all">
+            <Plus className="h-4 w-4" />
+            Anadir item
+          </button>
+        </div>
       </div>
 
       {/* Form */}
