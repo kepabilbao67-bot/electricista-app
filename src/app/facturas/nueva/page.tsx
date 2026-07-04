@@ -264,11 +264,11 @@ export default function NuevaFacturaPage() {
                 <div className="w-16">
                   <input
                     type="number"
-                    min="0.01"
-                    step="0.01"
+                    min="1"
+                    step="1"
                     placeholder="Cant."
                     value={item.quantity}
-                    onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                    onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 1)}
                     className="input-field text-center"
                   />
                 </div>

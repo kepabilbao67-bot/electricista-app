@@ -479,10 +479,10 @@ export default function NuevoPresupuestoPage() {
                         <input
                           type="number"
                           min="1"
-                          step="0.01"
+                          step="1"
                           placeholder="Cant."
                           value={item.quantity}
-                          onChange={(e) => updateItem(zoneIndex, itemIndex, "quantity", parseFloat(e.target.value) || 0)}
+                          onChange={(e) => updateItem(zoneIndex, itemIndex, "quantity", parseInt(e.target.value) || 1)}
                           className="input-field"
                         />
                       </div>
