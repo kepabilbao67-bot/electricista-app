@@ -15,9 +15,19 @@ const SUGGESTION_CHIPS = [
   "Proteccion para horno",
   "Electrificacion elevada",
   "Caida de tension",
+  "Precios de materiales",
+  "Margen de beneficio",
 ];
 
-function generateResponse(query: string): string {
+interface CatalogItem {
+  id: string;
+  name: string;
+  unit_price: number;
+  cost_price: number;
+  category: string;
+}
+
+function generateResponse(query: string, catalog: CatalogItem[]): string {
   const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   // Secciones / cable / mm
@@ -227,31 +237,59 @@ Donde:
 e = (2x20x16x1) / (56x2.5x230) x 100 = 1.98% (OK, <5%)`;
   }
 
-  // Precio / cobrar
-  if (q.match(/precio|cobrar|costar|vale|tarifa|cuesta/)) {
-    return `**Precios orientativos de instalacion:**
+  // Precio / cobrar / compra / venta / margen / material
+  if (q.match(/precio|cobrar|costar|vale|tarifa|cuesta|compra|venta|margen|material|catalogo|sokoel/)) {
+    if (catalog.length === 0) {
+      return `No he podido cargar el catalogo. Ve a la seccion Catalogo para ver tus precios de compra y venta.`;
+    }
 
-**Cuadro electrico:**
-- Derivacion individual: 475 EUR
-- Cuadro: 225 EUR
-- Sobretensiones: 110.90 EUR
-- Magnetotermico general: 57.60 EUR
-- Diferenciales: 45.50 EUR/ud
-- Magnetotermicos 2x16: 47.50 EUR
-- Magnetotermicos 2x10: 45.50 EUR
-- Timbre: 97 EUR | Peines: 125 EUR | Rotulacion: 55 EUR
+    // Buscar material específico en la pregunta
+    const matchedItems = catalog.filter((item) => {
+      const itemName = item.name.toLowerCase();
+      return q.split(/\s+/).some((word) => word.length > 3 && itemName.includes(word));
+    });
 
-**Por estancia:**
-- Enchufe: 67.50 EUR | Conmutador: 57.50 EUR | Interruptor: 57.60 EUR
-- Toma TV: 85.60 EUR | RJ45: 85.65 EUR | Foco: 67.50 EUR
+    if (matchedItems.length > 0 && matchedItems.length <= 5) {
+      const table = matchedItems.map((item) => {
+        const margin = item.cost_price > 0 ? Math.round(((item.unit_price - item.cost_price) / item.cost_price) * 100) : 0;
+        const beneficio = item.unit_price - (item.cost_price || 0);
+        return `- **${item.name}**: Compra ${item.cost_price || 0}€ → Venta ${item.unit_price}€ (margen ${margin}%, beneficio ${beneficio.toFixed(2)}€)`;
+      }).join("\n");
+      return `**Materiales encontrados:**\n\n${table}\n\nPara ver todo el catalogo con precios de compra/venta, ve a Catalogo. Para calcular precios personalizados, usa la Calculadora (Catalogo → Calculadora).`;
+    }
 
-**Lineas:**
-- Horno-vitro: 102.50 EUR | Lavadora/lavavajillas: 75.50 EUR
-- Alumbrado: 68.50 EUR | Enchufes: 75.50 EUR | Caldera: 75.50 EUR
+    // Si pregunta por margen general
+    if (q.match(/margen|beneficio|gano/)) {
+      const itemsConCoste = catalog.filter((i) => i.cost_price > 0);
+      if (itemsConCoste.length > 0) {
+        const avgMargin = itemsConCoste.reduce((acc, i) => acc + ((i.unit_price - i.cost_price) / i.cost_price * 100), 0) / itemsConCoste.length;
+        const table = itemsConCoste.slice(0, 8).map((item) => {
+          const margin = Math.round(((item.unit_price - item.cost_price) / item.cost_price) * 100);
+          return `| ${item.name} | ${item.cost_price}€ | ${item.unit_price}€ | ${margin}% |`;
+        }).join("\n");
+        return `**Tu margen de beneficio:**\n\nMargen medio: **${avgMargin.toFixed(0)}%**\n\n| Material | Compra | Venta | Margen |\n|----------|--------|-------|--------|\n${table}\n\nPara ajustar margenes, ve a Catalogo → Calculadora.`;
+      }
+    }
 
-**General:**
-- Picado rozas: 780 EUR | Material: 485 EUR
-- Cuadro telecomunicaciones: 140 EUR | Switch: 155 EUR`;
+    // Lista general de precios
+    const byCategory = catalog.reduce((acc, item) => {
+      const cat = item.category || "Otros";
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    }, {} as Record<string, CatalogItem[]>);
+
+    let response = "**Tu catalogo de precios (compra → venta):**\n\n";
+    for (const [cat, items] of Object.entries(byCategory)) {
+      response += `**${cat}:**\n`;
+      for (const item of items.slice(0, 5)) {
+        const margin = item.cost_price > 0 ? ` (margen ${Math.round(((item.unit_price - item.cost_price) / item.cost_price) * 100)}%)` : "";
+        response += `- ${item.name}: ${item.cost_price > 0 ? `${item.cost_price}€ →` : ""} **${item.unit_price}€**${margin}\n`;
+      }
+      response += "\n";
+    }
+    response += `Total items en catalogo: ${catalog.length}\nVe a **Catalogo** para editar precios o a **Calculadora** para calcular margenes.`;
+    return response;
   }
 
   // Piso / vivienda / habitaciones
@@ -303,12 +341,17 @@ export default function NormativaPage() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hola! Soy tu asistente de normativa electrica (REBT). Puedo ayudarte con secciones de cable, protecciones, circuitos obligatorios, caidas de tension, precios y mucho mas.\n\nEscribe tu pregunta o usa las sugerencias rapidas de abajo.",
+      content: "Hola! Soy tu asistente de normativa electrica (REBT) y precios. Puedo ayudarte con:\n\n- **Normativa**: secciones de cable, protecciones, circuitos obligatorios, caidas de tension\n- **Precios**: consultar tu catalogo, precios de compra/venta, margenes de beneficio\n- **Materiales**: que necesitas para cada circuito y cuanto cobrar\n\nEscribe tu pregunta o usa las sugerencias rapidas de abajo.",
     },
   ]);
   const [input, setInput] = useState("");
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/catalog").then((r) => r.json()).then((data) => setCatalog(Array.isArray(data) ? data : [])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -324,7 +367,7 @@ export default function NormativaPage() {
       content: query,
     };
 
-    const response = generateResponse(query);
+    const response = generateResponse(query, catalog);
     const assistantMsg: Message = {
       id: `assistant-${Date.now()}`,
       role: "assistant",
