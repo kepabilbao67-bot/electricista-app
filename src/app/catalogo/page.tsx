@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit2, Trash2, Package, Search, Tag, Check, X } from "lucide-react";
+import { Plus, Trash2, Package, Search, Save, TrendingUp } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface CatalogItem {
@@ -9,293 +9,243 @@ interface CatalogItem {
   name: string;
   description: string | null;
   unit_price: number;
+  cost_price: number;
   category: string | null;
-  created_at: string;
 }
 
 export default function CatalogoPage() {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
-  const [editingPrice, setEditingPrice] = useState<{ id: string; price: string } | null>(null);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [form, setForm] = useState({
     name: "",
     description: "",
     unit_price: 0,
+    cost_price: 0,
     category: "",
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchItems = () => {
-    fetch("/api/catalog")
-      .then((res) => res.json())
-      .then((data) => {
-        setItems(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetch("/api/catalog").then((r) => r.json()).then((data) => {
+      setItems(Array.isArray(data) ? data : []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   };
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
+  useEffect(() => { fetchItems(); }, []);
+
+  const categories = Array.from(new Set(items.map((i) => i.category).filter(Boolean)));
+
+  const filtered = items.filter((item) => {
+    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase()) ||
+      (item.description || "").toLowerCase().includes(search.toLowerCase());
+    const matchCategory = !filterCategory || item.category === filterCategory;
+    return matchSearch && matchCategory;
+  });
+
+  // Group by category
+  const grouped = filtered.reduce((acc, item) => {
+    const cat = item.category || "Sin categoria";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(item);
+    return acc;
+  }, {} as Record<string, CatalogItem[]>);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const url = editingItem ? `/api/catalog/${editingItem.id}` : "/api/catalog";
-    const method = editingItem ? "PUT" : "POST";
+    if (!form.name) return;
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
-      showToast("success", editingItem ? "Item actualizado" : "Item creado correctamente");
-      setShowForm(false);
-      setEditingItem(null);
-      setForm({ name: "", description: "", unit_price: 0, category: "" });
-      fetchItems();
-    } else {
-      showToast("error", "Error al guardar el item");
-    }
-  };
-
-  const handleEdit = (item: CatalogItem) => {
-    setEditingItem(item);
-    setForm({
-      name: item.name || "",
-      description: item.description || "",
-      unit_price: item.unit_price || 0,
-      category: item.category || "",
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm("Seguro que desea eliminar este item del catalogo?")) {
-      const res = await fetch(`/api/catalog/${id}`, { method: "DELETE" });
+    if (editingId) {
+      // Update
+      const res = await fetch("/api/catalog", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, id: editingId }),
+      });
       if (res.ok) {
-        showToast("success", "Item eliminado del catalogo");
+        showToast("success", "Item actualizado");
+        setShowForm(false);
+        setEditingId(null);
+        setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" });
         fetchItems();
-      } else {
-        showToast("error", "Error al eliminar el item");
+      }
+    } else {
+      // Create
+      const res = await fetch("/api/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        showToast("success", "Item creado");
+        setShowForm(false);
+        setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" });
+        fetchItems();
       }
     }
   };
 
-  const startEditPrice = (item: CatalogItem) => {
-    setEditingPrice({ id: item.id, price: item.unit_price.toString() });
-  };
-
-  const savePrice = async () => {
-    if (!editingPrice) return;
-    const item = items.find((i) => i.id === editingPrice.id);
-    if (!item) return;
-
-    const newPrice = parseFloat(editingPrice.price);
-    if (isNaN(newPrice) || newPrice < 0) {
-      showToast("error", "Precio invalido");
-      return;
-    }
-
-    const res = await fetch(`/api/catalog/${editingPrice.id}`, {
+  const deleteItem = async (id: string) => {
+    if (!confirm("¿Eliminar este item del catalogo?")) return;
+    await fetch(`/api/catalog`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: item.name,
-        description: item.description || "",
-        unit_price: newPrice,
-        category: item.category || "",
-      }),
+      body: JSON.stringify({ id, name: "_DELETE_" }),
     });
-
-    if (res.ok) {
-      setItems(items.map((i) => i.id === editingPrice.id ? { ...i, unit_price: newPrice } : i));
-      showToast("success", "Precio actualizado");
-    } else {
-      showToast("error", "Error al actualizar precio");
-    }
-    setEditingPrice(null);
+    setItems(items.filter((i) => i.id !== id));
+    showToast("success", "Item eliminado");
   };
 
-  const cancelEditPrice = () => {
-    setEditingPrice(null);
+  const editItem = (item: CatalogItem) => {
+    setForm({
+      name: item.name,
+      description: item.description || "",
+      unit_price: item.unit_price,
+      cost_price: item.cost_price || 0,
+      category: item.category || "",
+    });
+    setEditingId(item.id);
+    setShowForm(true);
   };
 
-  // Get unique categories
-  const categories = Array.from(new Set(items.map((i) => i.category).filter(Boolean))) as string[];
+  const totalMargen = items.reduce((acc, item) => acc + (item.unit_price - (item.cost_price || 0)), 0);
 
-  // Filter items
-  const filtered = items.filter((item) => {
-    const matchesSearch = !search ||
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      (item.description || "").toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = !filterCategory || item.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Group by category
-  const grouped: Record<string, CatalogItem[]> = {};
-  filtered.forEach((item) => {
-    const cat = item.category || "Sin categoria";
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(item);
-  });
-
-  // Sort category keys
-  const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    if (a === "Sin categoria") return 1;
-    if (b === "Sin categoria") return -1;
-    return a.localeCompare(b);
-  });
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-800 border-t-transparent"></div>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div></div>;
 
   return (
     <div className="animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="page-title">Catalogo</h1>
-          <p className="page-subtitle">{items.length} materiales y servicios</p>
+          <h1 className="text-2xl font-bold text-slate-900">Catalogo de materiales</h1>
+          <p className="text-sm text-slate-500">{items.length} items - Precio compra, venta y margen</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingItem(null);
-            setForm({ name: "", description: "", unit_price: 0, category: "" });
-            setShowForm(true);
-          }}
-          className="btn-accent"
-        >
+        <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" }); }} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition-all">
           <Plus className="h-4 w-4" />
           Anadir item
         </button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input type="text" placeholder="Buscar por nombre o descripcion..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field pl-10" />
-        </div>
-        <div className="flex gap-1.5 flex-wrap">
-          <button onClick={() => setFilterCategory("")} className={`rounded-lg px-3 py-2 text-xs font-medium border transition-all duration-200 ${!filterCategory ? "border-blue-300 bg-blue-50 text-blue-800 shadow-sm" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-            Todos
-          </button>
-          {categories.map((cat) => (
-            <button key={cat} onClick={() => setFilterCategory(cat)} className={`rounded-lg px-3 py-2 text-xs font-medium border transition-all duration-200 ${filterCategory === cat ? "border-blue-300 bg-blue-50 text-blue-800 shadow-sm" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Form */}
       {showForm && (
-        <div className="mb-6 card-static animate-scale-in">
-          <h2 className="text-base font-semibold text-slate-900 mb-4">
-            {editingItem ? "Editar item" : "Nuevo item de catalogo"}
-          </h2>
+        <div className="card mb-6 border-indigo-200 bg-indigo-50/30">
+          <h2 className="text-base font-semibold text-slate-900 mb-4">{editingId ? "Editar item" : "Nuevo item"}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Nombre *</label>
-              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" placeholder="Ej: Magnetotermico 2x16" />
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-slate-700 mb-1">Nombre *</label>
+              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Magnetotermico 2x16" className="input-field" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-slate-700 mb-1">Descripcion</label>
+              <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Detalles opcionales..." className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Precio unitario (EUR) *</label>
-              <input type="number" required min="0" step="0.01" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="input-field" />
+              <label className="block text-xs font-medium text-slate-700 mb-1">Precio COMPRA (lo que te cuesta)</label>
+              <input type="number" min="0" step="0.01" value={form.cost_price || ""} onChange={(e) => setForm({ ...form, cost_price: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Categoria</label>
-              <input type="text" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="input-field" placeholder="Ej: Proteccion, Instalacion, Material" list="categories-list" />
-              <datalist id="categories-list">
-                {categories.map((cat) => (<option key={cat} value={cat} />))}
+              <label className="block text-xs font-medium text-slate-700 mb-1">Precio VENTA (lo que cobras)</label>
+              <input type="number" min="0" step="0.01" required value={form.unit_price || ""} onChange={(e) => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="input-field" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Categoria</label>
+              <input type="text" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Proteccion, Mecanismos, Lineas..." className="input-field" list="categories" />
+              <datalist id="categories">
+                {categories.map((c) => <option key={c} value={c || ""} />)}
               </datalist>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Descripcion</label>
-              <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-field" placeholder="Descripcion opcional" />
+            <div className="flex items-end">
+              <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 w-full text-center">
+                <p className="text-xs text-emerald-600">Margen</p>
+                <p className="text-lg font-bold text-emerald-700">
+                  {form.cost_price > 0 ? `${((form.unit_price - form.cost_price) / form.cost_price * 100).toFixed(0)}%` : "-"}
+                  {form.cost_price > 0 && <span className="text-sm font-normal ml-2">({(form.unit_price - form.cost_price).toFixed(2)}€)</span>}
+                </p>
+              </div>
             </div>
             <div className="md:col-span-2 flex gap-3">
-              <button type="submit" className="btn-primary">{editingItem ? "Guardar cambios" : "Crear item"}</button>
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancelar</button>
+              <button type="submit" className="btn-primary"><Save className="h-4 w-4" /> {editingId ? "Guardar" : "Crear"}</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="btn-secondary">Cancelar</button>
             </div>
           </form>
         </div>
       )}
 
+      {/* Search and filter */}
+      <div className="flex gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input type="text" placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field !pl-10" />
+        </div>
+        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="input-field w-auto">
+          <option value="">Todas</option>
+          {categories.map((c) => <option key={c} value={c || ""}>{c}</option>)}
+        </select>
+      </div>
+
       {/* Items grouped by category */}
-      {sortedCategories.length === 0 ? (
-        <div className="card-static">
-          <div className="empty-state">
-            <Package className="empty-state-icon" />
-            <p className="empty-state-title">Catalogo vacio</p>
-            <p className="empty-state-text">Anade materiales y servicios para usarlos en tus facturas y presupuestos</p>
-          </div>
+      {Object.keys(grouped).length === 0 ? (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+          <p className="text-slate-500">No hay items en el catalogo</p>
         </div>
       ) : (
         <div className="space-y-6">
-          {sortedCategories.map((cat) => (
-            <div key={cat}>
-              <div className="flex items-center gap-2 mb-3">
-                <Tag className="h-4 w-4 text-amber-500" />
-                <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">{cat}</h3>
-                <span className="text-xs text-slate-400">({grouped[cat].length})</span>
-                <div className="flex-1 border-t border-slate-200 ml-3"></div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {grouped[cat].map((item) => (
-                  <div key={item.id} className="card p-4 group">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 shrink-0">
-                          <Package className="h-4 w-4 text-blue-700" />
-                        </div>
-                        <h4 className="text-sm font-semibold text-slate-900 truncate">{item.name}</h4>
-                      </div>
-                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleEdit(item)} className="rounded-md p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(item.id)} className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                    {item.description && <p className="text-xs text-slate-500 mb-2 line-clamp-2">{item.description}</p>}
-                    {/* Inline price editing */}
-                    {editingPrice && editingPrice.id === item.id ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={editingPrice.price}
-                          onChange={(e) => setEditingPrice({ ...editingPrice, price: e.target.value })}
-                          className="w-24 rounded border border-blue-300 px-2 py-1 text-sm font-bold text-blue-800 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          autoFocus
-                          onKeyDown={(e) => { if (e.key === "Enter") savePrice(); if (e.key === "Escape") cancelEditPrice(); }}
-                        />
-                        <span className="text-xs text-slate-500">EUR</span>
-                        <button onClick={savePrice} className="rounded p-1 text-emerald-600 hover:bg-emerald-50"><Check className="h-3.5 w-3.5" /></button>
-                        <button onClick={cancelEditPrice} className="rounded p-1 text-red-500 hover:bg-red-50"><X className="h-3.5 w-3.5" /></button>
-                      </div>
-                    ) : (
-                      <p className="text-lg font-bold text-blue-800 cursor-pointer hover:text-amber-600 transition-colors" onClick={() => startEditPrice(item)} title="Click para editar precio">
-                        {item.unit_price.toFixed(2)} EUR
-                      </p>
-                    )}
-                  </div>
-                ))}
+          {Object.entries(grouped).map(([category, categoryItems]) => (
+            <div key={category}>
+              <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wide mb-2 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                {category}
+                <span className="text-xs font-normal text-slate-400">({categoryItems.length})</span>
+              </h3>
+              <div className="overflow-hidden rounded-lg border border-slate-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-semibold uppercase text-slate-500">Material</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold uppercase text-slate-500 w-24">Compra</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold uppercase text-slate-500 w-24">Venta</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold uppercase text-slate-500 w-20">Margen</th>
+                      <th className="px-4 py-2 text-right text-xs font-semibold uppercase text-slate-500 w-20">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {categoryItems.map((item) => {
+                      const margin = item.cost_price > 0 ? ((item.unit_price - item.cost_price) / item.cost_price * 100) : 0;
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-2.5">
+                            <p className="font-medium text-slate-900">{item.name}</p>
+                            {item.description && <p className="text-xs text-slate-400">{item.description}</p>}
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-red-600 font-medium">
+                            {item.cost_price ? `${item.cost_price.toFixed(2)}€` : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-emerald-700 font-bold">{item.unit_price.toFixed(2)}€</td>
+                          <td className="px-4 py-2.5 text-right">
+                            {item.cost_price > 0 ? (
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${margin > 50 ? "bg-emerald-100 text-emerald-700" : margin > 20 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                                {margin.toFixed(0)}%
+                              </span>
+                            ) : <span className="text-slate-300">-</span>}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            <div className="flex justify-end gap-1">
+                              <button onClick={() => editItem(item)} className="rounded p-1 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600" title="Editar">
+                                <Save className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => deleteItem(item.id)} className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Eliminar">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           ))}
