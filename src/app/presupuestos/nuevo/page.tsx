@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ChevronDown, ChevronRight, Copy } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Copy, Wand2, X } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Client {
@@ -62,11 +62,113 @@ export default function NuevoPresupuestoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showAddZone, setShowAddZone] = useState(false);
   const [customZoneName, setCustomZoneName] = useState("");
+  const [showAutoModal, setShowAutoModal] = useState(false);
+  const [autoType, setAutoType] = useState<"piso" | "chalet" | "local">("piso");
+  const [autoRooms, setAutoRooms] = useState(2);
+  const [autoBathrooms, setAutoBathrooms] = useState(1);
+  const [autoKitchen, setAutoKitchen] = useState(true);
 
   useEffect(() => {
     fetch("/api/clients").then((r) => r.json()).then(setClients);
     fetch("/api/catalog").then((r) => r.json()).then(setCatalog);
   }, []);
+
+  const generateAutoBudget = () => {
+    const newZones: Zone[] = [];
+
+    // Cuadro electrico
+    const totalCircuits = 5 + autoRooms + autoBathrooms + (autoKitchen ? 3 : 0);
+    const numDiferenciales = Math.ceil(totalCircuits / 5);
+    const cuadroItems: BudgetItem[] = [
+      { description: "Derivacion individual", quantity: 1, unit_price: 475 },
+      { description: "Cuadro electrico", quantity: 1, unit_price: 225 },
+      { description: "Protector sobretensiones", quantity: 1, unit_price: 110.90 },
+      { description: "Magnetotermico general", quantity: 1, unit_price: 57.60 },
+      { description: "Diferencial 30mA", quantity: numDiferenciales, unit_price: 45.50 },
+      { description: "Magnetotermico 2x16A", quantity: Math.ceil(totalCircuits * 0.6), unit_price: 47.50 },
+      { description: "Magnetotermico 2x10A (alumbrado)", quantity: Math.ceil(totalCircuits * 0.4), unit_price: 45.50 },
+      { description: "Timbre", quantity: 1, unit_price: 97 },
+      { description: "Peines conexion", quantity: 1, unit_price: 125 },
+      { description: "Rotulacion cuadro", quantity: 1, unit_price: 55 },
+    ];
+    newZones.push({ name: "Cuadro electrico", items: cuadroItems, collapsed: false });
+
+    // Habitaciones
+    for (let i = 1; i <= autoRooms; i++) {
+      const roomItems: BudgetItem[] = [
+        { description: "Enchufe", quantity: 5, unit_price: 67.50 },
+        { description: "Conmutador", quantity: 3, unit_price: 57.50 },
+        { description: "Interruptor", quantity: 2, unit_price: 57.60 },
+        { description: "Toma TV", quantity: 1, unit_price: 85.60 },
+        { description: "Toma RJ45", quantity: 1, unit_price: 85.65 },
+        { description: "Foco/punto de luz", quantity: 6, unit_price: 67.50 },
+      ];
+      newZones.push({ name: `Habitacion ${i}`, items: roomItems, collapsed: false });
+    }
+
+    // Cocina
+    if (autoKitchen) {
+      const kitchenItems: BudgetItem[] = [
+        { description: "Enchufe encimera", quantity: 4, unit_price: 67.50 },
+        { description: "Interruptor", quantity: 1, unit_price: 57.60 },
+        { description: "Foco/punto de luz", quantity: 3, unit_price: 67.50 },
+        { description: "Linea horno-vitroceramica", quantity: 1, unit_price: 102.50 },
+        { description: "Linea lavadora", quantity: 1, unit_price: 75.50 },
+        { description: "Linea lavavajillas", quantity: 1, unit_price: 75.50 },
+        { description: "Linea microondas", quantity: 1, unit_price: 75.50 },
+        { description: "Linea frigorifico", quantity: 1, unit_price: 75.50 },
+        { description: "Linea campana extractora", quantity: 1, unit_price: 68.50 },
+      ];
+      newZones.push({ name: "Cocina", items: kitchenItems, collapsed: false });
+    }
+
+    // Banos
+    for (let i = 1; i <= autoBathrooms; i++) {
+      const bathroomItems: BudgetItem[] = [
+        { description: "Enchufe", quantity: 2, unit_price: 67.50 },
+        { description: "Interruptor", quantity: 2, unit_price: 57.60 },
+        { description: "Foco/punto de luz", quantity: 4, unit_price: 67.50 },
+      ];
+      const name = autoBathrooms === 1 ? "Bano" : (i === 1 ? "Bano principal" : `Bano ${i}`);
+      newZones.push({ name, items: bathroomItems, collapsed: false });
+    }
+
+    // Salon
+    const salonItems: BudgetItem[] = [
+      { description: "Enchufe", quantity: 6, unit_price: 67.50 },
+      { description: "Conmutador", quantity: 4, unit_price: 57.50 },
+      { description: "Interruptor", quantity: 2, unit_price: 57.60 },
+      { description: "Foco/punto de luz", quantity: 8, unit_price: 67.50 },
+      { description: "Toma TV", quantity: 1, unit_price: 85.60 },
+      { description: "Toma RJ45", quantity: 2, unit_price: 85.65 },
+    ];
+    newZones.push({ name: "Salon", items: salonItems, collapsed: false });
+
+    // Entrada/Pasillo
+    const entradaItems: BudgetItem[] = [
+      { description: "Enchufe", quantity: 3, unit_price: 67.50 },
+      { description: "Conmutador", quantity: 3, unit_price: 57.50 },
+      { description: "Foco/punto de luz", quantity: 4, unit_price: 67.50 },
+    ];
+    newZones.push({ name: "Entrada/Pasillo", items: entradaItems, collapsed: false });
+
+    // Instalacion general
+    const generalItems: BudgetItem[] = [
+      { description: "Linea alumbrado", quantity: 1, unit_price: 68.50 },
+      { description: "Linea enchufes normales", quantity: 1, unit_price: 75.50 },
+      { description: "Linea enchufes humedos", quantity: 1, unit_price: 75.50 },
+      { description: "Linea caldera", quantity: 1, unit_price: 75.50 },
+      { description: "Picado de rozas", quantity: 1, unit_price: 780 },
+      { description: "Material instalacion", quantity: 1, unit_price: 485 },
+      { description: "Cuadro telecomunicaciones", quantity: 1, unit_price: 140 },
+      { description: "Switch red", quantity: 1, unit_price: 155 },
+    ];
+    newZones.push({ name: "Instalacion general", items: generalItems, collapsed: false });
+
+    setZones(newZones);
+    setShowAutoModal(false);
+    showToast("success", "Presupuesto generado automaticamente");
+  };
 
   const addZone = (zoneName: string) => {
     if (!zoneName.trim()) return;
@@ -243,7 +345,16 @@ export default function NuevoPresupuestoPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="card">
-          <h2 className="text-base font-semibold text-slate-900 mb-4">Datos generales</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-slate-900">Datos generales</h2>
+            <button
+              type="button"
+              onClick={() => setShowAutoModal(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 transition-colors"
+            >
+              <Wand2 className="h-4 w-4" /> Generar presupuesto automatico
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
@@ -496,6 +607,108 @@ export default function NuevoPresupuestoPage() {
           </button>
         </div>
       </form>
+
+      {/* Auto Budget Modal */}
+      {showAutoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5 text-amber-600" />
+                <h3 className="text-lg font-bold text-slate-900">Presupuesto automatico</h3>
+              </div>
+              <button
+                onClick={() => setShowAutoModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-600 mb-5">
+              Genera automaticamente todas las estancias con materiales y precios segun el tipo de vivienda.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de vivienda</label>
+                <select
+                  value={autoType}
+                  onChange={(e) => setAutoType(e.target.value as "piso" | "chalet" | "local")}
+                  className="input-field"
+                >
+                  <option value="piso">Piso</option>
+                  <option value="chalet">Chalet</option>
+                  <option value="local">Local comercial</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Numero de habitaciones: {autoRooms}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="6"
+                  value={autoRooms}
+                  onChange={(e) => setAutoRooms(parseInt(e.target.value))}
+                  className="w-full accent-blue-700"
+                />
+                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                  <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Numero de banos: {autoBathrooms}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  value={autoBathrooms}
+                  onChange={(e) => setAutoBathrooms(parseInt(e.target.value))}
+                  className="w-full accent-blue-700"
+                />
+                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                  <span>1</span><span>2</span><span>3</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoKitchen}
+                    onChange={(e) => setAutoKitchen(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-600"
+                  />
+                  <span className="text-sm font-medium text-slate-700">Cocina independiente</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={generateAutoBudget}
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
+              >
+                <Wand2 className="h-4 w-4" /> Generar
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAutoModal(false)}
+                className="btn-secondary flex-1"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

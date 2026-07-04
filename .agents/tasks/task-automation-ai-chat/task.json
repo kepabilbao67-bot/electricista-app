@@ -1,0 +1,8 @@
+{
+  "task_id": "task-automation-ai-chat",
+  "task_description": "Automation features (auto budget by housing type, dashboard alerts) and AI chat interface for normativa/REBT",
+  "status": "in_progress",
+  "feature_order": ["FEAT-006"],
+  "blocked_reason": null,
+  "verification": null
+}

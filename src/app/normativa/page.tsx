@@ -1,371 +1,432 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, CheckCircle, AlertTriangle, XCircle, BookOpen, Zap, Table } from "lucide-react";
-import {
-  searchKnowledge,
-  validateBudgetItems,
-  CIRCUITS_BASIC,
-  CIRCUITS_ELEVATED,
-  CABLE_SECTIONS,
-  ITC_DATABASE,
-} from "@/lib/rebt-data";
+import { useState, useRef, useEffect } from "react";
+import { Send, Zap, Bot, User } from "lucide-react";
 
-interface Budget {
+interface Message {
   id: string;
-  number: string;
-  client_name: string;
-  items: Array<{ description: string }>;
+  role: "user" | "assistant";
+  content: string;
 }
 
-type TabType = "consulta" | "tablas" | "validar";
+const SUGGESTION_CHIPS = [
+  "Secciones de cable",
+  "Circuitos minimos",
+  "Proteccion para horno",
+  "Electrificacion elevada",
+  "Caida de tension",
+];
+
+function generateResponse(query: string): string {
+  const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // Secciones / cable / mm
+  if (q.match(/secci[oó]n|cable|mm/)) {
+    return `**Tabla de secciones de cable (ITC-BT-19):**
+
+| Seccion | Intensidad max. | Uso tipico |
+|---------|----------------|------------|
+| 1.5 mm2 | 15A | Iluminacion (C1) |
+| 2.5 mm2 | 21A | Tomas generales (C2), frigorifico (C5) |
+| 4 mm2 | 27A | Lavadora, lavavajillas (C4) |
+| 6 mm2 | 36A | Cocina/horno (C3), calefaccion |
+| 10 mm2 | 50A | Derivacion individual |
+| 16 mm2 | 66A | Acometidas |
+| 25 mm2 | 84A | Lineas principales |
+
+Cable tipo H07V-K para instalacion interior bajo tubo. Caida de tension maxima: 3% en iluminacion, 5% en fuerza.`;
+  }
+
+  // Magnetotermico / proteccion / diferencial
+  if (q.match(/magnetot[eé]rmico|protecci[oó]n|diferencial/)) {
+    return `**Protecciones por circuito (ITC-BT-22/25):**
+
+| Circuito | Uso | PIA | Diferencial |
+|----------|-----|-----|-------------|
+| C1 | Iluminacion | 10A curva C | 30mA |
+| C2 | Tomas generales | 16A curva C | 30mA |
+| C3 | Cocina/horno | 25A curva C | 30mA |
+| C4 | Lavadora/lavavajillas | 20A curva C | 30mA |
+| C5 | Tomas bano/cocina | 16A curva C | 30mA |
+
+- IGA: 25A (basica) o 40A (elevada)
+- Diferencial 30mA OBLIGATORIO para todos los circuitos
+- Poder de corte minimo: 4500A (recomendado 6000A)
+- Se recomienda dividir en 2+ diferenciales para evitar corte total`;
+  }
+
+  // Circuitos / minimo / obligatorio
+  if (q.match(/circuito|m[ií]nimo|obligatorio/)) {
+    return `**Circuitos minimos obligatorios (ITC-BT-25):**
+
+**Electrificacion BASICA** (5750W, IGA 25A):
+- C1: Iluminacion - 1.5mm2, PIA 10A, max 30 puntos
+- C2: Tomas generales - 2.5mm2, PIA 16A, max 20 tomas
+- C3: Cocina y horno - 6mm2, PIA 25A, max 2 tomas
+- C4: Lavadora/lavavajillas/termo - 4mm2, PIA 20A, max 3 tomas
+- C5: Tomas bano y cocina - 2.5mm2, PIA 16A, max 6 tomas
+
+**Electrificacion ELEVADA** (9200W, IGA 40A): C1-C5 + C6 a C12
+- C6-C7: Iluminacion y tomas adicionales
+- C8: Calefaccion (6mm2, 25A)
+- C9: Aire acondicionado (6mm2, 25A)
+- C10: Secadora (2.5mm2, 16A)
+- C11: Automatizacion (1.5mm2, 10A)
+- C12: Tomas adicionales cocina/bano (2.5mm2, 16A)`;
+  }
+
+  // Horno / vitro
+  if (q.match(/horno|vitro|placa|inducci/)) {
+    return `**Horno / Vitroceramica / Placa de induccion:**
+
+- Circuito: C3 (Cocina y horno)
+- Seccion cable: **6 mm2** (H07V-K 3x6 mm2)
+- Proteccion: Magnetotermico **2x25A** curva C
+- Diferencial: 30mA obligatorio
+- Intensidad maxima: 36A
+- Toma: Base 25A (2P+T) encastrada
+
+Si la placa de induccion supera 5400W, considerar seccion de 10mm2 y magnetotermico de 32A.
+
+Precio instalacion tipica: linea horno-vitro 102.50 EUR`;
+  }
+
+  // Lavadora / lavavajillas
+  if (q.match(/lavadora|lavavajillas|secadora/)) {
+    return `**Lavadora / Lavavajillas / Secadora:**
+
+- Circuito: C4 (Lavadora, lavavajillas, termo)
+- Seccion cable: **2.5 mm2** (H07V-K 3x2.5 mm2) o 4mm2 si circuito compartido
+- Proteccion: Magnetotermico **2x20A** curva C
+- Diferencial: 30mA obligatorio
+- Intensidad maxima: 21A (2.5mm2) / 27A (4mm2)
+- Max 3 tomas por circuito C4
+
+Se recomienda circuito independiente para cada electrodomestico si la distancia supera 15m.
+
+Precio instalacion tipica: linea lavadora/lavavajillas 75.50 EUR cada una`;
+  }
+
+  // Alumbrado / luz
+  if (q.match(/alumbrado|luz|iluminaci|led|foco/)) {
+    return `**Circuito de alumbrado / iluminacion (C1):**
+
+- Seccion cable: **1.5 mm2** (H07V-K 3x1.5 mm2)
+- Proteccion: Magnetotermico **2x10A** curva C
+- Diferencial: 30mA obligatorio
+- Max 30 puntos de luz por circuito
+- Intensidad maxima: 15A
+
+En electrificacion elevada se anade C6 (iluminacion adicional) con las mismas caracteristicas.
+
+Precio instalacion tipica: linea alumbrado 68.50 EUR`;
+  }
+
+  // Enchufe / toma
+  if (q.match(/enchufe|toma(?!r)/)) {
+    return `**Tomas de corriente / Enchufes (C2):**
+
+- Seccion cable: **2.5 mm2** (H07V-K 3x2.5 mm2)
+- Proteccion: Magnetotermico **2x16A** curva C
+- Diferencial: 30mA obligatorio
+- Max 20 tomas por circuito
+- Intensidad maxima: 21A
+- Altura instalacion: 30cm del suelo (vivienda)
+
+Tomas de cocina y bano van en C5 (mismo cable 2.5mm2, PIA 16A, max 6 tomas).
+
+Precio instalacion tipica: enchufe 67.50 EUR`;
+  }
+
+  // Tierra
+  if (q.match(/tierra|pica|puesta/)) {
+    return `**Instalacion de puesta a tierra (ITC-BT-17):**
+
+- Obligatoria en TODA instalacion electrica
+- Resistencia maxima: tension contacto < 50V (24V locales humedos)
+- Con diferencial 30mA: R tierra < 800 ohmios (recomendado)
+- Formula: R = V / I = 50V / 0.03A = 1666 ohm (maximo teorico)
+
+**Componentes:**
+- Electrodo: pica acero-cobre minimo 2m
+- Conductor tierra: 16mm2 cobre desnudo enterrado
+- Conductor proteccion (amarillo-verde): en todos los circuitos
+- Borne principal de tierra en cuadro general
+- Equipotencialidad en banos (ITC-BT-27)
+
+Medicion periodica cada 5 anos obligatoria.`;
+  }
+
+  // Derivacion / individual
+  if (q.match(/derivaci[oó]n|individual/)) {
+    return `**Derivacion individual (ITC-BT-10):**
+
+Linea que conecta el contador con el cuadro general de la vivienda.
+
+- Seccion minima: **6 mm2** en cobre
+- Conductores: fase + neutro + proteccion + reserva
+- Tubo protector por zonas comunes del edificio
+- Cable tipo: RZ1-K (AS) 0.6/1kV
+
+**Caidas de tension maximas:**
+- Contadores centralizados: 1%
+- Contadores individuales: 0.5%
+
+**Diametros tubo segun seccion:**
+- 6mm2: tubo 32mm
+- 10mm2: tubo 32mm
+- 16mm2: tubo 40mm
+- 25mm2: tubo 50mm
+
+Precio instalacion tipica: derivacion individual 475 EUR`;
+  }
+
+  // Electrificacion / basica / elevada
+  if (q.match(/electrificaci[oó]n|b[aá]sica|elevada/)) {
+    return `**Grados de electrificacion (ITC-BT-25):**
+
+**BASICA** - Se aplica cuando:
+- Viviendas < 160 m2
+- Sin calefaccion electrica
+- Sin aire acondicionado
+- Sin automatizacion
+- Potencia: 5750W | IGA: 25A | Circuitos: C1-C5
+
+**ELEVADA** - Se aplica cuando:
+- Viviendas > 160 m2
+- Con calefaccion electrica
+- Con aire acondicionado
+- Con sistema de automatizacion
+- Con secadora
+- Potencia: 9200W | IGA: 40A | Circuitos: C1-C12
+
+La eleccion determina el numero de circuitos, la potencia contratada y las protecciones del cuadro.`;
+  }
+
+  // Caida / tension
+  if (q.match(/ca[ií]da|tensi[oó]n/)) {
+    return `**Caida de tension (ITC-BT-19):**
+
+**Limites maximos permitidos:**
+- Iluminacion: **3%**
+- Otros usos (fuerza): **5%**
+- Derivacion individual: 1% (centralizado) / 0.5% (individual)
+
+**Formula (monofasico):**
+e(%) = (2 x L x I x cos(phi)) / (conductividad x S x V) x 100
+
+Donde:
+- L = longitud en metros
+- I = intensidad en amperios
+- cos(phi) = factor de potencia (0.8-1)
+- conductividad Cu = 56 m/(ohm*mm2)
+- S = seccion en mm2
+- V = tension (230V monofasico)
+
+**Ejemplo:** Cable 2.5mm2, 20m, 16A, cos=1:
+e = (2x20x16x1) / (56x2.5x230) x 100 = 1.98% (OK, <5%)`;
+  }
+
+  // Precio / cobrar
+  if (q.match(/precio|cobrar|costar|vale|tarifa|cuesta/)) {
+    return `**Precios orientativos de instalacion:**
+
+**Cuadro electrico:**
+- Derivacion individual: 475 EUR
+- Cuadro: 225 EUR
+- Sobretensiones: 110.90 EUR
+- Magnetotermico general: 57.60 EUR
+- Diferenciales: 45.50 EUR/ud
+- Magnetotermicos 2x16: 47.50 EUR
+- Magnetotermicos 2x10: 45.50 EUR
+- Timbre: 97 EUR | Peines: 125 EUR | Rotulacion: 55 EUR
+
+**Por estancia:**
+- Enchufe: 67.50 EUR | Conmutador: 57.50 EUR | Interruptor: 57.60 EUR
+- Toma TV: 85.60 EUR | RJ45: 85.65 EUR | Foco: 67.50 EUR
+
+**Lineas:**
+- Horno-vitro: 102.50 EUR | Lavadora/lavavajillas: 75.50 EUR
+- Alumbrado: 68.50 EUR | Enchufes: 75.50 EUR | Caldera: 75.50 EUR
+
+**General:**
+- Picado rozas: 780 EUR | Material: 485 EUR
+- Cuadro telecomunicaciones: 140 EUR | Switch: 155 EUR`;
+  }
+
+  // Piso / vivienda / habitaciones
+  if (q.match(/piso|vivienda|habitaci|chalet|local/)) {
+    return `**Circuitos segun tipo de vivienda (ITC-BT-25):**
+
+**Piso standard (2-3 hab):**
+- Electrificacion basica: 5 circuitos (C1-C5)
+- Potencia: 5750W | IGA: 25A
+- 1 diferencial 30mA, 5 magnetotermicos
+
+**Piso grande (4+ hab) o chalet:**
+- Electrificacion elevada: hasta 12 circuitos (C1-C12)
+- Potencia: 9200W | IGA: 40A
+- 2+ diferenciales 30mA, 10+ magnetotermicos
+- Circuitos adicionales: calefaccion, A/C, secadora
+
+**Local comercial:**
+- Segun ITC-BT-28 (locales publica concurrencia)
+- Alumbrado de emergencia obligatorio
+- Cuadro con cerradura
+- Diferencial selectivo + instantaneos
+
+Usa el boton "Generar presupuesto automatico" en la seccion de presupuestos para calcular automaticamente las estancias y materiales.`;
+  }
+
+  // Default
+  return `No tengo informacion especifica sobre eso. Puedo ayudarte con estos temas:
+
+- **Secciones de cable** - Tabla completa por circuito
+- **Circuitos minimos** - Obligatorios segun ITC-BT-25
+- **Protecciones** - Magnetotermicos y diferenciales
+- **Horno/vitro** - Seccion y proteccion necesaria
+- **Lavadora/lavavajillas** - Circuito C4
+- **Alumbrado** - Circuito C1
+- **Enchufes** - Tomas generales C2
+- **Puesta a tierra** - ITC-BT-17
+- **Derivacion individual** - ITC-BT-10
+- **Electrificacion** - Basica vs elevada
+- **Caida de tension** - Formulas y limites
+- **Precios** - Tarifas orientativas del catalogo
+- **Viviendas** - Circuitos segun tipo
+
+Escribe tu pregunta o pulsa una de las sugerencias de abajo.`;
+}
 
 export default function NormativaPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("consulta");
-  const [query, setQuery] = useState("");
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [selectedBudgetId, setSelectedBudgetId] = useState("");
-  const [validation, setValidation] = useState<{
-    valid: boolean;
-    missing: string[];
-    warnings: string[];
-  } | null>(null);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content: "Hola! Soy tu asistente de normativa electrica (REBT). Puedo ayudarte con secciones de cable, protecciones, circuitos obligatorios, caidas de tension, precios y mucho mas.\n\nEscribe tu pregunta o usa las sugerencias rapidas de abajo.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/budgets")
-      .then((r) => r.json())
-      .then((data) => {
-        // Fetch details for each budget to get items
-        const fetchDetails = data.slice(0, 20).map((b: Budget) =>
-          fetch(`/api/budgets/${b.id}`).then((r) => r.json())
-        );
-        Promise.all(fetchDetails).then(setBudgets);
-      })
-      .catch(() => {});
-  }, []);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const handleSearch = () => {
-    if (!query.trim()) return;
-    const results = searchKnowledge(query);
-    setAnswers(results);
-  };
+  const handleSend = (text?: string) => {
+    const query = text || input.trim();
+    if (!query) return;
 
-  const handleValidate = () => {
-    const budget = budgets.find((b) => b.id === selectedBudgetId);
-    if (!budget || !budget.items) return;
-    const descriptions = budget.items.map((i) => i.description);
-    const result = validateBudgetItems(descriptions);
-    setValidation(result);
+    const userMsg: Message = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: query,
+    };
+
+    const response = generateResponse(query);
+    const assistantMsg: Message = {
+      id: `assistant-${Date.now()}`,
+      role: "assistant",
+      content: response,
+    };
+
+    setMessages((prev) => [...prev, userMsg, assistantMsg]);
+    setInput("");
+    inputRef.current?.focus();
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="max-w-3xl mx-auto flex flex-col h-[calc(100vh-8rem)]">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4 flex-shrink-0">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
           <Zap className="h-5 w-5 text-amber-600" />
         </div>
         <div>
-          <h1 className="page-title mb-0">Normativa REBT</h1>
-          <p className="page-subtitle">Reglamento Electrotecnico de Baja Tension - Consulta rapida</p>
+          <h1 className="text-lg font-bold text-slate-900">Asistente REBT</h1>
+          <p className="text-xs text-slate-500">Normativa electrica - Consulta rapida</p>
         </div>
       </div>
 
-      {/* ITC Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
-        {ITC_DATABASE.map((itc) => (
-          <div key={itc.code} className="card p-3">
-            <p className="text-xs font-bold text-blue-700">{itc.code}</p>
-            <p className="text-[11px] text-slate-600 mt-0.5 line-clamp-2">{itc.title}</p>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto space-y-4 pb-4 pr-1">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`flex items-start gap-2 max-w-[85%] ${
+                msg.role === "user" ? "flex-row-reverse" : "flex-row"
+              }`}
+            >
+              <div
+                className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
+                  msg.role === "user"
+                    ? "bg-indigo-600"
+                    : "bg-slate-200"
+                }`}
+              >
+                {msg.role === "user" ? (
+                  <User className="h-3.5 w-3.5 text-white" />
+                ) : (
+                  <Bot className="h-3.5 w-3.5 text-slate-600" />
+                )}
+              </div>
+              <div
+                className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                  msg.role === "user"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white border border-slate-200 text-slate-700 shadow-sm"
+                }`}
+              >
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+              </div>
+            </div>
           </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Suggestion Chips */}
+      <div className="flex flex-wrap gap-2 pb-3 flex-shrink-0">
+        {SUGGESTION_CHIPS.map((chip) => (
+          <button
+            key={chip}
+            onClick={() => handleSend(chip)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition-colors shadow-sm"
+          >
+            {chip}
+          </button>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-slate-100 rounded-lg p-1">
+      {/* Input */}
+      <div className="flex-shrink-0 flex gap-2 border-t border-slate-200 pt-3">
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Pregunta sobre normativa electrica..."
+          className="input-field flex-1"
+        />
         <button
-          onClick={() => setActiveTab("consulta")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "consulta" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-          }`}
+          onClick={() => handleSend()}
+          disabled={!input.trim()}
+          className="btn-primary flex items-center gap-2 disabled:opacity-50"
         >
-          <Search className="h-4 w-4" /> Consulta
-        </button>
-        <button
-          onClick={() => setActiveTab("tablas")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "tablas" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <Table className="h-4 w-4" /> Tablas
-        </button>
-        <button
-          onClick={() => setActiveTab("validar")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "validar" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <CheckCircle className="h-4 w-4" /> Validar presupuesto
+          <Send className="h-4 w-4" />
+          <span className="hidden sm:inline">Enviar</span>
         </button>
       </div>
-
-      {/* Consulta Tab */}
-      {activeTab === "consulta" && (
-        <div className="space-y-4">
-          <div className="card">
-            <div className="flex gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Ej: que seccion para un horno, circuitos minimos elevada, diferencial obligatorio..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-                  className="input-field pl-10"
-                />
-              </div>
-              <button onClick={handleSearch} className="btn-primary whitespace-nowrap">
-                Consultar
-              </button>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <span className="text-xs text-slate-500">Sugerencias:</span>
-              {["seccion horno", "circuitos basica", "diferencial", "tierra", "bano volumenes", "derivacion individual"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => { setQuery(s); }}
-                  className="rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {answers.length > 0 && (
-            <div className="space-y-3">
-              {answers.map((answer, idx) => (
-                <div key={idx} className="card border-l-4 border-l-blue-500">
-                  <div className="flex items-start gap-3">
-                    <BookOpen className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                    <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">{answer}</pre>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tablas Tab */}
-      {activeTab === "tablas" && (
-        <div className="space-y-6">
-          {/* Cable Sections */}
-          <div className="card">
-            <h3 className="text-base font-semibold text-slate-900 mb-3 flex items-center gap-2">
-              <Zap className="h-4 w-4 text-amber-500" />
-              Tabla de secciones de cable (ITC-BT-19)
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Seccion</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Intensidad max.</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Uso tipico</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {CABLE_SECTIONS.map((cs) => (
-                    <tr key={cs.section}>
-                      <td className="px-3 py-2 font-medium text-blue-700">{cs.section}</td>
-                      <td className="px-3 py-2">{cs.maxIntensity}A</td>
-                      <td className="px-3 py-2 text-slate-600">{cs.typicalUse}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Basic Electrification */}
-          <div className="card">
-            <h3 className="text-base font-semibold text-slate-900 mb-3">
-              Circuitos electrificacion BASICA (5750W, IGA 25A)
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Circuito</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Descripcion</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Seccion</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Proteccion</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Max puntos</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {CIRCUITS_BASIC.map((c) => (
-                    <tr key={c.id}>
-                      <td className="px-3 py-2 font-medium text-blue-700">{c.id}</td>
-                      <td className="px-3 py-2">{c.description}</td>
-                      <td className="px-3 py-2">{c.section} mm2</td>
-                      <td className="px-3 py-2">{c.protection}</td>
-                      <td className="px-3 py-2">{c.maxPoints}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Elevated Electrification */}
-          <div className="card">
-            <h3 className="text-base font-semibold text-slate-900 mb-3">
-              Circuitos electrificacion ELEVADA (9200W, IGA 40A)
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Circuito</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Descripcion</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Seccion</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Proteccion</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Max puntos</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {CIRCUITS_ELEVATED.map((c) => (
-                    <tr key={c.id}>
-                      <td className="px-3 py-2 font-medium text-blue-700">{c.id}</td>
-                      <td className="px-3 py-2">{c.description}</td>
-                      <td className="px-3 py-2">{c.section} mm2</td>
-                      <td className="px-3 py-2">{c.protection}</td>
-                      <td className="px-3 py-2">{c.maxPoints}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Magnetotermicos Table */}
-          <div className="card">
-            <h3 className="text-base font-semibold text-slate-900 mb-3">
-              Magnetotermicos por circuito (ITC-BT-22)
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Circuito</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Uso</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">PIA</th>
-                    <th className="px-3 py-2 text-left font-medium text-slate-700">Conductor</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {CIRCUITS_BASIC.map((c) => (
-                    <tr key={c.id}>
-                      <td className="px-3 py-2 font-medium text-blue-700">{c.id}</td>
-                      <td className="px-3 py-2">{c.name.replace(`${c.id} - `, "")}</td>
-                      <td className="px-3 py-2 font-medium">{c.protection}</td>
-                      <td className="px-3 py-2 text-slate-600">{c.conductor}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Validar Tab */}
-      {activeTab === "validar" && (
-        <div className="space-y-4">
-          <div className="card">
-            <h3 className="text-base font-semibold text-slate-900 mb-3">Validar presupuesto contra normativa</h3>
-            <p className="text-sm text-slate-600 mb-4">
-              Selecciona un presupuesto para verificar si cumple con los circuitos obligatorios segun ITC-BT-25.
-            </p>
-            <div className="flex gap-3">
-              <select
-                value={selectedBudgetId}
-                onChange={(e) => { setSelectedBudgetId(e.target.value); setValidation(null); }}
-                className="input-field flex-1"
-              >
-                <option value="">Seleccionar presupuesto...</option>
-                {budgets.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.number} - {b.client_name}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={handleValidate}
-                disabled={!selectedBudgetId}
-                className="btn-primary whitespace-nowrap disabled:opacity-50"
-              >
-                Validar presupuesto
-              </button>
-            </div>
-          </div>
-
-          {validation && (
-            <div className="card">
-              <div className="flex items-center gap-2 mb-4">
-                {validation.valid ? (
-                  <>
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <h3 className="text-base font-semibold text-green-700">Presupuesto cumple con normativa basica</h3>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-5 w-5 text-red-500" />
-                    <h3 className="text-base font-semibold text-red-700">Se han detectado posibles incumplimientos</h3>
-                  </>
-                )}
-              </div>
-
-              {validation.missing.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-red-700 mb-2">Circuitos obligatorios no detectados:</p>
-                  <div className="space-y-1">
-                    {validation.missing.map((m) => (
-                      <div key={m} className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-                        <XCircle className="h-4 w-4 flex-shrink-0" />
-                        <span>{m}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {validation.warnings.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-amber-700 mb-2">Advertencias:</p>
-                  <div className="space-y-1">
-                    {validation.warnings.map((w) => (
-                      <div key={w} className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-                        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                        <span>{w}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {validation.valid && (
-                <p className="text-sm text-green-600">
-                  Todos los circuitos obligatorios y protecciones parecen estar incluidos en el presupuesto.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

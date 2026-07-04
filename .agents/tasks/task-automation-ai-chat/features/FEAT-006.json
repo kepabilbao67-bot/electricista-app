@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-006",
+  "type": "feat",
+  "description": "Automation features and AI chat: auto budget generator by housing type, dashboard alerts (overdue invoices, expiring budgets, today visits), and rewrite normativa page as chat interface with keyword-based intelligent responses.",
+  "status": "in_progress",
+  "steps": [
+    "Add auto budget modal to presupuestos/nuevo with housing type, rooms, bathrooms, kitchen options and price generation logic",
+    "Add alerts section to dashboard (overdue invoices >30 days, budgets expiring <3 days, today visits)",
+    "Rewrite normativa/page.tsx as chat interface with message bubbles, suggestion chips, and keyword-based response system"
+  ],
+  "acceptance_criteria": [
+    "Budget page has 'Generar presupuesto automatico' button that opens modal",
+    "Modal asks for tipo (piso/chalet/local), habitaciones (1-6), banos (1-3), cocina independiente (si/no)",
+    "Auto-generated budget includes cuadro electrico, rooms, kitchen, bathrooms, salon, entrada/pasillo, general items with specified prices",
+    "Dashboard shows alerts section with overdue invoices (>30 days, red), expiring budgets (<3 days, orange), today visits (blue)",
+    "Normativa page is a chat interface with messages (user right, assistant left)",
+    "Chat has welcome message and suggestion chips",
+    "Keyword-based responses cover all specified topics (seccion, magnetotermico, circuito, horno, lavadora, alumbrado, enchufe, tierra, derivacion, electrificacion, caida, precio, piso)",
+    "npx next build passes without errors"
+  ],
+  "verification": ["Run `npx next build` in /projects/sandbox/electricista-app and confirm successful build"],
+  "blocked_reason": null,
+  "findings": null
+}

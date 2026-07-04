@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, ClipboardList, Calendar, Euro, Clock, ArrowRight, Users, MessageSquare, BarChart3, TrendingUp, TrendingDown } from "lucide-react";
+import { FileText, ClipboardList, Calendar, Euro, Clock, ArrowRight, Users, MessageSquare, BarChart3, TrendingUp, TrendingDown, AlertTriangle, AlertCircle, Bell } from "lucide-react";
 
 interface MonthlyBilling { month: string; year: number; total: number; }
 interface TopClient { name: string; total: number; }
+interface AlertOverdueInvoice { id: string; number: string; total: number; date: string; client_name: string; }
+interface AlertExpiringBudget { id: string; number: string; valid_until: string; client_name: string; }
+interface AlertTodayVisit { id: string; title: string; time: string; client_name: string; }
+
 interface DashboardData {
   totalFacturacion: number;
   facturasPendientes: number;
@@ -18,6 +22,11 @@ interface DashboardData {
   topClients: TopClient[];
   thisMonthTotal: number;
   lastMonthTotal: number;
+  alerts: {
+    overdueInvoices: AlertOverdueInvoice[];
+    expiringBudgets: AlertExpiringBudget[];
+    todayVisits: AlertTodayVisit[];
+  };
   ultimasFacturas: Array<{ id: string; number: string; client_name: string; total: number; status: string; date: string; }>;
   proximasVisitasList: Array<{ id: string; title: string; client_name: string; date: string; time: string; address: string; }>;
 }
@@ -101,6 +110,79 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Alerts Section */}
+      {data?.alerts && (data.alerts.overdueInvoices.length > 0 || data.alerts.expiringBudgets.length > 0 || data.alerts.todayVisits.length > 0) && (
+        <div className="mb-8 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Bell className="h-4 w-4 text-slate-600" />
+            <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">Alertas</h2>
+          </div>
+
+          {data.alerts.overdueInvoices.length > 0 && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm font-semibold text-red-800">Facturas pendientes de cobro &gt;30 dias</span>
+              </div>
+              <div className="space-y-1.5">
+                {data.alerts.overdueInvoices.map((inv) => (
+                  <Link key={inv.id} href={`/facturas/${inv.id}`} className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm hover:bg-white transition-colors">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-red-700">{inv.number}</span>
+                      <span className="text-slate-600">{inv.client_name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-slate-500">{formatDate(inv.date)}</span>
+                      <span className="font-bold text-red-700">{inv.total.toFixed(2)} EUR</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.alerts.expiringBudgets.length > 0 && (
+            <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-semibold text-orange-800">Presupuestos que caducan en menos de 3 dias</span>
+              </div>
+              <div className="space-y-1.5">
+                {data.alerts.expiringBudgets.map((budget) => (
+                  <Link key={budget.id} href={`/presupuestos/${budget.id}`} className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm hover:bg-white transition-colors">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-orange-700">{budget.number}</span>
+                      <span className="text-slate-600">{budget.client_name}</span>
+                    </div>
+                    <span className="text-xs text-orange-700 font-medium">Caduca: {formatDate(budget.valid_until)}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.alerts.todayVisits.length > 0 && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-800">Visitas de hoy</span>
+              </div>
+              <div className="space-y-1.5">
+                {data.alerts.todayVisits.map((visit) => (
+                  <Link key={visit.id} href="/agenda" className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm hover:bg-white transition-colors">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-blue-700">{visit.title}</span>
+                      <span className="text-slate-600">{visit.client_name}</span>
+                    </div>
+                    {visit.time && <span className="text-xs text-blue-700 font-medium">{visit.time}</span>}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-8">
         {kpis.map((kpi) => (
