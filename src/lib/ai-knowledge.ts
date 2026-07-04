@@ -513,7 +513,6 @@ Puedes ofrecer esto como servicio adicional en presupuestos de reforma integral.
 
 Pregúntame cualquier duda concreta sobre cómo hacer algo en la app.`,
   },
-];
 
   // ============ MATERIALES Y PROVEEDORES ============
   {
