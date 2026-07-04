@@ -8,7 +8,7 @@ export async function GET() {
     const result = await db.execute(
       `SELECT invoices.number, invoices.date, invoices.status, invoices.subtotal, 
               invoices.tax_rate, invoices.tax_amount, invoices.total, invoices.notes,
-              invoices.ticketbai_id, invoices.payment_method,
+              invoices.ticketbai_id,
               clients.name as client_name, clients.nif as client_nif
        FROM invoices 
        LEFT JOIN clients ON invoices.client_id = clients.id 
@@ -23,7 +23,7 @@ export async function GET() {
       overdue: "Vencida",
     };
 
-    const headers = ["Numero", "Fecha", "Cliente", "NIF Cliente", "Estado", "Base Imponible", "IVA %", "Cuota IVA", "Total", "Forma Pago", "TicketBAI", "Notas"];
+    const headers = ["Numero", "Fecha", "Cliente", "NIF Cliente", "Estado", "Base Imponible", "IVA %", "Cuota IVA", "Total", "TicketBAI", "Notas"];
     const rows = result.rows.map((row) => [
       row.number || "",
       row.date || "",
@@ -34,7 +34,6 @@ export async function GET() {
       row.tax_rate || 21,
       row.tax_amount || 0,
       row.total || 0,
-      row.payment_method || "",
       row.ticketbai_id || "",
       row.notes || "",
     ]);
