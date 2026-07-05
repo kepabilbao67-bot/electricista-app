@@ -48,6 +48,124 @@ export function getDbClient(): Client {
   return client;
 }
 
+/**
+ * Anade columnas faltantes a una tabla ya existente, de forma idempotente.
+ * Usa PRAGMA table_info para saber que columnas existen y solo hace ALTER de
+ * las que falten. Los defaults deben ser constantes (SQLite no permite
+ * defaults no constantes como datetime('now') al hacer ADD COLUMN).
+ */
+async function ensureColumns(
+  db: Client,
+  table: string,
+  columns: { name: string; def: string }[]
+): Promise<void> {
+  try {
+    const info = await db.execute(`PRAGMA table_info(${table})`);
+    const existing = new Set(info.rows.map((r) => String(r.name)));
+    for (const col of columns) {
+      if (!existing.has(col.name)) {
+        try {
+          await db.execute(`ALTER TABLE ${table} ADD COLUMN ${col.name} ${col.def}`);
+        } catch {
+          /* la columna ya existe o no se puede anadir; se ignora */
+        }
+      }
+    }
+  } catch {
+    /* la tabla puede no existir todavia; se ignora */
+  }
+}
+
+async function migrateSchema(db: Client): Promise<void> {
+  await ensureColumns(db, "clients", [
+    { name: "nif", def: "TEXT" },
+    { name: "email", def: "TEXT" },
+    { name: "phone", def: "TEXT" },
+    { name: "address", def: "TEXT" },
+    { name: "city", def: "TEXT" },
+    { name: "postal_code", def: "TEXT" },
+    { name: "province", def: "TEXT" },
+    { name: "notes", def: "TEXT" },
+    { name: "client_type", def: "TEXT DEFAULT 'particular'" },
+    { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "invoices", [
+    { name: "due_date", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'draft'" },
+    { name: "subtotal", def: "REAL DEFAULT 0" },
+    { name: "tax_rate", def: "REAL DEFAULT 21" },
+    { name: "tax_amount", def: "REAL DEFAULT 0" },
+    { name: "total", def: "REAL DEFAULT 0" },
+    { name: "notes", def: "TEXT" },
+    { name: "payment_method", def: "TEXT DEFAULT 'transferencia'" },
+    { name: "ticketbai_id", def: "TEXT" },
+    { name: "ticketbai_signature", def: "TEXT" },
+    { name: "ticketbai_qr", def: "TEXT" },
+    { name: "ticketbai_description", def: "TEXT" },
+    { name: "ticketbai_tipo_operacion", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "invoice_items", [
+    { name: "discount", def: "REAL DEFAULT 0" },
+    { name: "discount_type", def: "TEXT DEFAULT 'percent'" },
+    { name: "sort_order", def: "INTEGER DEFAULT 0" },
+  ]);
+
+  await ensureColumns(db, "budgets", [
+    { name: "valid_until", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'draft'" },
+    { name: "subtotal", def: "REAL DEFAULT 0" },
+    { name: "tax_rate", def: "REAL DEFAULT 21" },
+    { name: "tax_amount", def: "REAL DEFAULT 0" },
+    { name: "total", def: "REAL DEFAULT 0" },
+    { name: "notes", def: "TEXT" },
+    { name: "converted_invoice_id", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "budget_items", [
+    { name: "sort_order", def: "INTEGER DEFAULT 0" },
+  ]);
+
+  await ensureColumns(db, "communications", [
+    { name: "subject", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'sent'" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "calls", [
+    { name: "client_name", def: "TEXT" },
+    { name: "phone", def: "TEXT" },
+    { name: "direction", def: "TEXT DEFAULT 'incoming'" },
+    { name: "duration", def: "INTEGER" },
+    { name: "notes", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "visits", [
+    { name: "description", def: "TEXT" },
+    { name: "time", def: "TEXT" },
+    { name: "duration", def: "INTEGER DEFAULT 60" },
+    { name: "status", def: "TEXT DEFAULT 'scheduled'" },
+    { name: "address", def: "TEXT" },
+    { name: "notes", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "catalog_items", [
+    { name: "description", def: "TEXT" },
+    { name: "category", def: "TEXT" },
+    { name: "cost_price", def: "REAL DEFAULT 0" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+}
+
 export async function initializeDatabase(): Promise<void> {
   const db = getDbClient();
 
@@ -181,6 +299,12 @@ export async function initializeDatabase(): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Migracion: anade columnas que puedan faltar en tablas creadas por versiones
+  // antiguas de la app (el CREATE TABLE IF NOT EXISTS no modifica tablas ya
+  // existentes, asi que si la base de datos es vieja le faltan columnas nuevas
+  // y los INSERT fallan). Cada columna se anade solo si no existe.
+  await migrateSchema(db);
 
   // Seed catalog items if empty
   const result = await db.execute("SELECT COUNT(*) as count FROM catalog_items");

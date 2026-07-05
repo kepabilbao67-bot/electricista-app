@@ -46,7 +46,7 @@ export async function GET() {
     diagnostics.errorEscritura = (error instanceof Error ? error.message : String(error)).slice(0, 300);
   }
 
-  // 3) initializeDatabase (lo que usa el guardado real de clientes/facturas)
+  // 3) initializeDatabase (crea tablas y aplica la migracion de columnas)
   try {
     await initializeDatabase();
     diagnostics.initializeDatabase = "OK";
@@ -55,15 +55,32 @@ export async function GET() {
     diagnostics.errorInitialize = (error instanceof Error ? error.message : String(error)).slice(0, 300);
   }
 
+  // 4) PRUEBA REAL: insertar un cliente de prueba en la tabla clients y borrarlo.
+  //    Esto reproduce exactamente lo que falla al pulsar "Crear cliente".
+  try {
+    const testId = `healthcheck-${Date.now()}`;
+    await db.execute({
+      sql: `INSERT INTO clients (id, name, nif, email, phone, address, city, postal_code, province, notes, client_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [testId, "HEALTHCHECK", null, null, null, null, null, null, null, null, "particular"],
+    });
+    await db.execute({ sql: "DELETE FROM clients WHERE id = ?", args: [testId] });
+    diagnostics.pruebaGuardarCliente = "OK";
+  } catch (error: unknown) {
+    diagnostics.pruebaGuardarCliente = "ERROR";
+    diagnostics.errorGuardarCliente = (error instanceof Error ? error.message : String(error)).slice(0, 300);
+  }
+
   const todoOk =
     diagnostics.lectura === "OK" &&
     diagnostics.escritura === "OK" &&
-    diagnostics.initializeDatabase === "OK";
+    diagnostics.initializeDatabase === "OK" &&
+    diagnostics.pruebaGuardarCliente === "OK";
 
   return NextResponse.json({
     estado: todoOk ? "OK" : "ERROR",
     mensaje: todoOk
-      ? "Todo correcto: se puede leer, escribir y crear tablas. Los datos se guardan bien."
+      ? "Todo correcto: se puede leer, escribir, crear tablas y guardar clientes. La app funciona."
       : "Hay un problema. Revisa que campo pone ERROR y su mensaje.",
     ...diagnostics,
   });
