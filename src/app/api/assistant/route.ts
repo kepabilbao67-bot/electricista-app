@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { localAnswer, buildCatalogContext, CatalogItem } from "@/lib/ai-engine";
+import { checkAiSecret } from "@/lib/ai-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +106,9 @@ async function callLLM(
 
 export async function POST(request: NextRequest) {
   try {
+    const blocked = checkAiSecret(request);
+    if (blocked) return blocked;
+
     const body = await request.json().catch(() => ({}));
     const query = typeof body?.query === "string" ? body.query.trim() : "";
     const history: ChatMessage[] = Array.isArray(body?.history) ? body.history : [];
