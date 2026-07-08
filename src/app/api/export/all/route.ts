@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
+import { checkExportSecret } from "@/lib/export-guard";
 
 // Export all data as JSON (for backup or import to Airtable/Notion/Sheets)
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const blocked = checkExportSecret(request);
+  if (blocked) return blocked;
+
   try {
     await initializeDatabase();
     const db = getDbClient();
