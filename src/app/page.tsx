@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -96,8 +96,10 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <h1 className="page-title">Buenos dias, Ivan</h1>
-        <p className="page-subtitle capitalize">{today}</p>
+        <h1 className="page-title">Panel de control del autónomo</h1>
+        <p className="page-subtitle capitalize">
+          Resumen diario de facturación, clientes, tareas y actividad · {today}
+        </p>
       </div>
 
       <div className="mb-6">
