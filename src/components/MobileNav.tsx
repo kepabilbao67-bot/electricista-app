@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -27,8 +27,8 @@ const navItems = [
   { href: "/gastos", label: "Gastos", icon: Receipt },
   { href: "/comunicaciones", label: "Comunicaciones", icon: MessageSquare },
   { href: "/agenda", label: "Agenda", icon: Calendar },
-  { href: "/catalogo", label: "Catalogo", icon: Package },
-  { href: "/normativa", label: "Normativa REBT", icon: BookOpen },
+  { href: "/catalogo", label: "Servicios", icon: Package },
+  { href: "/normativa", label: "Normativa", icon: BookOpen },
   { href: "/exportar", label: "Exportar", icon: Download },
 ];
 
@@ -43,7 +43,7 @@ export function MobileNav() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 shadow-sm">
             <Zap className="h-4 w-4 text-amber-400" />
           </div>
-          <span className="font-bold text-slate-900 text-sm">ElectricistApp</span>
+          <span className="font-bold text-slate-900 text-sm">Autonomo360</span>
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -87,3 +87,4 @@ export function MobileNav() {
     </div>
   );
 }
+
