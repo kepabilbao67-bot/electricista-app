@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,8 +24,8 @@ const navItems = [
   { href: "/gastos", label: "Gastos", icon: Receipt },
   { href: "/comunicaciones", label: "Comunicaciones", icon: MessageSquare },
   { href: "/agenda", label: "Agenda", icon: Calendar },
-  { href: "/catalogo", label: "Catalogo", icon: Package },
-  { href: "/normativa", label: "Normativa REBT", icon: BookOpen },
+  { href: "/catalogo", label: "Servicios", icon: Package },
+  { href: "/normativa", label: "Normativa", icon: BookOpen },
   { href: "/exportar", label: "Exportar", icon: Download },
 ];
 
@@ -40,8 +40,8 @@ export function Sidebar() {
           <Zap className="h-5 w-5 text-amber-400" />
         </div>
         <div className="flex flex-col">
-          <span className="text-base font-bold text-white tracking-tight leading-tight">ElectricistApp</span>
-          <span className="text-[10px] text-slate-500 font-medium tracking-wide">GESTION PROFESIONAL</span>
+          <span className="text-base font-bold text-white tracking-tight leading-tight">Autonomo360</span>
+          <span className="text-[10px] text-slate-500 font-medium tracking-wide">GESTION PARA AUTONOMOS</span>
         </div>
       </div>
 
@@ -86,3 +86,6 @@ export function Sidebar() {
     </aside>
   );
 }
+
+
+
