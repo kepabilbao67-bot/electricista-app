@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -74,7 +74,7 @@ export default function Dashboard() {
     { label: "Pendiente de cobro", value: `${(data?.pendienteCobro ?? 0).toFixed(2)} EUR`, icon: Clock, gradient: "from-red-500 to-rose-600", href: "/facturas" },
     { label: "Facturas este mes", value: data?.facturasEsteMes ?? 0, icon: FileText, gradient: "from-blue-600 to-blue-800", href: "/facturas" },
     { label: "Presupuestos pendientes", value: data?.presupuestosPendientes ?? 0, icon: ClipboardList, gradient: "from-amber-500 to-orange-500", href: "/presupuestos" },
-    { label: "Proximas visitas", value: data?.proximasVisitas ?? 0, icon: Calendar, gradient: "from-purple-500 to-purple-600", href: "/agenda" },
+    { label: "Proximas tareas", value: data?.proximasVisitas ?? 0, icon: Calendar, gradient: "from-purple-500 to-purple-600", href: "/agenda" },
     { label: "Clientes activos", value: data?.clientesActivos ?? 0, icon: Users, gradient: "from-blue-700 to-blue-900", href: "/clientes" },
   ];
 
@@ -215,7 +215,7 @@ export default function Dashboard() {
         </div>
 
         <div className="card-static p-5 lg:col-span-2">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">Top 3 clientes por facturacion</h3>
+          <h3 className="text-sm font-semibold text-slate-700 mb-3">Top clientes por actividad</h3>
           {topClients.length === 0 ? (
             <p className="text-sm text-slate-400">Sin datos aun</p>
           ) : (
@@ -238,7 +238,7 @@ export default function Dashboard() {
       <div className="card-static mb-8">
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="h-5 w-5 text-blue-800" />
-          <h2 className="text-lg font-semibold text-slate-900">Facturacion mensual</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Resumen mensual</h2>
         </div>
         <div className="flex items-end justify-between gap-2 h-48 px-2">
           {monthlyBilling.map((month, idx) => {
@@ -260,7 +260,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card-static">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Ultimas facturas</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Ultimos documentos</h2>
             <Link href="/facturas" className="text-sm text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1">Ver todas <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
           <div className="space-y-3">
@@ -291,12 +291,12 @@ export default function Dashboard() {
 
         <div className="card-static">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Proximas visitas</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Proximas tareas</h2>
             <Link href="/agenda" className="text-sm text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1">Ver agenda <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
           <div className="space-y-3">
             {(data?.proximasVisitasList ?? []).length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No hay visitas programadas</p>
+              <p className="text-sm text-slate-400 text-center py-4">No hay tareas programadas</p>
             ) : (
               (data?.proximasVisitasList ?? []).map((visita) => (
                 <Link key={visita.id} href="/agenda" className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150">
@@ -320,3 +320,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
