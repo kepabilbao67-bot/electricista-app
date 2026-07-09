@@ -88,7 +88,7 @@ export default function Dashboard() {
   const quickActions = [
     { label: "Nueva factura", href: "/facturas/nueva", icon: FileText, color: "bg-blue-800 hover:bg-blue-900" },
     { label: "Nuevo presupuesto", href: "/presupuestos/nuevo", icon: ClipboardList, color: "bg-emerald-600 hover:bg-emerald-700" },
-    { label: "Nueva visita", href: "/agenda", icon: Calendar, color: "bg-purple-600 hover:bg-purple-700" },
+    { label: "Nueva tarea", href: "/agenda", icon: Calendar, color: "bg-purple-600 hover:bg-purple-700" },
     { label: "Nuevo cliente", href: "/clientes", icon: Users, color: "bg-amber-600 hover:bg-amber-700" },
     { label: "Enviar mensaje", href: "/comunicaciones", icon: MessageSquare, color: "bg-blue-600 hover:bg-blue-700" },
   ];
@@ -320,4 +320,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
 
