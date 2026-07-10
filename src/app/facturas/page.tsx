@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Eye, FileText, Search, Euro, Clock, CheckCircle2, AlertCircle, Copy } from "lucide-react";
+import { Plus, Eye, FileText, Search, Euro, Clock, CheckCircle2, AlertCircle, Copy, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Invoice {
@@ -76,6 +76,23 @@ export default function FacturasPage() {
       setInvoices(invoices.map((inv) => inv.id === invoiceId ? { ...inv, status: "paid" } : inv));
     } else {
       showToast("error", "Error al actualizar la factura");
+    }
+  };
+
+  const handleDelete = async (invoice: Invoice, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`¿Eliminar factura borrador ${invoice.number}? Esta accion no se puede deshacer.`)) return;
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}`, { method: "DELETE" });
+      if (res.ok) {
+        setInvoices(invoices.filter((inv) => inv.id !== invoice.id));
+        showToast("success", `Factura ${invoice.number} eliminada`);
+      } else {
+        showToast("error", "Error al eliminar la factura");
+      }
+    } catch {
+      showToast("error", "Error al eliminar la factura");
     }
   };
 
@@ -261,6 +278,15 @@ export default function FacturasPage() {
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
+                        {invoice.status === "draft" && !invoice.ticketbai_id && (
+                          <button
+                            onClick={(e) => handleDelete(invoice, e)}
+                            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                            title="Eliminar factura borrador"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         <Link
                           href={`/facturas/${invoice.id}`}
                           className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 transition-colors"
