@@ -1,6 +1,7 @@
 import { createClient, Client } from "@libsql/client";
 import { tmpdir } from "os";
 import { join } from "path";
+import { MATERIALES_DEMO } from "./materiales-demo";
 
 let client: Client;
 
@@ -306,31 +307,15 @@ export async function initializeDatabase(): Promise<void> {
   // y los INSERT fallan). Cada columna se anade solo si no existe.
   await migrateSchema(db);
 
-  // Seed catalog items if empty
+  // Seed catalog items if empty (usa materiales profesionales de MAT-001)
   const result = await db.execute("SELECT COUNT(*) as count FROM catalog_items");
   const count = result.rows[0].count as number;
 
   if (count === 0) {
-    const catalogItems = [
-      ["cat_01", "Cableado estructural", 150, "Instalacion"],
-      ["cat_02", "Cuadro electrico empotrar pladur", 130, "Cuadros"],
-      ["cat_03", "Magnetotermico general 2x25", 45.5, "Proteccion"],
-      ["cat_04", "Diferencial 2x40", 39.25, "Proteccion"],
-      ["cat_05", "Magnetotermico 2x16", 36.5, "Proteccion"],
-      ["cat_06", "Magnetotermico 2x10", 34.5, "Proteccion"],
-      ["cat_07", "Rotulacion cuadro", 50, "Cuadros"],
-      ["cat_08", "Linea alumbrado 3x1.5", 20, "Lineas"],
-      ["cat_09", "Linea fuerza 3x2.5", 20, "Lineas"],
-      ["cat_10", "Enchufes Niessen Zenit blanca", 25, "Mecanismos"],
-      ["cat_11", "Interruptores Niessen Zenit", 20, "Mecanismos"],
-      ["cat_12", "Material conexionado", 65, "Material"],
-      ["cat_13", "Apuntamiento proyectores", 800, "Instalacion"],
-    ];
-
-    for (const item of catalogItems) {
+    for (const mat of MATERIALES_DEMO) {
       await db.execute({
         sql: "INSERT INTO catalog_items (id, name, unit_price, category) VALUES (?, ?, ?, ?)",
-        args: [item[0], item[1], item[2], item[3]],
+        args: [mat.id, mat.name, mat.unit_price, mat.category],
       });
     }
   }
