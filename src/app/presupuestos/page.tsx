@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Eye, Copy, FileText, AlertTriangle } from "lucide-react";
+import { Plus, Eye, Copy, FileText, AlertTriangle, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Budget {
@@ -91,6 +91,21 @@ export default function PresupuestosPage() {
       showToast("error", "Error al duplicar el presupuesto");
     }
     setDuplicating(null);
+  };
+
+  const handleDelete = async (budget: Budget) => {
+    if (!confirm(`¿Eliminar presupuesto ${budget.number}? Esta accion no se puede deshacer.`)) return;
+    try {
+      const res = await fetch(`/api/budgets/${budget.id}`, { method: "DELETE" });
+      if (res.ok) {
+        setBudgets(budgets.filter((b) => b.id !== budget.id));
+        showToast("success", `Presupuesto ${budget.number} eliminado`);
+      } else {
+        showToast("error", "Error al eliminar el presupuesto");
+      }
+    } catch {
+      showToast("error", "Error al eliminar el presupuesto");
+    }
   };
 
   const handleConvert = async (budgetId: string) => {
@@ -205,6 +220,13 @@ export default function PresupuestosPage() {
                             <FileText className="h-3.5 w-3.5" />
                           </button>
                         )}
+                        <button
+                          onClick={() => handleDelete(budget)}
+                          className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                          title="Eliminar presupuesto"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
