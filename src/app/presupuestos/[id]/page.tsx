@@ -125,8 +125,33 @@ export default function PresupuestoDetailPage() {
       showToast("error", "Este cliente no tiene email asociado.");
       return;
     }
+
+    const statusLabel = budget.status === "draft" ? "Borrador" : budget.status === "sent" ? "Enviado" : budget.status === "accepted" ? "Aceptado" : budget.status === "rejected" ? "Rechazado" : budget.status;
+
+    // Construir detalle de conceptos
+    let conceptosText = "";
+    if (budget.items && budget.items.length > 0) {
+      conceptosText = "\n--- CONCEPTOS ---\n";
+      budget.items.forEach((item, idx) => {
+        const { desc } = parseZoneFromDescription(item.description);
+        const zone = item.description.match(/^\[([^\]]+)\]/) ? item.description.match(/^\[([^\]]+)\]/)![1] : "";
+        const label = zone ? `[${zone}] ${desc}` : desc;
+        conceptosText += `\n${idx + 1}. ${label}\n   Cantidad: ${item.quantity}\n   Precio unitario: ${item.unit_price.toFixed(2)} €\n   Total: ${item.total.toFixed(2)} €\n`;
+      });
+    }
+
+    // Construir totales
+    const totalesText = `\n--- TOTALES ---\nSubtotal: ${budget.subtotal.toFixed(2)} €\nIVA (${budget.tax_rate}%): ${budget.tax_amount.toFixed(2)} €\nTOTAL: ${budget.total.toFixed(2)} €`;
+
+    // Notas si existen
+    const notasText = budget.notes ? `\n\nNotas: ${budget.notes}` : "";
+
+    // Validez si existe
+    const validezText = budget.valid_until ? `\nVálido hasta: ${budget.valid_until}` : "";
+
     const subject = `Presupuesto ${budget.number} - Autonomo360`;
-    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nPresupuesto: ${budget.number}\nImporte: ${budget.total.toFixed(2)} EUR\nEstado: ${budget.status === "draft" ? "Borrador" : budget.status === "sent" ? "Enviado" : budget.status === "accepted" ? "Aceptado" : budget.status}\n\nPuedes revisarlo y responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
+    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\n--- DATOS DEL PRESUPUESTO ---\nNúmero: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nEstado: ${statusLabel}${validezText}\n${conceptosText}\n${totalesText}${notasText}\n\nPuedes revisarlo y responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
+
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(budget.client_email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = gmailUrl;
   };
