@@ -128,31 +128,49 @@ export default function PresupuestoDetailPage() {
 
     const statusLabel = budget.status === "draft" ? "Borrador" : budget.status === "sent" ? "Enviado" : budget.status === "accepted" ? "Aceptado" : budget.status === "rejected" ? "Rechazado" : budget.status;
 
-    // Construir detalle de conceptos
+    // Construir detalle de conceptos (compacto)
     let conceptosText = "";
     if (budget.items && budget.items.length > 0) {
-      conceptosText = "\n--- CONCEPTOS ---\n";
+      conceptosText = "\nConceptos:\n";
       budget.items.forEach((item, idx) => {
         const { desc } = parseZoneFromDescription(item.description);
         const zone = item.description.match(/^\[([^\]]+)\]/) ? item.description.match(/^\[([^\]]+)\]/)![1] : "";
         const label = zone ? `[${zone}] ${desc}` : desc;
-        conceptosText += `\n${idx + 1}. ${label}\n   Cantidad: ${item.quantity}\n   Precio unitario: ${item.unit_price.toFixed(2)} €\n   Total: ${item.total.toFixed(2)} €\n`;
+        conceptosText += `${idx + 1}. ${label} | Cant: ${item.quantity} | Precio: ${item.unit_price.toFixed(2)} € | Total: ${item.total.toFixed(2)} €\n`;
       });
     }
 
-    // Construir totales
-    const totalesText = `\n--- TOTALES ---\nSubtotal: ${budget.subtotal.toFixed(2)} €\nIVA (${budget.tax_rate}%): ${budget.tax_amount.toFixed(2)} €\nTOTAL: ${budget.total.toFixed(2)} €`;
-
-    // Notas si existen
-    const notasText = budget.notes ? `\n\nNotas: ${budget.notes}` : "";
-
-    // Validez si existe
-    const validezText = budget.valid_until ? `\nVálido hasta: ${budget.valid_until}` : "";
+    const totalesText = `\nSubtotal: ${budget.subtotal.toFixed(2)} €\nIVA (${budget.tax_rate}%): ${budget.tax_amount.toFixed(2)} €\nTotal: ${budget.total.toFixed(2)} €`;
+    const notasText = budget.notes ? `\nNotas: ${budget.notes}` : "";
+    const validezText = budget.valid_until ? ` | Válido hasta: ${budget.valid_until}` : "";
 
     const subject = `Presupuesto ${budget.number} - Autonomo360`;
-    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\n--- DATOS DEL PRESUPUESTO ---\nNúmero: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nEstado: ${statusLabel}${validezText}\n${conceptosText}\n${totalesText}${notasText}\n\nPuedes revisarlo y responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
 
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(budget.client_email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // Cuerpo completo
+    const bodyFull = `Hola,\n\nTe envío el presupuesto solicitado.\n\nNúmero: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nEstado: ${statusLabel}${validezText}\n${conceptosText}${totalesText}${notasText}\n\nPuedes revisarlo y responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
+
+    // Cuerpo resumido (fallback si URL es demasiado larga)
+    const bodyShort = `Hola,\n\nTe envío el presupuesto solicitado.\n\nNúmero: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}\n\nEl detalle completo del presupuesto es demasiado largo para incluirlo en este enlace. Puedes consultarlo directamente en la app o solicitar el PDF.\n\nUn saludo,\nKepa`;
+
+    // Construir URL con URLSearchParams
+    const buildGmailUrl = (body: string) => {
+      const params = new URLSearchParams({
+        view: "cm",
+        fs: "1",
+        to: budget.client_email!,
+        su: subject,
+        body,
+      });
+      return `https://mail.google.com/mail/?${params.toString()}`;
+    };
+
+    let gmailUrl = buildGmailUrl(bodyFull);
+
+    // Protección por longitud: Gmail rechaza URLs > ~8000 caracteres
+    if (gmailUrl.length > 7000) {
+      gmailUrl = buildGmailUrl(bodyShort);
+    }
+
     window.location.href = gmailUrl;
   };
 
