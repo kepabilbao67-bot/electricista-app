@@ -125,11 +125,10 @@ export default function PresupuestoDetailPage() {
       showToast("error", "Este cliente no tiene email asociado.");
       return;
     }
-    const subject = encodeURIComponent(`Presupuesto ${budget.number} - Autonomo360`);
-    const body = encodeURIComponent(
-      `Hola,\n\nTe envio el presupuesto solicitado.\n\nPresupuesto: ${budget.number}\nImporte: ${budget.total.toFixed(2)} EUR\nEstado: ${budget.status === "draft" ? "Borrador" : budget.status === "sent" ? "Enviado" : budget.status === "accepted" ? "Aceptado" : budget.status}\n\nPuedes revisarlo y responder a este correo si estas conforme o necesitas algun ajuste.\n\nUn saludo,\nKepa`
-    );
-    window.open(`mailto:${budget.client_email}?subject=${subject}&body=${body}`, "_self");
+    const subject = `Presupuesto ${budget.number} - Autonomo360`;
+    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nPresupuesto: ${budget.number}\nImporte: ${budget.total.toFixed(2)} EUR\nEstado: ${budget.status === "draft" ? "Borrador" : budget.status === "sent" ? "Enviado" : budget.status === "accepted" ? "Aceptado" : budget.status}\n\nPuedes revisarlo y responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(budget.client_email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = gmailUrl;
   };
 
   if (loading) {
@@ -177,7 +176,7 @@ export default function PresupuestoDetailPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <Mail className="h-4 w-4" />
-            Enviar por email
+            Enviar por Gmail
           </button>
           {!budget.converted_invoice_id && budget.status !== "rejected" && (
             <button
