@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, FileText, Send, Pencil } from "lucide-react";
+import { ArrowLeft, Printer, FileText, Send, Pencil, Mail } from "lucide-react";
+import { showToast } from "@/components/Toast";
 
 interface BudgetItem {
   id: string;
@@ -21,6 +22,7 @@ interface BudgetDetail {
   client_city: string;
   client_postal_code: string;
   client_province: string;
+  client_email?: string;
   date: string;
   valid_until: string;
   status: string;
@@ -113,6 +115,23 @@ export default function PresupuestoDetailPage() {
     setBudget({ ...budget, status: "sent" });
   };
 
+  const sendByEmail = () => {
+    if (!budget) return;
+    if (!budget.client_name) {
+      showToast("error", "Asigna un cliente con email antes de enviar este presupuesto.");
+      return;
+    }
+    if (!budget.client_email) {
+      showToast("error", "Este cliente no tiene email asociado.");
+      return;
+    }
+    const subject = encodeURIComponent(`Presupuesto ${budget.number} - Autonomo360`);
+    const body = encodeURIComponent(
+      `Hola,\n\nTe envio el presupuesto solicitado.\n\nPresupuesto: ${budget.number}\nImporte: ${budget.total.toFixed(2)} EUR\nEstado: ${budget.status === "draft" ? "Borrador" : budget.status === "sent" ? "Enviado" : budget.status === "accepted" ? "Aceptado" : budget.status}\n\nPuedes revisarlo y responder a este correo si estas conforme o necesitas algun ajuste.\n\nUn saludo,\nKepa`
+    );
+    window.open(`mailto:${budget.client_email}?subject=${subject}&body=${body}`, "_self");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -153,6 +172,13 @@ export default function PresupuestoDetailPage() {
               Marcar enviado
             </button>
           )}
+          <button
+            onClick={sendByEmail}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Mail className="h-4 w-4" />
+            Enviar por email
+          </button>
           {!budget.converted_invoice_id && budget.status !== "rejected" && (
             <button
               onClick={convertToInvoice}
