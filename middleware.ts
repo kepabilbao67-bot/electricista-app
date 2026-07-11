@@ -32,7 +32,8 @@ export function middleware(request: NextRequest) {
   if (authHeader?.startsWith("Basic ")) {
     const encoded = authHeader.slice("Basic ".length);
     try {
-      const decoded = atob(encoded);
+      const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+      const decoded = new TextDecoder("utf-8").decode(bytes);
       const separatorIndex = decoded.indexOf(":");
       const providedUser = decoded.slice(0, separatorIndex);
       const providedPassword = decoded.slice(separatorIndex + 1);
