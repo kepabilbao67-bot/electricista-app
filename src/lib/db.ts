@@ -226,7 +226,7 @@ export async function initializeDatabase(): Promise<void> {
     CREATE TABLE IF NOT EXISTS budgets (
       id TEXT PRIMARY KEY,
       number TEXT NOT NULL UNIQUE,
-      client_id TEXT NOT NULL,
+      client_id TEXT,
       date TEXT NOT NULL,
       valid_until TEXT,
       status TEXT DEFAULT 'draft',
