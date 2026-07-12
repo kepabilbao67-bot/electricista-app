@@ -126,52 +126,31 @@ export default function PresupuestoDetailPage() {
       return;
     }
 
-    const statusLabel = budget.status === "draft" ? "Borrador" : budget.status === "sent" ? "Enviado" : budget.status === "accepted" ? "Aceptado" : budget.status === "rejected" ? "Rechazado" : budget.status;
-
-    // Construir detalle de conceptos (compacto)
-    let conceptosText = "";
-    if (budget.items && budget.items.length > 0) {
-      conceptosText = "\nConceptos:\n";
-      budget.items.forEach((item, idx) => {
-        const { desc } = parseZoneFromDescription(item.description);
-        const zone = item.description.match(/^\[([^\]]+)\]/) ? item.description.match(/^\[([^\]]+)\]/)![1] : "";
-        const label = zone ? `[${zone}] ${desc}` : desc;
-        conceptosText += `${idx + 1}. ${label} | Cant: ${item.quantity} | Precio: ${item.unit_price.toFixed(2)} € | Total: ${item.total.toFixed(2)} €\n`;
-      });
-    }
-
-    const totalesText = `\nSubtotal: ${budget.subtotal.toFixed(2)} €\nIVA (${budget.tax_rate}%): ${budget.tax_amount.toFixed(2)} €\nTotal: ${budget.total.toFixed(2)} €`;
-    const notasText = budget.notes ? `\nNotas: ${budget.notes}` : "";
-    const validezText = budget.valid_until ? ` | Válido hasta: ${budget.valid_until}` : "";
+    const statusLabel =
+      budget.status === "draft"
+        ? "Borrador"
+        : budget.status === "sent"
+          ? "Enviado"
+          : budget.status === "accepted"
+            ? "Aceptado"
+            : budget.status === "rejected"
+              ? "Rechazado"
+              : budget.status;
 
     const subject = `Presupuesto ${budget.number} - Autonomo360`;
+    const validUntilLine = budget.valid_until ? `\nVálido hasta: ${budget.valid_until}` : "";
+    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nAdjunto el presupuesto en PDF para que puedas revisarlo con todos los conceptos, importes e IVA desglosados.\n\nResumen:\nPresupuesto: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}${validUntilLine}\n\nPuedes responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
 
-    // Cuerpo completo
-    const bodyFull = `Hola,\n\nTe envío el presupuesto solicitado.\n\nNúmero: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nEstado: ${statusLabel}${validezText}\n${conceptosText}${totalesText}${notasText}\n\nPuedes revisarlo y responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
+    const gmailParams = new URLSearchParams({
+      view: "cm",
+      fs: "1",
+      to: budget.client_email,
+      su: subject,
+      body,
+    });
 
-    // Cuerpo resumido (fallback si URL es demasiado larga)
-    const bodyShort = `Hola,\n\nTe envío el presupuesto solicitado.\n\nNúmero: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}\n\nEl detalle completo del presupuesto es demasiado largo para incluirlo en este enlace. Puedes consultarlo directamente en la app o solicitar el PDF.\n\nUn saludo,\nKepa`;
-
-    // Construir URL con URLSearchParams
-    const buildGmailUrl = (body: string) => {
-      const params = new URLSearchParams({
-        view: "cm",
-        fs: "1",
-        to: budget.client_email!,
-        su: subject,
-        body,
-      });
-      return `https://mail.google.com/mail/?${params.toString()}`;
-    };
-
-    let gmailUrl = buildGmailUrl(bodyFull);
-
-    // Protección por longitud: Gmail rechaza URLs > ~8000 caracteres
-    if (gmailUrl.length > 7000) {
-      gmailUrl = buildGmailUrl(bodyShort);
-    }
-
-    window.location.href = gmailUrl;
+    showToast("success", "Recuerda adjuntar el PDF del presupuesto en Gmail.");
+    window.location.href = `https://mail.google.com/mail/?${gmailParams.toString()}`;
   };
 
   if (loading) {
@@ -186,7 +165,6 @@ export default function PresupuestoDetailPage() {
     return <div className="text-center py-8 text-gray-500">Presupuesto no encontrado</div>;
   }
 
-  // Check if items have zone prefixes
   const hasZones = budget.items.some((item) => item.description.match(/^\[([^\]]+)\]/));
   const zoneGroups = hasZones ? groupItemsByZone(budget.items) : null;
 
@@ -236,7 +214,7 @@ export default function PresupuestoDetailPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             <Printer className="h-4 w-4" />
-            Imprimir
+            Guardar PDF / Imprimir
           </button>
         </div>
       </div>
@@ -271,7 +249,6 @@ export default function PresupuestoDetailPage() {
           )}
         </div>
 
-        {/* Grouped by zones */}
         {zoneGroups ? (
           <div className="space-y-6 mb-6">
             {zoneGroups.map((group) => (
