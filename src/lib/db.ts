@@ -165,6 +165,43 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "cost_price", def: "REAL DEFAULT 0" },
     { name: "created_at", def: "TEXT" },
   ]);
+
+  // Migración: hacer budgets.client_id nullable en tablas existentes.
+  // SQLite no permite ALTER COLUMN, así que reconstruimos la tabla si es NOT NULL.
+  try {
+    const info = await db.execute("PRAGMA table_info(budgets)");
+    const clientIdCol = info.rows.find((r) => String(r.name) === "client_id");
+    if (clientIdCol && Number(clientIdCol.notnull) === 1) {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS budgets_new (
+          id TEXT PRIMARY KEY,
+          number TEXT NOT NULL UNIQUE,
+          client_id TEXT,
+          date TEXT NOT NULL,
+          valid_until TEXT,
+          status TEXT DEFAULT 'draft',
+          subtotal REAL DEFAULT 0,
+          tax_rate REAL DEFAULT 21,
+          tax_amount REAL DEFAULT 0,
+          total REAL DEFAULT 0,
+          notes TEXT,
+          converted_invoice_id TEXT,
+          created_at TEXT,
+          updated_at TEXT,
+          FOREIGN KEY (client_id) REFERENCES clients(id),
+          FOREIGN KEY (converted_invoice_id) REFERENCES invoices(id)
+        )
+      `);
+      await db.execute(`
+        INSERT OR IGNORE INTO budgets_new (id, number, client_id, date, valid_until, status, subtotal, tax_rate, tax_amount, total, notes, converted_invoice_id, created_at, updated_at)
+        SELECT id, number, client_id, date, valid_until, status, subtotal, tax_rate, tax_amount, total, notes, converted_invoice_id, created_at, updated_at FROM budgets
+      `);
+      await db.execute("DROP TABLE budgets");
+      await db.execute("ALTER TABLE budgets_new RENAME TO budgets");
+    }
+  } catch {
+    /* migración no crítica: si falla, la tabla nueva ya es nullable */
+  }
 }
 
 export async function initializeDatabase(): Promise<void> {
