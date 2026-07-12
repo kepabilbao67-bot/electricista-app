@@ -219,7 +219,11 @@ export default function PresupuestoDetailPage() {
         </div>
       </div>
 
-      <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none">
+      <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none relative overflow-hidden">
+        {/* Marca de agua PRESUPUESTO */}
+        <div className="print-watermark text-gray-400">PRESUPUESTO</div>
+
+        <div className="relative z-10">
         <div className="flex justify-between items-start mb-8">
           <div>
             <h2 className="text-xl font-bold text-gray-900">MARTIN OYARZABAL, IVAN</h2>
@@ -333,6 +337,7 @@ export default function PresupuestoDetailPage() {
             <p className="text-sm text-gray-500">{budget.notes}</p>
           </div>
         )}
+        </div>{/* end relative z-10 */}
       </div>
     </div>
   );
