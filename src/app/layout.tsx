@@ -33,13 +33,39 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <style>{`
+          @media print {
+            html,
+            body,
+            .app-shell,
+            .app-content,
+            .app-main {
+              display: block !important;
+              height: auto !important;
+              min-height: 0 !important;
+              max-height: none !important;
+              overflow: visible !important;
+            }
+
+            .app-main {
+              width: 100% !important;
+              padding: 0 !important;
+            }
+
+            aside,
+            nav,
+            button {
+              display: none !important;
+            }
+          }
+        `}</style>
       </head>
       <body className="bg-slate-50 text-slate-900 antialiased">
-        <div className="flex h-[100dvh] overflow-hidden">
+        <div className="app-shell flex h-[100dvh] overflow-hidden">
           <Sidebar />
-          <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+          <div className="app-content flex flex-1 flex-col overflow-hidden min-w-0">
             <MobileNav />
-            <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 lg:p-8">
+            <main className="app-main flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 lg:p-8">
               {children}
             </main>
           </div>
