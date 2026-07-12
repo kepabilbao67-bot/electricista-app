@@ -220,7 +220,7 @@ export default function PresupuestoDetailPage() {
       </div>
 
       <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none">
-        <div className="flex justify-between mb-4">
+        <div className="flex justify-between items-start mb-8">
           <div>
             <h2 className="text-xl font-bold text-gray-900">MARTIN OYARZABAL, IVAN</h2>
             <p className="text-sm text-gray-500">NIF: 16063731W</p>
@@ -229,6 +229,20 @@ export default function PresupuestoDetailPage() {
             <p className="text-sm text-gray-500">Teléfono: 609421750</p>
             <p className="text-sm text-gray-500">Email: sh.electricas@gmail.com</p>
           </div>
+
+          {/* Logo S&H inline */}
+          <div className="flex flex-col items-center mx-4">
+            <div className="flex items-center justify-center rounded-full border-4 border-gray-900" style={{ width: "120px", height: "120px", position: "relative" }}>
+              <div className="flex items-center justify-center rounded-full border-2 border-red-600" style={{ width: "100px", height: "100px", backgroundColor: "#1a1a1a" }}>
+                <div className="flex flex-col items-center">
+                  <span className="text-white font-bold" style={{ fontSize: "28px", lineHeight: "1" }}>S&H</span>
+                  <span className="text-red-600 font-bold" style={{ fontSize: "16px", lineHeight: "1.2" }}>⚡</span>
+                </div>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-gray-800 mt-1 tracking-wider">S&H ELÉCTRICAS</span>
+          </div>
+
           <div className="text-right">
             <p className="text-2xl font-bold text-yellow-600">PRESUPUESTO</p>
             <p className="text-lg font-medium">{budget.number}</p>
@@ -237,16 +251,6 @@ export default function PresupuestoDetailPage() {
               <p className="text-sm text-gray-500">Valido hasta: {budget.valid_until}</p>
             )}
           </div>
-        </div>
-
-        {/* Logo centrado entre datos emisor y contenido */}
-        <div className="flex justify-center mb-8">
-          <img
-            src="/logo-sh-electricas.png"
-            alt="S&H Eléctricas"
-            className="h-auto"
-            style={{ width: "130px" }}
-          />
         </div>
 
         <div className="mb-8 p-4 bg-gray-50 rounded-lg">
