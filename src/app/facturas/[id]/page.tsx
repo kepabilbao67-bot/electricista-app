@@ -185,7 +185,7 @@ export default function FacturaDetailPage() {
   }
 
   const status = statusLabels[invoice.status] || statusLabels.draft;
-  const watermarkText = invoice.status === "paid" ? "PAGADO" : (invoice.status === "draft" || invoice.status === "pending_batuz") ? "BORRADOR" : "";
+  const watermarkText = invoice.status === "paid" ? "PAGADO" : (invoice.status === "draft" && !invoice.ticketbai_id) ? "BORRADOR" : "";
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
