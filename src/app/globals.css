@@ -181,7 +181,7 @@
 
   .input-field {
     min-height: 44px;
-    font-size: 16px !important; /* Prevent zoom on iOS */
+    font-size: 16px !important;
   }
 
   select.input-field {
@@ -196,13 +196,11 @@
     padding: 0.5rem 0.375rem !important;
   }
 
-  /* Make tables scrollable horizontally on mobile */
   .overflow-hidden {
     overflow-x: auto !important;
   }
 }
 
-/* Touch targets */
 @media (pointer: coarse) {
   button, a, select, input[type="checkbox"] {
     min-height: 44px;
@@ -214,7 +212,6 @@
   }
 }
 
-/* Safe area for notch phones */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   main {
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
@@ -223,6 +220,11 @@
 
 /* Print styles */
 @media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
   .no-print {
     display: none !important;
   }
@@ -240,7 +242,39 @@
     white-space: nowrap;
   }
 
+  html,
   body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
     background: white !important;
+  }
+
+  body > div,
+  body > div > div,
+  main {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  main {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
