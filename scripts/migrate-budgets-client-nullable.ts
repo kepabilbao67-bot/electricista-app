@@ -7,20 +7,26 @@
  * EJECUCION MANUAL. UNICA VEZ. NO se ejecuta en arranque, build ni deploy.
  *
  * USO:
- *   npx tsx scripts/migrate-budgets-client-nullable.ts --url "file:electricista.db"
- *   npx tsx scripts/migrate-budgets-client-nullable.ts --url "libsql://..." --token "..."
+ *   npx tsx scripts/migrate-budgets-client-nullable.ts --url "file:electricista.db" --yes
+ *   npx tsx scripts/migrate-budgets-client-nullable.ts --url "libsql://..." --token "..." --yes --backup-verified
+ *
+ * FLAGS:
+ *   --url       (obligatorio) URL de la base de datos
+ *   --token     Token de autenticacion para Turso remoto
+ *   --yes       Confirma ejecucion (obligatorio en modo no interactivo)
+ *   --backup-verified  Confirma que el operador ya realizo y verifico un backup (obligatorio para Turso)
  *
  * PREREQUISITOS:
  *   1. Detener la aplicacion (sin escrituras concurrentes).
- *   2. Realizar backup verificado (ver instrucciones en pantalla).
- *   3. Ejecutar este script.
+ *   2. Realizar backup verificado.
+ *   3. Ejecutar este script con --yes.
  *   4. Verificar resultado.
  *   5. Reiniciar la aplicacion.
  */
 
 import { createClient, type Client } from "@libsql/client";
 import { parseArgs } from "node:util";
-import { copyFileSync, existsSync } from "node:fs";
+import { copyFileSync, existsSync, statSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
 
@@ -48,10 +54,7 @@ const BUDGETS_COLUMNS = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 function maskUrl(url: string): string {
-  if (url.startsWith("file:")) {
-    return url;
-  }
-  // Para URLs remotas, ocultar despues del host
+  if (url.startsWith("file:")) return url;
   try {
     const parsed = new URL(url);
     return `${parsed.protocol}//${parsed.hostname.slice(0, 8)}***`;
@@ -61,10 +64,8 @@ function maskUrl(url: string): string {
 }
 
 async function confirm(question: string): Promise<boolean> {
-  // Si stdin no es interactivo (pipe), aceptar automaticamente
   if (!process.stdin.isTTY) {
-    console.log(`${question} (s/n): s [auto-aceptado: stdin no interactivo]`);
-    return true;
+    return false; // No interactivo: nunca auto-aceptar
   }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => {
@@ -79,6 +80,13 @@ function getRowValue(row: Record<string, unknown>, key: string): unknown {
   return (row as Record<string, unknown>)[key];
 }
 
+class MigrationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MigrationError";
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,27 +96,40 @@ async function main(): Promise<void> {
     options: {
       url: { type: "string" },
       token: { type: "string" },
+      yes: { type: "boolean", default: false },
+      "backup-verified": { type: "boolean", default: false },
     },
     strict: true,
   });
 
   if (!values.url) {
     console.error("ERROR: Proporciona --url (file:... o libsql://...)");
-    console.error("Ejemplo: npx tsx scripts/migrate-budgets-client-nullable.ts --url \"file:electricista.db\"");
+    console.error("USO: npx tsx scripts/migrate-budgets-client-nullable.ts --url \"file:electricista.db\" --yes");
     process.exit(1);
   }
 
   const dbUrl = values.url;
   const isLocal = dbUrl.startsWith("file:");
+  const autoConfirm = values.yes === true;
+  const backupVerified = values["backup-verified"] === true;
   const displayUrl = maskUrl(dbUrl);
+  const isInteractive = Boolean(process.stdin.isTTY);
 
   console.log("");
   console.log("================================================================");
   console.log(`  MIGRACION: ${MIGRATION_ID}`);
   console.log(`  Base: ${displayUrl}`);
   console.log(`  Tipo: ${isLocal ? "LOCAL (file:)" : "REMOTA (Turso)"}`);
+  console.log(`  Modo: ${isInteractive ? "INTERACTIVO" : (autoConfirm ? "NO-INTERACTIVO (--yes)" : "NO-INTERACTIVO (sin --yes)")}`);
   console.log("================================================================");
   console.log("");
+
+  // ──── VERIFICAR --yes EN MODO NO INTERACTIVO ─────────────────────────────
+  if (!isInteractive && !autoConfirm) {
+    console.error("ERROR: Modo no interactivo requiere --yes para confirmar ejecucion.");
+    console.error("  Agrega --yes para autorizar la migracion explicitamente.");
+    process.exit(1);
+  }
 
   // ──── BACKUP ─────────────────────────────────────────────────────────────
   if (isLocal) {
@@ -124,49 +145,67 @@ async function main(): Promise<void> {
       console.error("  Detener TODA la aplicacion y esperar a que desaparezcan:");
       console.error(`    ${filePath}-wal`);
       console.error(`    ${filePath}-shm`);
-      console.error("  O ejecutar un checkpoint manual: sqlite3 DB \"PRAGMA wal_checkpoint(TRUNCATE);\"");
+      console.error("  O ejecutar: sqlite3 DB \"PRAGMA wal_checkpoint(TRUNCATE);\"");
+      process.exit(1);
+    }
+    // Validar que el archivo no este vacio
+    const stat = statSync(filePath);
+    if (stat.size === 0) {
+      console.error("ERROR: El archivo de base de datos esta vacio.");
       process.exit(1);
     }
     const backupPath = `${filePath}.bak.${Date.now()}`;
     copyFileSync(filePath, backupPath);
-    console.log(`OK Backup creado: ${backupPath}`);
-  } else {
-    console.log("BASE REMOTA: Asegurate de haber ejecutado ANTES:");
-    console.log("    turso db shell <database> .dump > backup.sql");
-    console.log("  o:");
-    console.log("    turso db export <database> --output backup.db");
-    console.log("");
-    console.log("Verifica el backup con:");
-    console.log("    sqlite3 backup.db \"PRAGMA integrity_check;\"");
-    console.log("    sqlite3 backup.db \"SELECT COUNT(*) FROM budgets;\"");
-    console.log("    sqlite3 backup.db \"SELECT COUNT(*) FROM budget_items;\"");
-    console.log("");
-    if (!(await confirm("Backup realizado y verificado?"))) {
-      console.log("Abortado.");
-      process.exit(0);
+    // Validar backup creado correctamente
+    if (!existsSync(backupPath) || statSync(backupPath).size !== stat.size) {
+      console.error("ERROR: No se pudo crear backup valido.");
+      process.exit(1);
     }
+    console.log(`OK Backup creado: ${backupPath} (${stat.size} bytes)`);
+  } else {
+    // Turso remoto: requiere --backup-verified
+    if (!backupVerified) {
+      console.error("ERROR: Base remota requiere --backup-verified para confirmar backup.");
+      console.error("");
+      console.error("  Antes de ejecutar, realiza:");
+      console.error("    turso db shell <database> .dump > backup.sql");
+      console.error("  o:");
+      console.error("    turso db export <database> --output backup.db");
+      console.error("");
+      console.error("  Verifica con:");
+      console.error("    sqlite3 backup.db \"PRAGMA integrity_check;\"");
+      console.error("    sqlite3 backup.db \"SELECT COUNT(*) FROM budgets;\"");
+      console.error("");
+      console.error("  Luego ejecuta con: --backup-verified");
+      process.exit(1);
+    }
+    console.log("OK --backup-verified proporcionado por operador.");
   }
 
   // ──── CONFIRMACION APP DETENIDA ──────────────────────────────────────────
-  if (!(await confirm("La aplicacion esta DETENIDA (sin escrituras)?"))) {
-    console.log("Abortado. Deten la aplicacion antes de migrar.");
-    process.exit(0);
+  if (!autoConfirm) {
+    if (!(await confirm("La aplicacion esta DETENIDA (sin escrituras)?"))) {
+      console.log("Abortado.");
+      process.exit(0);
+    }
+  } else {
+    console.log("INFO --yes proporcionado: asumiendo aplicacion detenida.");
   }
 
-  // ──── CONECTAR ───────────────────────────────────────────────────────────
+  // ──── CONECTAR Y EJECUTAR CON CIERRE GARANTIZADO ─────────────────────────
   const db: Client = createClient({
     url: dbUrl,
     authToken: values.token,
   });
 
   try {
-    await runMigration(db);
+    await runMigration(db, autoConfirm);
   } finally {
     db.close();
   }
 }
 
-async function runMigration(db: Client): Promise<void> {
+async function runMigration(db: Client, autoConfirm: boolean): Promise<void> {
   // ──── CREAR schema_migrations ──────────────────────────────────────────
   await db.execute(
     `CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -192,17 +231,25 @@ async function runMigration(db: Client): Promise<void> {
     console.log("AVISO: Migracion registrada pero client_id sigue NOT NULL. Re-ejecutando...");
   }
 
+  // ──── VERIFICAR SI TABLA budgets EXISTE ────────────────────────────────
+  const tableExists = await db.execute(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='budgets'"
+  );
+  if (tableExists.rows.length === 0) {
+    // Tabla no existe: no registrar migración, el CREATE TABLE la creará correcta
+    console.log("OK Tabla budgets no existe aun. CREATE TABLE la creara con client_id nullable.");
+    return;
+  }
+
   // ──── VERIFICAR SI MIGRACION ES NECESARIA ──────────────────────────────
   const tableInfo = await db.execute("PRAGMA table_info(budgets)");
   const clientIdCol = tableInfo.rows.find((r) => getRowValue(r, "name") === "client_id");
 
   if (!clientIdCol) {
-    console.log("OK Tabla budgets no tiene client_id. CREATE TABLE la creara correctamente.");
-    await db.execute({
-      sql: "INSERT OR IGNORE INTO schema_migrations (id, applied_by) VALUES (?, ?)",
-      args: [MIGRATION_ID, "scripts/migrate-budgets-client-nullable.ts"],
-    });
-    return;
+    // Columna no existe: esquema inesperado, no registrar, no migrar
+    throw new MigrationError(
+      "Tabla budgets existe pero no tiene columna client_id. Esquema inesperado."
+    );
   }
 
   if (Number(getRowValue(clientIdCol, "notnull")) === 0) {
@@ -224,25 +271,18 @@ async function runMigration(db: Client): Promise<void> {
   if (residual.rows.length > 0) {
     const newCount = await db.execute("SELECT COUNT(*) as cnt FROM budgets_new");
     const origCount = await db.execute("SELECT COUNT(*) as cnt FROM budgets");
-    console.error("");
-    console.error("ERROR: La tabla budgets_new ya existe (migracion interrumpida previa).");
-    console.error(`  budgets_new: ${Number(getRowValue(newCount.rows[0], "cnt"))} filas`);
-    console.error(`  budgets:     ${Number(getRowValue(origCount.rows[0], "cnt"))} filas`);
-    console.error("");
-    console.error("Requiere intervencion manual. Inspecciona ambas tablas y decide:");
-    console.error("  - Si budgets_new es basura: DROP TABLE budgets_new;");
-    console.error("  - Si budgets_new es valida: inspeccionar datos antes de actuar.");
-    console.error("");
-    console.error("NO EJECUTAR");
-    process.exit(1);
+    throw new MigrationError(
+      `Tabla budgets_new ya existe (migracion interrumpida previa). ` +
+      `budgets_new: ${Number(getRowValue(newCount.rows[0], "cnt"))} filas, ` +
+      `budgets: ${Number(getRowValue(origCount.rows[0], "cnt"))} filas. ` +
+      `Requiere intervencion manual.`
+    );
   }
 
-  // ──── VERIFICAR PRAGMA foreign_keys (informativo) ───────────────────────
-  // NOTA: db.migrate() gestiona automaticamente PRAGMA foreign_keys=OFF antes
-  // del batch y =ON despues. No es necesario desactivarlo manualmente.
+  // ──── PRAGMA foreign_keys (informativo) ────────────────────────────────
   const fkResult = await db.execute("PRAGMA foreign_keys");
   const fkVal = Number(fkResult.rows[0]?.[0] ?? getRowValue(fkResult.rows[0], "foreign_keys") ?? 0);
-  console.log(`INFO PRAGMA foreign_keys = ${fkVal} (db.migrate() lo desactiva automaticamente)`);
+  console.log(`INFO PRAGMA foreign_keys = ${fkVal} (db.migrate() lo gestiona automaticamente)`);
 
   // ──── CONTEOS PRE-MIGRACION ────────────────────────────────────────────
   const budgetCountRes = await db.execute("SELECT COUNT(*) as cnt FROM budgets");
@@ -254,50 +294,42 @@ async function runMigration(db: Client): Promise<void> {
   console.log(`Conteo pre-migracion: budgets=${budgetCount}, budget_items=${itemsCount}`);
 
   // ──── CONFIRMACION FINAL ───────────────────────────────────────────────
-  if (!(await confirm(`Ejecutar migracion sobre ${budgetCount} presupuestos?`))) {
-    console.log("Abortado por usuario.");
-    return;
+  if (!autoConfirm) {
+    if (!(await confirm(`Ejecutar migracion sobre ${budgetCount} presupuestos?`))) {
+      console.log("Abortado por usuario.");
+      return;
+    }
   }
 
   // ──── EJECUTAR MIGRACION ATOMICA ───────────────────────────────────────
-  // Usa migrate() que es un batch atomico con PRAGMA foreign_keys=OFF/ON
-  // automatico. Si cualquier sentencia falla, ROLLBACK completo.
   const colsList = BUDGETS_COLUMNS.join(", ");
 
   console.log("");
   console.log("Ejecutando migracion atomica (transaccion con rollback automatico)...");
 
-  try {
-    await db.migrate([
-      `CREATE TABLE budgets_new (
-        id TEXT PRIMARY KEY,
-        number TEXT NOT NULL UNIQUE,
-        client_id TEXT,
-        date TEXT NOT NULL,
-        valid_until TEXT,
-        status TEXT DEFAULT 'draft',
-        subtotal REAL DEFAULT 0,
-        tax_rate REAL DEFAULT 21,
-        tax_amount REAL DEFAULT 0,
-        total REAL DEFAULT 0,
-        notes TEXT,
-        converted_invoice_id TEXT,
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (client_id) REFERENCES clients(id),
-        FOREIGN KEY (converted_invoice_id) REFERENCES invoices(id)
-      )`,
-      `INSERT INTO budgets_new (${colsList}) SELECT ${colsList} FROM budgets`,
-      "DROP TABLE budgets",
-      "ALTER TABLE budgets_new RENAME TO budgets",
-    ]);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("");
-    console.error("ERROR: Migracion fallida. ROLLBACK automatico. Base intacta.");
-    console.error(`  Detalle: ${msg}`);
-    process.exit(1);
-  }
+  await db.migrate([
+    `CREATE TABLE budgets_new (
+      id TEXT PRIMARY KEY,
+      number TEXT NOT NULL UNIQUE,
+      client_id TEXT,
+      date TEXT NOT NULL,
+      valid_until TEXT,
+      status TEXT DEFAULT 'draft',
+      subtotal REAL DEFAULT 0,
+      tax_rate REAL DEFAULT 21,
+      tax_amount REAL DEFAULT 0,
+      total REAL DEFAULT 0,
+      notes TEXT,
+      converted_invoice_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (converted_invoice_id) REFERENCES invoices(id)
+    )`,
+    `INSERT INTO budgets_new (${colsList}) SELECT ${colsList} FROM budgets`,
+    "DROP TABLE budgets",
+    "ALTER TABLE budgets_new RENAME TO budgets",
+  ]);
 
   console.log("OK Batch ejecutado (COMMIT realizado).");
   console.log("");
@@ -365,7 +397,7 @@ async function runMigration(db: Client): Promise<void> {
     console.log("  OK integrity_check: ok");
   }
 
-  // V7: INSERT con client_id NULL (con UUID unico)
+  // V7: INSERT con client_id NULL (UUID unico)
   const testId = randomUUID();
   const testNumber = `TEST_MIGR_${Date.now()}`;
   try {
@@ -390,14 +422,10 @@ async function runMigration(db: Client): Promise<void> {
 
   // ──── RESULTADO FINAL ──────────────────────────────────────────────────
   if (!allOk) {
-    console.error("");
-    console.error("================================================================");
-    console.error("  VERIFICACIONES FALLIDAS");
-    console.error("  RESTAURAR BACKUP INMEDIATAMENTE");
-    console.error("================================================================");
-    console.error("");
-    console.error("NO se registra la migracion como completada.");
-    process.exit(1);
+    throw new MigrationError(
+      "VERIFICACIONES FALLIDAS. RESTAURAR BACKUP INMEDIATAMENTE. " +
+      "NO se registra la migracion como completada."
+    );
   }
 
   // ──── REGISTRAR MIGRACION COMPLETADA ───────────────────────────────────
@@ -413,11 +441,10 @@ async function runMigration(db: Client): Promise<void> {
   console.log("================================================================");
   console.log("");
   console.log("Puedes reiniciar la aplicacion.");
-  console.log("Este script puede eliminarse del repositorio tras verificar.");
 }
 
 main().catch((err: unknown) => {
   const msg = err instanceof Error ? err.message : String(err);
-  console.error(`Error fatal: ${msg}`);
+  console.error(`\nERROR: ${msg}`);
   process.exit(1);
 });
