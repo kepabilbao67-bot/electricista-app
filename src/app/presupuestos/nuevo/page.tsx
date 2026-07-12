@@ -388,7 +388,7 @@ export default function NuevoPresupuestoPage() {
                 onChange={(e) => setClientId(e.target.value)}
                 className="input-field"
               >
-                <option value="">Sin cliente (asignar despues)</option>
+                <option value="">Sin cliente (asignar después)</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
