@@ -174,7 +174,7 @@ export default function PresupuestosPage() {
                 return (
                   <tr key={budget.id} className="table-row">
                     <td className="px-4 py-3.5"><span className="text-base font-bold text-blue-800">{budget.number}</span></td>
-                    <td className="px-4 py-3.5 text-slate-600">{budget.client_name}</td>
+                    <td className="px-4 py-3.5 text-slate-600">{budget.client_name || <span className="text-slate-400 italic">Sin cliente</span>}</td>
                     <td className="px-4 py-3.5 hidden sm:table-cell text-slate-500">{formatDate(budget.date)}</td>
                     <td className="px-4 py-3.5 hidden md:table-cell">
                       {budget.valid_until ? (
@@ -211,14 +211,24 @@ export default function PresupuestosPage() {
                           <Copy className="h-3.5 w-3.5" />
                         </button>
                         {!budget.converted_invoice_id && budget.status !== "rejected" && (
-                          <button
-                            onClick={() => handleConvert(budget.id)}
-                            disabled={converting === budget.id}
-                            className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                            title="Convertir a factura"
-                          >
-                            <FileText className="h-3.5 w-3.5" />
-                          </button>
+                          budget.client_id ? (
+                            <button
+                              onClick={() => handleConvert(budget.id)}
+                              disabled={converting === budget.id}
+                              className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                              title="Convertir a factura"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => showToast("error", "Asigna un cliente antes de convertir este presupuesto en factura.")}
+                              className="rounded-lg p-1.5 text-slate-300 cursor-not-allowed"
+                              title="Asigna un cliente antes de convertir"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </button>
+                          )
                         )}
                         <button
                           onClick={() => handleDelete(budget)}

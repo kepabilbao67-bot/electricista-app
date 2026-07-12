@@ -165,6 +165,12 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "cost_price", def: "REAL DEFAULT 0" },
     { name: "created_at", def: "TEXT" },
   ]);
+
+  // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
+  // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
+  // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
+  //   npx tsx scripts/migrate-budgets-client-nullable.ts --url "file:electricista.db" --yes
+  // No se ejecuta automáticamente en arranque para evitar riesgos en producción.
 }
 
 export async function initializeDatabase(): Promise<void> {
@@ -226,7 +232,7 @@ export async function initializeDatabase(): Promise<void> {
     CREATE TABLE IF NOT EXISTS budgets (
       id TEXT PRIMARY KEY,
       number TEXT NOT NULL UNIQUE,
-      client_id TEXT NOT NULL,
+      client_id TEXT,
       date TEXT NOT NULL,
       valid_until TEXT,
       status TEXT DEFAULT 'draft',

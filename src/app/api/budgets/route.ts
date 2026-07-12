@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       args: [
         id,
         number,
-        body.client_id,
+        body.client_id || null,
         body.date || new Date().toISOString().split("T")[0],
         body.valid_until || null,
         body.status || "draft",

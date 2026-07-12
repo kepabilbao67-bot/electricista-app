@@ -318,7 +318,6 @@ export default function NuevoPresupuestoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientId) return;
     setSubmitting(true);
 
     // Flatten all zone items with [ZONA] prefix
@@ -342,7 +341,7 @@ export default function NuevoPresupuestoPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_id: clientId,
+        client_id: clientId || null,
         date,
         valid_until: validUntil || null,
         notes,
@@ -383,14 +382,13 @@ export default function NuevoPresupuestoPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente</label>
               <select
-                required
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
                 className="input-field"
               >
-                <option value="">Seleccionar cliente</option>
+                <option value="">Sin cliente (asignar después)</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
