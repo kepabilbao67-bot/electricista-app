@@ -220,12 +220,24 @@ export default function PresupuestoDetailPage() {
       </div>
 
       <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <img
+            src="/logo-sh-electricas.svg"
+            alt="S&H Eléctricas"
+            className="h-auto"
+            style={{ width: "140px" }}
+          />
+        </div>
+
         <div className="flex justify-between mb-8">
           <div>
             <h2 className="text-xl font-bold text-gray-900">MARTIN OYARZABAL, IVAN</h2>
             <p className="text-sm text-gray-500">NIF: 16063731W</p>
             <p className="text-sm text-gray-500">Lehendakari Aguirre 7b 2 derecha</p>
             <p className="text-sm text-gray-500">48640 Berango, Bizkaia</p>
+            <p className="text-sm text-gray-500">Teléfono: 609421750</p>
+            <p className="text-sm text-gray-500">Email: sh.electricas@gmail.com</p>
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-yellow-600">PRESUPUESTO</p>
