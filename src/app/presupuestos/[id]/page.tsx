@@ -220,17 +220,7 @@ export default function PresupuestoDetailPage() {
       </div>
 
       <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none">
-        {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <img
-            src="/logo-sh-electricas.svg"
-            alt="S&H Eléctricas"
-            className="h-auto"
-            style={{ width: "140px" }}
-          />
-        </div>
-
-        <div className="flex justify-between mb-8">
+        <div className="flex justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900">MARTIN OYARZABAL, IVAN</h2>
             <p className="text-sm text-gray-500">NIF: 16063731W</p>
@@ -247,6 +237,16 @@ export default function PresupuestoDetailPage() {
               <p className="text-sm text-gray-500">Valido hasta: {budget.valid_until}</p>
             )}
           </div>
+        </div>
+
+        {/* Logo centrado entre datos emisor y contenido */}
+        <div className="flex justify-center mb-8">
+          <img
+            src="/logo-sh-electricas.png"
+            alt="S&H Eléctricas"
+            className="h-auto"
+            style={{ width: "130px" }}
+          />
         </div>
 
         <div className="mb-8 p-4 bg-gray-50 rounded-lg">
