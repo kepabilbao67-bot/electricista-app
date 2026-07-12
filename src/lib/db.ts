@@ -166,16 +166,11 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "created_at", def: "TEXT" },
   ]);
 
-  // Migración: hacer budgets.client_id nullable en tablas existentes.
-  // NOTA: SQLite no permite ALTER COLUMN para quitar NOT NULL.
-  // En bases de datos NUEVAS, la tabla se crea con client_id TEXT (nullable).
-  // En bases de datos EXISTENTES con client_id NOT NULL, la migración destructiva
-  // (rebuild de tabla) se aplazó al bloque DB-MIGRATION controlado para evitar
-  // riesgo con budget_items y foreign keys.
-  // Mientras tanto, libSQL/Turso no valida NOT NULL en muchos casos si PRAGMA
-  // foreign_keys está OFF (por defecto), por lo que los INSERTs con null funcionan.
-  // Si en producción falla un INSERT con client_id=null, ejecutar la migración
-  // manual descrita en docs o bloque DB-MIGRATION.
+  // Migración de budgets.client_id NOT NULL → nullable:
+  // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
+  // En bases EXISTENTES, ejecutar manualmente:
+  //   npx tsx scripts/migrate-budgets-client-nullable.ts --url "file:electricista.db"
+  // Ver scripts/migrate-budgets-client-nullable.ts para detalles.
 }
 
 export async function initializeDatabase(): Promise<void> {
