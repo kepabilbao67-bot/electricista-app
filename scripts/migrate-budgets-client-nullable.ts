@@ -11,17 +11,10 @@
  *   npx tsx scripts/migrate-budgets-client-nullable.ts --url "libsql://..." --token "..." --yes --backup-verified
  *
  * FLAGS:
- *   --url       (obligatorio) URL de la base de datos
- *   --token     Token de autenticacion para Turso remoto
- *   --yes       Confirma ejecucion (obligatorio en modo no interactivo)
- *   --backup-verified  Confirma que el operador ya realizo y verifico un backup (obligatorio para Turso)
- *
- * PREREQUISITOS:
- *   1. Detener la aplicacion (sin escrituras concurrentes).
- *   2. Realizar backup verificado.
- *   3. Ejecutar este script con --yes.
- *   4. Verificar resultado.
- *   5. Reiniciar la aplicacion.
+ *   --url              (obligatorio) URL de la base de datos
+ *   --token            Token de autenticacion para Turso remoto
+ *   --yes              Confirma ejecucion (obligatorio en modo no interactivo)
+ *   --backup-verified  Confirma backup manual realizado (obligatorio para Turso)
  */
 
 import { createClient, type Client } from "@libsql/client";
@@ -33,24 +26,11 @@ import { randomUUID } from "node:crypto";
 const MIGRATION_ID = "BUD_CLIENT_ID_NULLABLE_001";
 
 const BUDGETS_COLUMNS = [
-  "id",
-  "number",
-  "client_id",
-  "date",
-  "valid_until",
-  "status",
-  "subtotal",
-  "tax_rate",
-  "tax_amount",
-  "total",
-  "notes",
-  "converted_invoice_id",
-  "created_at",
-  "updated_at",
+  "id", "number", "client_id", "date", "valid_until", "status",
+  "subtotal", "tax_rate", "tax_amount", "total", "notes",
+  "converted_invoice_id", "created_at", "updated_at",
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Utilidades
 // ─────────────────────────────────────────────────────────────────────────────
 
 function maskUrl(url: string): string {
@@ -64,9 +44,7 @@ function maskUrl(url: string): string {
 }
 
 async function confirm(question: string): Promise<boolean> {
-  if (!process.stdin.isTTY) {
-    return false; // No interactivo: nunca auto-aceptar
-  }
+  if (!process.stdin.isTTY) return false;
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => {
     rl.question(`${question} (s/n): `, (answer) => {
@@ -81,14 +59,9 @@ function getRowValue(row: Record<string, unknown>, key: string): unknown {
 }
 
 class MigrationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "MigrationError";
-  }
+  constructor(message: string) { super(message); this.name = "MigrationError"; }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -112,13 +85,12 @@ async function main(): Promise<void> {
   const isLocal = dbUrl.startsWith("file:");
   const autoConfirm = values.yes === true;
   const backupVerified = values["backup-verified"] === true;
-  const displayUrl = maskUrl(dbUrl);
   const isInteractive = Boolean(process.stdin.isTTY);
 
   console.log("");
   console.log("================================================================");
   console.log(`  MIGRACION: ${MIGRATION_ID}`);
-  console.log(`  Base: ${displayUrl}`);
+  console.log(`  Base: ${maskUrl(dbUrl)}`);
   console.log(`  Tipo: ${isLocal ? "LOCAL (file:)" : "REMOTA (Turso)"}`);
   console.log(`  Modo: ${isInteractive ? "INTERACTIVO" : (autoConfirm ? "NO-INTERACTIVO (--yes)" : "NO-INTERACTIVO (sin --yes)")}`);
   console.log("================================================================");
@@ -138,45 +110,62 @@ async function main(): Promise<void> {
       console.error(`ERROR: Archivo no encontrado: ${filePath}`);
       process.exit(1);
     }
-    // Verificar WAL/SHM (conexion activa)
     if (existsSync(`${filePath}-wal`) || existsSync(`${filePath}-shm`)) {
-      console.error("ERROR: Existen archivos WAL/SHM junto a la base de datos.");
-      console.error("  Esto indica una conexion activa o shutdown incompleto.");
-      console.error("  Detener TODA la aplicacion y esperar a que desaparezcan:");
-      console.error(`    ${filePath}-wal`);
-      console.error(`    ${filePath}-shm`);
-      console.error("  O ejecutar: sqlite3 DB \"PRAGMA wal_checkpoint(TRUNCATE);\"");
+      console.error("ERROR: Existen archivos WAL/SHM (conexion activa o shutdown incompleto).");
+      console.error(`  ${filePath}-wal / ${filePath}-shm`);
+      console.error("  Detener app o ejecutar: sqlite3 DB \"PRAGMA wal_checkpoint(TRUNCATE);\"");
       process.exit(1);
     }
-    // Validar que el archivo no este vacio
     const stat = statSync(filePath);
     if (stat.size === 0) {
       console.error("ERROR: El archivo de base de datos esta vacio.");
       process.exit(1);
     }
+    // Copiar backup
     const backupPath = `${filePath}.bak.${Date.now()}`;
     copyFileSync(filePath, backupPath);
-    // Validar backup creado correctamente
     if (!existsSync(backupPath) || statSync(backupPath).size !== stat.size) {
-      console.error("ERROR: No se pudo crear backup valido.");
+      console.error("ERROR: No se pudo crear copia del backup.");
       process.exit(1);
     }
-    console.log(`OK Backup creado: ${backupPath} (${stat.size} bytes)`);
+    // Verificar backup con cliente independiente
+    const backupDb = createClient({ url: `file:${backupPath}` });
+    try {
+      const bkIntegrity = await backupDb.execute("PRAGMA integrity_check");
+      const bkIntVal = String(bkIntegrity.rows[0]?.[0] ?? getRowValue(bkIntegrity.rows[0], "integrity_check") ?? "");
+      if (bkIntVal !== "ok") {
+        console.error(`ERROR: Backup corrupto. integrity_check: ${bkIntVal}`);
+        console.error(`  Backup conservado en: ${backupPath}`);
+        process.exit(1);
+      }
+      const bkBudgets = Number(getRowValue((await backupDb.execute("SELECT COUNT(*) as cnt FROM budgets")).rows[0], "cnt"));
+      const bkItems = Number(getRowValue((await backupDb.execute("SELECT COUNT(*) as cnt FROM budget_items")).rows[0], "cnt"));
+      // Comparar con original
+      const origDb = createClient({ url: dbUrl });
+      try {
+        const origBudgets = Number(getRowValue((await origDb.execute("SELECT COUNT(*) as cnt FROM budgets")).rows[0], "cnt"));
+        const origItems = Number(getRowValue((await origDb.execute("SELECT COUNT(*) as cnt FROM budget_items")).rows[0], "cnt"));
+        if (bkBudgets !== origBudgets || bkItems !== origItems) {
+          console.error("ERROR: Conteos del backup no coinciden con la base original.");
+          console.error(`  Original: budgets=${origBudgets}, budget_items=${origItems}`);
+          console.error(`  Backup:   budgets=${bkBudgets}, budget_items=${bkItems}`);
+          console.error(`  Backup conservado en: ${backupPath}`);
+          process.exit(1);
+        }
+      } finally {
+        origDb.close();
+      }
+      console.log(`OK Backup verificado: ${backupPath}`);
+      console.log(`   integrity_check: ok | budgets: ${bkBudgets} | budget_items: ${bkItems}`);
+    } finally {
+      backupDb.close();
+    }
   } else {
-    // Turso remoto: requiere --backup-verified
     if (!backupVerified) {
       console.error("ERROR: Base remota requiere --backup-verified para confirmar backup.");
-      console.error("");
-      console.error("  Antes de ejecutar, realiza:");
-      console.error("    turso db shell <database> .dump > backup.sql");
-      console.error("  o:");
-      console.error("    turso db export <database> --output backup.db");
-      console.error("");
-      console.error("  Verifica con:");
-      console.error("    sqlite3 backup.db \"PRAGMA integrity_check;\"");
-      console.error("    sqlite3 backup.db \"SELECT COUNT(*) FROM budgets;\"");
-      console.error("");
-      console.error("  Luego ejecuta con: --backup-verified");
+      console.error("  Realiza antes: turso db export <database> --output backup.db");
+      console.error("  Verifica: sqlite3 backup.db \"PRAGMA integrity_check;\"");
+      console.error("  Luego agrega: --backup-verified");
       process.exit(1);
     }
     console.log("OK --backup-verified proporcionado por operador.");
@@ -189,15 +178,11 @@ async function main(): Promise<void> {
       process.exit(0);
     }
   } else {
-    console.log("INFO --yes proporcionado: asumiendo aplicacion detenida.");
+    console.log("INFO --yes: asumiendo aplicacion detenida.");
   }
 
-  // ──── CONECTAR Y EJECUTAR CON CIERRE GARANTIZADO ─────────────────────────
-  const db: Client = createClient({
-    url: dbUrl,
-    authToken: values.token,
-  });
-
+  // ──── CONECTAR Y EJECUTAR ────────────────────────────────────────────────
+  const db: Client = createClient({ url: dbUrl, authToken: values.token });
   try {
     await runMigration(db, autoConfirm);
   } finally {
@@ -206,91 +191,55 @@ async function main(): Promise<void> {
 }
 
 async function runMigration(db: Client, autoConfirm: boolean): Promise<void> {
-  // ──── CREAR schema_migrations ──────────────────────────────────────────
   await db.execute(
     `CREATE TABLE IF NOT EXISTS schema_migrations (
-      id TEXT PRIMARY KEY,
-      applied_at TEXT DEFAULT (datetime('now')),
-      applied_by TEXT
+      id TEXT PRIMARY KEY, applied_at TEXT DEFAULT (datetime('now')), applied_by TEXT
     )`
   );
 
   // ──── VERIFICAR SI YA APLICADA ─────────────────────────────────────────
-  const applied = await db.execute({
-    sql: "SELECT id FROM schema_migrations WHERE id = ?",
-    args: [MIGRATION_ID],
-  });
-
+  const applied = await db.execute({ sql: "SELECT id FROM schema_migrations WHERE id = ?", args: [MIGRATION_ID] });
   if (applied.rows.length > 0) {
     const info = await db.execute("PRAGMA table_info(budgets)");
-    const clientIdRow = info.rows.find((r) => getRowValue(r, "name") === "client_id");
-    if (clientIdRow && Number(getRowValue(clientIdRow, "notnull")) === 0) {
+    const col = info.rows.find((r) => getRowValue(r, "name") === "client_id");
+    if (col && Number(getRowValue(col, "notnull")) === 0) {
       console.log("OK Migracion ya aplicada. client_id es nullable. Nada que hacer.");
       return;
     }
-    console.log("AVISO: Migracion registrada pero client_id sigue NOT NULL. Re-ejecutando...");
+    console.log("AVISO: Registrada pero client_id sigue NOT NULL. Re-ejecutando...");
   }
 
-  // ──── VERIFICAR SI TABLA budgets EXISTE ────────────────────────────────
-  const tableExists = await db.execute(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name='budgets'"
-  );
+  // ──── VERIFICAR TABLA budgets ──────────────────────────────────────────
+  const tableExists = await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='budgets'");
   if (tableExists.rows.length === 0) {
-    // Tabla no existe: no registrar migración, el CREATE TABLE la creará correcta
-    console.log("OK Tabla budgets no existe aun. CREATE TABLE la creara con client_id nullable.");
+    console.log("OK Tabla budgets no existe. CREATE TABLE la creara con client_id nullable.");
     return;
   }
 
-  // ──── VERIFICAR SI MIGRACION ES NECESARIA ──────────────────────────────
   const tableInfo = await db.execute("PRAGMA table_info(budgets)");
   const clientIdCol = tableInfo.rows.find((r) => getRowValue(r, "name") === "client_id");
-
   if (!clientIdCol) {
-    // Columna no existe: esquema inesperado, no registrar, no migrar
-    throw new MigrationError(
-      "Tabla budgets existe pero no tiene columna client_id. Esquema inesperado."
-    );
+    throw new MigrationError("Tabla budgets existe pero no tiene columna client_id. Esquema inesperado.");
   }
-
   if (Number(getRowValue(clientIdCol, "notnull")) === 0) {
     console.log("OK client_id ya es nullable. Registrando migracion.");
-    await db.execute({
-      sql: "INSERT OR IGNORE INTO schema_migrations (id, applied_by) VALUES (?, ?)",
-      args: [MIGRATION_ID, "scripts/migrate-budgets-client-nullable.ts"],
-    });
+    await db.execute({ sql: "INSERT OR IGNORE INTO schema_migrations (id, applied_by) VALUES (?, ?)", args: [MIGRATION_ID, "script"] });
     return;
   }
 
-  console.log(`MIGRACION NECESARIA: client_id tiene notnull=1`);
+  console.log("MIGRACION NECESARIA: client_id tiene notnull=1");
 
   // ──── VERIFICAR budgets_new RESIDUAL ───────────────────────────────────
-  const residual = await db.execute(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name='budgets_new'"
-  );
-
+  const residual = await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='budgets_new'");
   if (residual.rows.length > 0) {
-    const newCount = await db.execute("SELECT COUNT(*) as cnt FROM budgets_new");
-    const origCount = await db.execute("SELECT COUNT(*) as cnt FROM budgets");
-    throw new MigrationError(
-      `Tabla budgets_new ya existe (migracion interrumpida previa). ` +
-      `budgets_new: ${Number(getRowValue(newCount.rows[0], "cnt"))} filas, ` +
-      `budgets: ${Number(getRowValue(origCount.rows[0], "cnt"))} filas. ` +
-      `Requiere intervencion manual.`
-    );
+    const nc = Number(getRowValue((await db.execute("SELECT COUNT(*) as cnt FROM budgets_new")).rows[0], "cnt"));
+    const oc = Number(getRowValue((await db.execute("SELECT COUNT(*) as cnt FROM budgets")).rows[0], "cnt"));
+    throw new MigrationError(`budgets_new ya existe (budgets_new: ${nc}, budgets: ${oc}). Intervencion manual requerida.`);
   }
 
-  // ──── PRAGMA foreign_keys (informativo) ────────────────────────────────
-  const fkResult = await db.execute("PRAGMA foreign_keys");
-  const fkVal = Number(fkResult.rows[0]?.[0] ?? getRowValue(fkResult.rows[0], "foreign_keys") ?? 0);
-  console.log(`INFO PRAGMA foreign_keys = ${fkVal} (db.migrate() lo gestiona automaticamente)`);
-
   // ──── CONTEOS PRE-MIGRACION ────────────────────────────────────────────
-  const budgetCountRes = await db.execute("SELECT COUNT(*) as cnt FROM budgets");
-  const budgetCount = Number(getRowValue(budgetCountRes.rows[0], "cnt"));
-
-  const itemsCountRes = await db.execute("SELECT COUNT(*) as cnt FROM budget_items");
-  const itemsCount = Number(getRowValue(itemsCountRes.rows[0], "cnt"));
-
+  const budgetCount = Number(getRowValue((await db.execute("SELECT COUNT(*) as cnt FROM budgets")).rows[0], "cnt"));
+  const itemsCount = Number(getRowValue((await db.execute("SELECT COUNT(*) as cnt FROM budget_items")).rows[0], "cnt"));
   console.log(`Conteo pre-migracion: budgets=${budgetCount}, budget_items=${itemsCount}`);
 
   // ──── CONFIRMACION FINAL ───────────────────────────────────────────────
@@ -303,26 +252,15 @@ async function runMigration(db: Client, autoConfirm: boolean): Promise<void> {
 
   // ──── EJECUTAR MIGRACION ATOMICA ───────────────────────────────────────
   const colsList = BUDGETS_COLUMNS.join(", ");
-
-  console.log("");
-  console.log("Ejecutando migracion atomica (transaccion con rollback automatico)...");
+  console.log("\nEjecutando migracion atomica...");
 
   await db.migrate([
     `CREATE TABLE budgets_new (
-      id TEXT PRIMARY KEY,
-      number TEXT NOT NULL UNIQUE,
-      client_id TEXT,
-      date TEXT NOT NULL,
-      valid_until TEXT,
-      status TEXT DEFAULT 'draft',
-      subtotal REAL DEFAULT 0,
-      tax_rate REAL DEFAULT 21,
-      tax_amount REAL DEFAULT 0,
-      total REAL DEFAULT 0,
-      notes TEXT,
-      converted_invoice_id TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
+      id TEXT PRIMARY KEY, number TEXT NOT NULL UNIQUE, client_id TEXT,
+      date TEXT NOT NULL, valid_until TEXT, status TEXT DEFAULT 'draft',
+      subtotal REAL DEFAULT 0, tax_rate REAL DEFAULT 21, tax_amount REAL DEFAULT 0,
+      total REAL DEFAULT 0, notes TEXT, converted_invoice_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (client_id) REFERENCES clients(id),
       FOREIGN KEY (converted_invoice_id) REFERENCES invoices(id)
     )`,
@@ -331,8 +269,7 @@ async function runMigration(db: Client, autoConfirm: boolean): Promise<void> {
     "ALTER TABLE budgets_new RENAME TO budgets",
   ]);
 
-  console.log("OK Batch ejecutado (COMMIT realizado).");
-  console.log("");
+  console.log("OK Batch ejecutado (COMMIT).\n");
 
   // ──── VERIFICACIONES POST-MIGRACION ────────────────────────────────────
   console.log("Verificando resultado...");
@@ -340,111 +277,103 @@ async function runMigration(db: Client, autoConfirm: boolean): Promise<void> {
 
   // V1: client_id nullable
   const infoAfter = await db.execute("PRAGMA table_info(budgets)");
-  const clientIdAfter = infoAfter.rows.find((r) => getRowValue(r, "name") === "client_id");
-  if (!clientIdAfter || Number(getRowValue(clientIdAfter, "notnull")) !== 0) {
-    console.error("  FALLO: client_id NO es nullable despues de migracion.");
+  const colAfter = infoAfter.rows.find((r) => getRowValue(r, "name") === "client_id");
+  if (!colAfter || Number(getRowValue(colAfter, "notnull")) !== 0) {
+    console.error("  FALLO: client_id NO es nullable.");
     allOk = false;
   } else {
-    console.log("  OK budgets.client_id -> notnull=0 (nullable)");
+    console.log("  OK budgets.client_id -> notnull=0");
   }
 
   // V2: conteo budgets
-  const countAfterRes = await db.execute("SELECT COUNT(*) as cnt FROM budgets");
-  const countAfter = Number(getRowValue(countAfterRes.rows[0], "cnt"));
-  if (countAfter !== budgetCount) {
-    console.error(`  FALLO: Conteo budgets: esperado=${budgetCount}, actual=${countAfter}`);
+  const cntAfter = Number(getRowValue((await db.execute("SELECT COUNT(*) as cnt FROM budgets")).rows[0], "cnt"));
+  if (cntAfter !== budgetCount) {
+    console.error(`  FALLO: budgets esperado=${budgetCount}, actual=${cntAfter}`);
     allOk = false;
   } else {
-    console.log(`  OK budgets: ${countAfter} filas (sin cambio)`);
+    console.log(`  OK budgets: ${cntAfter} filas`);
   }
 
   // V3: conteo budget_items
-  const itemsAfterRes = await db.execute("SELECT COUNT(*) as cnt FROM budget_items");
-  const itemsAfter = Number(getRowValue(itemsAfterRes.rows[0], "cnt"));
+  const itemsAfter = Number(getRowValue((await db.execute("SELECT COUNT(*) as cnt FROM budget_items")).rows[0], "cnt"));
   if (itemsAfter !== itemsCount) {
-    console.error(`  FALLO: Conteo budget_items: esperado=${itemsCount}, actual=${itemsAfter}`);
+    console.error(`  FALLO: budget_items esperado=${itemsCount}, actual=${itemsAfter}`);
     allOk = false;
   } else {
-    console.log(`  OK budget_items: ${itemsAfter} filas (sin cambio)`);
+    console.log(`  OK budget_items: ${itemsAfter} filas`);
   }
 
-  // V4: FK check budget_items
+  // V4: FK check
   const fkCheck = await db.execute("PRAGMA foreign_key_check(budget_items)");
   if (fkCheck.rows.length > 0) {
-    console.error(`  FALLO: foreign_key_check(budget_items): ${fkCheck.rows.length} violaciones`);
+    console.error(`  FALLO: foreign_key_check: ${fkCheck.rows.length} violaciones`);
     allOk = false;
   } else {
     console.log("  OK foreign_key_check(budget_items): 0 violaciones");
   }
 
-  // V5: invoices.client_id NOT NULL
-  const invInfo = await db.execute("PRAGMA table_info(invoices)");
-  const invClientId = invInfo.rows.find((r) => getRowValue(r, "name") === "client_id");
-  if (invClientId && Number(getRowValue(invClientId, "notnull")) !== 1) {
-    console.error("  FALLO: invoices.client_id dejo de ser NOT NULL");
+  // V5: invoices.client_id NOT NULL (estricto)
+  const invTableExists = await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='invoices'");
+  if (invTableExists.rows.length === 0) {
+    console.error("  FALLO: tabla invoices no existe.");
     allOk = false;
   } else {
-    console.log("  OK invoices.client_id -> notnull=1 (sin cambio)");
+    const invInfo = await db.execute("PRAGMA table_info(invoices)");
+    const invCol = invInfo.rows.find((r) => getRowValue(r, "name") === "client_id");
+    if (!invCol) {
+      console.error("  FALLO: invoices no tiene columna client_id.");
+      allOk = false;
+    } else if (Number(getRowValue(invCol, "notnull")) !== 1) {
+      console.error("  FALLO: invoices.client_id dejo de ser NOT NULL.");
+      allOk = false;
+    } else {
+      console.log("  OK invoices.client_id -> notnull=1");
+    }
   }
 
   // V6: integrity_check
-  const integrity = await db.execute("PRAGMA integrity_check");
-  const intVal = String(integrity.rows[0]?.[0] ?? getRowValue(integrity.rows[0], "integrity_check") ?? "");
-  if (intVal !== "ok") {
-    console.error(`  FALLO: integrity_check: ${intVal}`);
+  const ic = await db.execute("PRAGMA integrity_check");
+  const icVal = String(ic.rows[0]?.[0] ?? getRowValue(ic.rows[0], "integrity_check") ?? "");
+  if (icVal !== "ok") {
+    console.error(`  FALLO: integrity_check: ${icVal}`);
     allOk = false;
   } else {
     console.log("  OK integrity_check: ok");
   }
 
-  // V7: INSERT con client_id NULL (UUID unico)
+  // V7: INSERT con client_id NULL
   const testId = randomUUID();
-  const testNumber = `TEST_MIGR_${Date.now()}`;
+  const testNum = `TEST_MIGR_${Date.now()}`;
   try {
-    await db.execute({
-      sql: "INSERT INTO budgets (id, number, client_id, date) VALUES (?, ?, NULL, ?)",
-      args: [testId, testNumber, "2026-07-12"],
-    });
+    await db.execute({ sql: "INSERT INTO budgets (id, number, client_id, date) VALUES (?, ?, NULL, ?)", args: [testId, testNum, "2026-07-12"] });
     try {
       await db.execute({ sql: "DELETE FROM budgets WHERE id = ?", args: [testId] });
-      console.log("  OK INSERT con client_id=NULL: funciona correctamente");
-    } catch (delErr: unknown) {
-      const delMsg = delErr instanceof Error ? delErr.message : String(delErr);
-      console.error(`  FALLO: INSERT exitoso pero DELETE fallo: ${delMsg}`);
-      console.error(`  ID temporal pendiente de limpieza manual: ${testId}`);
+      console.log("  OK INSERT client_id=NULL funciona");
+    } catch (e: unknown) {
+      console.error(`  FALLO: DELETE test: ${e instanceof Error ? e.message : e}`);
+      console.error(`  ID limpieza manual: ${testId}`);
       allOk = false;
     }
-  } catch (insErr: unknown) {
-    const insMsg = insErr instanceof Error ? insErr.message : String(insErr);
-    console.error(`  FALLO: INSERT con client_id=NULL: ${insMsg}`);
+  } catch (e: unknown) {
+    console.error(`  FALLO: INSERT client_id=NULL: ${e instanceof Error ? e.message : e}`);
     allOk = false;
   }
 
-  // ──── RESULTADO FINAL ──────────────────────────────────────────────────
   if (!allOk) {
-    throw new MigrationError(
-      "VERIFICACIONES FALLIDAS. RESTAURAR BACKUP INMEDIATAMENTE. " +
-      "NO se registra la migracion como completada."
-    );
+    throw new MigrationError("VERIFICACIONES FALLIDAS. RESTAURAR BACKUP.");
   }
 
-  // ──── REGISTRAR MIGRACION COMPLETADA ───────────────────────────────────
-  await db.execute({
-    sql: "INSERT OR IGNORE INTO schema_migrations (id, applied_by) VALUES (?, ?)",
-    args: [MIGRATION_ID, "scripts/migrate-budgets-client-nullable.ts"],
-  });
+  // ──── REGISTRAR ────────────────────────────────────────────────────────
+  await db.execute({ sql: "INSERT OR IGNORE INTO schema_migrations (id, applied_by) VALUES (?, ?)", args: [MIGRATION_ID, "script"] });
 
-  console.log("");
-  console.log("================================================================");
+  console.log("\n================================================================");
   console.log("  MIGRACION COMPLETADA EXITOSAMENTE");
   console.log(`  ${MIGRATION_ID}`);
-  console.log("================================================================");
-  console.log("");
-  console.log("Puedes reiniciar la aplicacion.");
+  console.log("================================================================\n");
+  console.log("Reiniciar la aplicacion.");
 }
 
 main().catch((err: unknown) => {
-  const msg = err instanceof Error ? err.message : String(err);
-  console.error(`\nERROR: ${msg}`);
+  console.error(`\nERROR: ${err instanceof Error ? err.message : err}`);
   process.exit(1);
 });
