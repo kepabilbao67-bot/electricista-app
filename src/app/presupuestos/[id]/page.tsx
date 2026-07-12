@@ -169,8 +169,8 @@ export default function PresupuestoDetailPage() {
   const zoneGroups = hasZones ? groupItemsByZone(budget.items) : null;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="budget-page max-w-4xl mx-auto">
+      <div className="no-print flex items-center gap-4 mb-6">
         <button onClick={() => router.back()} className="rounded-lg p-2 hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -219,7 +219,7 @@ export default function PresupuestoDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none">
+      <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none">
         <div className="flex justify-between mb-8">
           <div>
             <h2 className="text-xl font-bold text-gray-900">MARTIN OYARZABAL, IVAN</h2>
@@ -306,7 +306,7 @@ export default function PresupuestoDetailPage() {
           </table>
         )}
 
-        <div className="border-t-2 border-gray-200 pt-4 text-right space-y-1">
+        <div className="budget-totals border-t-2 border-gray-200 pt-4 text-right space-y-1">
           <p className="text-sm">Base imponible: {budget.subtotal.toFixed(2)} EUR</p>
           <p className="text-sm">IVA {budget.tax_rate}%: {budget.tax_amount.toFixed(2)} EUR</p>
           <p className="text-xl font-bold">Total: {budget.total.toFixed(2)} EUR</p>

@@ -35,11 +35,18 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <style>{`
           @media print {
+            @page {
+              size: A4;
+              margin: 12mm;
+            }
+
             html,
             body,
             .app-shell,
             .app-content,
-            .app-main {
+            .app-main,
+            .budget-page,
+            .budget-print {
               display: block !important;
               height: auto !important;
               min-height: 0 !important;
@@ -47,15 +54,41 @@ export default function RootLayout({
               overflow: visible !important;
             }
 
-            .app-main {
+            .app-main,
+            .budget-page,
+            .budget-print {
               width: 100% !important;
+              max-width: none !important;
+              margin: 0 !important;
               padding: 0 !important;
             }
 
             aside,
             nav,
-            button {
+            button,
+            .no-print {
               display: none !important;
+            }
+
+            .budget-print {
+              position: static !important;
+              border: 0 !important;
+              box-shadow: none !important;
+            }
+
+            .budget-print table {
+              width: 100% !important;
+              page-break-inside: auto !important;
+            }
+
+            .budget-print thead {
+              display: table-header-group !important;
+            }
+
+            .budget-print tr,
+            .budget-totals {
+              break-inside: avoid !important;
+              page-break-inside: avoid !important;
             }
           }
         `}</style>
