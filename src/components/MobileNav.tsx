@@ -43,7 +43,6 @@ export function MobileNav() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 shadow-sm">
             <Zap className="h-4 w-4 text-amber-400" />
           </div>
-          <span className="font-bold text-slate-900 text-sm">Autonomo360</span>
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
