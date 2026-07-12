@@ -166,11 +166,98 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "created_at", def: "TEXT" },
   ]);
 
-  // Migración de budgets.client_id NOT NULL → nullable:
+  // Migración: budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001)
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
-  // En bases EXISTENTES, ejecutar manualmente:
-  //   npx tsx scripts/migrate-budgets-client-nullable.ts --url "file:electricista.db"
-  // Ver scripts/migrate-budgets-client-nullable.ts para detalles.
+  // En bases EXISTENTES con client_id NOT NULL, se reconstruye la tabla
+  // de forma atómica usando db.migrate() (transacción + PRAGMA foreign_keys OFF).
+  await migrateBudgetsClientIdNullable(db);
+}
+
+/**
+ * Migración idempotente: hace budgets.client_id nullable en tablas existentes.
+ * Usa db.migrate() que ejecuta dentro de una transacción atómica con
+ * PRAGMA foreign_keys=OFF antes y =ON después. Si falla → ROLLBACK completo.
+ */
+async function migrateBudgetsClientIdNullable(db: Client): Promise<void> {
+  const COLUMNS = [
+    "id", "number", "client_id", "date", "valid_until", "status",
+    "subtotal", "tax_rate", "tax_amount", "total", "notes",
+    "converted_invoice_id", "created_at", "updated_at",
+  ];
+
+  // 1. Comprobar si la tabla budgets existe y tiene client_id
+  let tableInfo;
+  try {
+    tableInfo = await db.execute("PRAGMA table_info(budgets)");
+  } catch {
+    return; // tabla no existe aún; CREATE TABLE la creará correctamente
+  }
+
+  const clientIdCol = tableInfo.rows.find(
+    (r) => (r as Record<string, unknown>)["name"] === "client_id"
+  );
+
+  // Si no existe la columna o ya es nullable, no hacer nada
+  if (!clientIdCol) return;
+  if (Number((clientIdCol as Record<string, unknown>)["notnull"]) === 0) return;
+
+  // 2. Verificar que budgets_new no existe (estado residual)
+  const residual = await db.execute(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='budgets_new'"
+  );
+  if (residual.rows.length > 0) {
+    // Estado ambiguo: no ejecutar automáticamente. Loguear y salir.
+    console.warn(
+      "[DB Migration] budgets_new ya existe (posible migración interrumpida). " +
+      "Ejecutar scripts/migrate-budgets-client-nullable.ts manualmente para resolver."
+    );
+    return;
+  }
+
+  // 3. Ejecutar rebuild atómico con db.migrate()
+  //    - Transacción implícita (BEGIN...COMMIT con ROLLBACK si falla)
+  //    - PRAGMA foreign_keys=OFF automático (protege budget_items FK)
+  const colsList = COLUMNS.join(", ");
+
+  try {
+    await db.migrate([
+      `CREATE TABLE budgets_new (
+        id TEXT PRIMARY KEY,
+        number TEXT NOT NULL UNIQUE,
+        client_id TEXT,
+        date TEXT NOT NULL,
+        valid_until TEXT,
+        status TEXT DEFAULT 'draft',
+        subtotal REAL DEFAULT 0,
+        tax_rate REAL DEFAULT 21,
+        tax_amount REAL DEFAULT 0,
+        total REAL DEFAULT 0,
+        notes TEXT,
+        converted_invoice_id TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (client_id) REFERENCES clients(id),
+        FOREIGN KEY (converted_invoice_id) REFERENCES invoices(id)
+      )`,
+      `INSERT INTO budgets_new (${colsList}) SELECT ${colsList} FROM budgets`,
+      "DROP TABLE budgets",
+      "ALTER TABLE budgets_new RENAME TO budgets",
+    ]);
+  } catch (err: unknown) {
+    // ROLLBACK automático ya aplicado por db.migrate()
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[DB Migration] budgets.client_id rebuild falló (ROLLBACK): ${msg}`);
+    return;
+  }
+
+  // 4. Verificación post-migración
+  const infoAfter = await db.execute("PRAGMA table_info(budgets)");
+  const colAfter = infoAfter.rows.find(
+    (r) => (r as Record<string, unknown>)["name"] === "client_id"
+  );
+  if (colAfter && Number((colAfter as Record<string, unknown>)["notnull"]) === 0) {
+    console.log("[DB Migration] budgets.client_id migrado a nullable exitosamente.");
+  }
 }
 
 export async function initializeDatabase(): Promise<void> {
