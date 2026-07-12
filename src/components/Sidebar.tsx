@@ -39,10 +39,6 @@ export function Sidebar() {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 shadow-lg shadow-blue-900/40 ring-1 ring-blue-500/20">
           <Zap className="h-5 w-5 text-amber-400" />
         </div>
-        <div className="flex flex-col">
-          <span className="text-base font-bold text-white tracking-tight leading-tight">Autonomo360</span>
-          <span className="text-[10px] text-slate-500 font-medium tracking-wide">GESTION PARA AUTONOMOS</span>
-        </div>
       </div>
 
       {/* Navigation */}
