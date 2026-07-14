@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Zap, Bot, User, Sparkles } from "lucide-react";
 import { EXTRA_SUGGESTION_CHIPS } from "@/lib/ai-knowledge";
 import { localAnswer, type CatalogItem } from "@/lib/ai-engine";
+import { answerAboutApp, isDangerousElectricalQuery, DANGEROUS_QUERY_RESPONSE } from "@/lib/assistant";
 
 interface Message {
   id: string;
@@ -12,6 +13,7 @@ interface Message {
 }
 
 const SUGGESTION_CHIPS = [
+  "Cómo usar la app",
   "Secciones de cable",
   "Circuitos minimos",
   "Proteccion para horno",
@@ -25,7 +27,7 @@ const WELCOME: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hola! Soy tu asistente completo para el negocio: normativa electrica, precios y mucho mas.\n\n- **Normativa REBT**: cable, protecciones, circuitos, banos, piscinas, garajes, locales, obras...\n- **Precios**: tu catalogo, margenes, como calcular presupuestos\n- **Negocio**: IRPF, cuota autonomo, morosos, ayudas, boletines, carnet instalador\n- **Seguridad**: EPIs, primeros auxilios, arco electrico\n- **Tecnico**: averias, domotica KNX, fotovoltaica, cargadores de coche, herramientas\n\nPreguntame lo que necesites o usa las sugerencias rapidas.",
+    "Hola! Soy el asistente de Autonomo360. Puedo ayudarte con:\n\n- **Usar la app**: cómo crear presupuestos, facturas, partes de trabajo, gestionar clientes...\n- **Normativa REBT**: cable, protecciones, circuitos, baños, piscinas, garajes, locales, obras...\n- **Precios**: tu catálogo, márgenes, cómo calcular presupuestos\n- **Negocio**: IRPF, cuota autónomo, morosos, ayudas, boletines, carnet instalador\n- **Seguridad**: EPIs, primeros auxilios, arco eléctrico\n- **Técnico**: averías, domótica KNX, fotovoltaica, cargadores de coche, herramientas\n\nPregúntame lo que necesites o usa las sugerencias rápidas.",
 };
 
 export default function NormativaPage() {
@@ -80,8 +82,13 @@ export default function NormativaPage() {
           ? data.answer
           : localAnswer(query, catalog);
     } catch {
-      // Sin conexion o error del servidor: respondemos con el motor offline.
-      answer = localAnswer(query, catalog);
+      // Sin conexión o error: responder con motor local mejorado.
+      if (isDangerousElectricalQuery(query)) {
+        answer = DANGEROUS_QUERY_RESPONSE;
+      } else {
+        const appAns = answerAboutApp(query);
+        answer = appAns || localAnswer(query, catalog);
+      }
     }
 
     const assistantMsg: Message = {
@@ -103,9 +110,9 @@ export default function NormativaPage() {
         </div>
         <div>
           <h1 className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
-            Asistente Electricista <Sparkles className="h-4 w-4 text-amber-500" />
+            Asistente Autonomo360 <Sparkles className="h-4 w-4 text-amber-500" />
           </h1>
-          <p className="text-xs text-slate-500">Normativa, negocio, seguridad, tecnica y precios</p>
+          <p className="text-xs text-slate-500">Normativa, negocio, seguridad, técnica y precios</p>
         </div>
       </div>
 
@@ -192,7 +199,7 @@ export default function NormativaPage() {
               handleSend();
             }
           }}
-          placeholder="Pregunta sobre normativa electrica..."
+          placeholder="Pregunta sobre la app, normativa, precios..."
           className="input-field flex-1"
           disabled={sending}
         />
