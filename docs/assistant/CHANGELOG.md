@@ -1,5 +1,13 @@
 # Changelog del Asistente Autonomo360
 
+## 2026-07-15-v2 — Modo demostración comercial
+
+- Documentado modo demo (DEMO_MODE=true) en Dashboard, Facturas y Agenda.
+- Dashboard: limitación y advertencia sobre datos ficticios en modo demo.
+- Facturas y Agenda: indicación de que las listas demo no son registros persistidos.
+- Variable DEMO_MODE es solo de servidor, no expuesta al navegador.
+- Los enlaces demo conducen a páginas generales, nunca a IDs inexistentes.
+
 ## 2026-07-15-v1 — Versión inicial
 
 - Refactorización completa del asistente como guía integral de Autonomo360.

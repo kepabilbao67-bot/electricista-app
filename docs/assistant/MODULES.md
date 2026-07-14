@@ -28,3 +28,21 @@
 - **Partes de trabajo**: Los datos se pierden al recargar. Solo los partes demo precargados son persistentes visualmente.
 - **Comunicaciones**: WhatsApp abre la app externa. Email y SMS solo generan texto para copiar.
 - **Facturas — TicketBAI**: TicketBAI es un sistema fiscal implantado en los territorios históricos de Euskadi. Su aplicación depende del territorio, actividad y situación fiscal. Batuz es la implementación de Bizkaia. Verificar con la Hacienda Foral correspondiente o con un asesor.
+
+## Modo demostración (DEMO_MODE)
+
+Variable de servidor `DEMO_MODE=true` que activa datos ficticios para demostraciones comerciales.
+
+**Características:**
+- No escribe datos en la base de datos.
+- El Dashboard muestra KPIs, alertas, facturas y visitas ficticias identificados con etiqueta "Modo demostración".
+- Los enlaces demo conducen a páginas generales (/facturas, /presupuestos, /agenda), no a registros inexistentes.
+- `DEMO_MODE=false` o ausente conserva el comportamiento real.
+- No se expone al navegador (no es NEXT_PUBLIC).
+
+**Módulos afectados en modo demo:**
+- Dashboard: datos ficticios completos.
+- Facturas (solo GET en dashboard): 5 facturas demo.
+- Agenda (solo GET en dashboard): 4 visitas demo.
+
+Los módulos individuales (/facturas, /agenda) NO se modifican internamente — solo sus respuestas GET cuando se llaman desde el dashboard en modo demo.

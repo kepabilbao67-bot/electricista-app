@@ -3,4 +3,4 @@
  * Incrementar con cada PR que modifique módulos, rutas, estados o funcionalidad.
  * Formato: YYYY-MM-DD-vN
  */
-export const KNOWLEDGE_VERSION = "2026-07-15-v1";
+export const KNOWLEDGE_VERSION = "2026-07-15-v2";

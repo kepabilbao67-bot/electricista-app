@@ -32,8 +32,12 @@ export const APP_MODULES: AppModule[] = [
       "Acciones rápidas: nueva factura, presupuesto, tarea, cliente, mensaje",
       "Últimas 5 facturas y próximas tareas",
     ],
-    limitations: ["Si la base de datos está vacía, muestra ceros"],
+    limitations: [
+      "Si la base de datos está vacía, muestra ceros",
+      "Cuando DEMO_MODE=true, los datos son ficticios y se utilizan únicamente para demostraciones comerciales. No representan actividad real del negocio.",
+    ],
     usage: "Accede a / o haz clic en Dashboard en el menú lateral.",
+    warnings: ["En modo demostración (DEMO_MODE=true), el dashboard muestra KPIs, alertas, facturas y visitas ficticias con una etiqueta visible. Los enlaces conducen a páginas generales, no a registros inexistentes. DEMO_MODE es una variable de servidor que no escribe datos en la base de datos."],
   },
   {
     name: "Clientes",
@@ -102,7 +106,10 @@ export const APP_MODULES: AppModule[] = [
       "Integración con catálogo de materiales",
       "TicketBAI/Batuz (sistema de los territorios históricos de Euskadi, verificar aplicación)",
     ],
-    limitations: ["TicketBAI es un sistema fiscal implantado en los territorios históricos de Euskadi. Su aplicación, calendario y requisitos dependen del territorio, la actividad y la situación fiscal. Debe verificarse con la Hacienda Foral correspondiente o con un asesor."],
+    limitations: [
+      "TicketBAI es un sistema fiscal implantado en los territorios históricos de Euskadi. Su aplicación, calendario y requisitos dependen del territorio, la actividad y la situación fiscal. Debe verificarse con la Hacienda Foral correspondiente o con un asesor.",
+      "En modo demostración, las listas de facturas mostradas en el Dashboard son ejemplos y no registros persistidos.",
+    ],
     usage: "Ve a /facturas. Haz clic en 'Nueva factura'. Selecciona cliente, añade líneas y guarda.",
     warnings: ["TicketBAI es un sistema fiscal de los territorios históricos de Euskadi. No es una obligación nacional. Batuz es la implementación específica de Bizkaia. Consulta con tu asesor si te aplica."],
   },
@@ -153,7 +160,7 @@ export const APP_MODULES: AppModule[] = [
       "Navegación entre semanas",
       "Crear, editar y eliminar visitas",
     ],
-    limitations: [],
+    limitations: ["En modo demostración, las visitas mostradas en el Dashboard son ejemplos y no registros persistidos."],
     usage: "Ve a /agenda. Alterna entre vista calendario y lista. Haz clic en 'Nueva visita' para programar una tarea.",
   },
   {
