@@ -1,7 +1,7 @@
 {
-  "name": "ElectricistApp",
-  "short_name": "Electricista",
-  "description": "Gestion profesional para electricistas",
+  "name": "Autonomo360",
+  "short_name": "Autonomo360",
+  "description": "Gestión profesional para electricistas y autónomos",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

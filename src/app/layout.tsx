@@ -13,13 +13,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ElectricistApp - Gestion Profesional",
-  description: "Aplicacion de gestion para electricista profesional",
+  title: "Autonomo360 — Gestión profesional para autónomos",
+  description: "Gestión profesional para electricistas y autónomos",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ElectricistApp",
+    title: "Autonomo360",
   },
 };
 
