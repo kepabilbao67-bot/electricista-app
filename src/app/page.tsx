@@ -11,6 +11,7 @@ interface AlertExpiringBudget { id: string; number: string; valid_until: string;
 interface AlertTodayVisit { id: string; title: string; time: string; client_name: string; }
 
 interface DashboardData {
+  demoMode: boolean;
   totalFacturacion: number;
   facturasPendientes: number;
   presupuestosPendientes: number;
@@ -70,11 +71,11 @@ export default function Dashboard() {
 
   const today = new Date().toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   const kpis = [
-    { label: "Facturacion total", value: `${(data?.totalFacturacion ?? 0).toFixed(2)} EUR`, icon: Euro, gradient: "from-emerald-500 to-emerald-600", href: "/facturas" },
+    { label: "Facturación total", value: `${(data?.totalFacturacion ?? 0).toFixed(2)} EUR`, icon: Euro, gradient: "from-emerald-500 to-emerald-600", href: "/facturas" },
     { label: "Pendiente de cobro", value: `${(data?.pendienteCobro ?? 0).toFixed(2)} EUR`, icon: Clock, gradient: "from-red-500 to-rose-600", href: "/facturas" },
     { label: "Facturas este mes", value: data?.facturasEsteMes ?? 0, icon: FileText, gradient: "from-blue-600 to-blue-800", href: "/facturas" },
     { label: "Presupuestos pendientes", value: data?.presupuestosPendientes ?? 0, icon: ClipboardList, gradient: "from-amber-500 to-orange-500", href: "/presupuestos" },
-    { label: "Proximas tareas", value: data?.proximasVisitas ?? 0, icon: Calendar, gradient: "from-purple-500 to-purple-600", href: "/agenda" },
+    { label: "Próximas tareas", value: data?.proximasVisitas ?? 0, icon: Calendar, gradient: "from-purple-500 to-purple-600", href: "/agenda" },
     { label: "Clientes activos", value: data?.clientesActivos ?? 0, icon: Users, gradient: "from-blue-700 to-blue-900", href: "/clientes" },
   ];
 
@@ -93,17 +94,29 @@ export default function Dashboard() {
     { label: "Enviar mensaje", href: "/comunicaciones", icon: MessageSquare, color: "bg-blue-600 hover:bg-blue-700" },
   ];
 
+  const isDemo = data?.demoMode === true;
+
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <h1 className="page-title">Panel de control del autónomo</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="page-title">Panel de control del autónomo</h1>
+          {isDemo && (
+            <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-800">
+              Modo demostración
+            </span>
+          )}
+        </div>
         <p className="page-subtitle capitalize">
           Resumen diario de facturación, clientes, tareas y actividad · {today}
         </p>
+        {isDemo && (
+          <p className="text-xs text-slate-500 mt-1">Los datos mostrados son ejemplos y no representan actividad real.</p>
+        )}
       </div>
 
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Acciones rapidas</h2>
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Acciones rápidas</h2>
         <div className="flex flex-wrap gap-2">
           {quickActions.map((action) => (
             <Link key={action.label} href={action.href} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-white shadow-sm transition-all duration-200 ${action.color}`}>
@@ -125,11 +138,11 @@ export default function Dashboard() {
             <div className="rounded-xl border border-red-200 bg-red-50 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-sm font-semibold text-red-800">Facturas pendientes de cobro &gt;30 dias</span>
+                <span className="text-sm font-semibold text-red-800">Facturas pendientes de cobro &gt;30 días</span>
               </div>
               <div className="space-y-1.5">
                 {data.alerts.overdueInvoices.map((inv) => (
-                  <Link key={inv.id} href={`/facturas/${inv.id}`} className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm hover:bg-white transition-colors">
+                  <Link key={inv.id} href={isDemo ? "/facturas" : `/facturas/${inv.id}`} className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm hover:bg-white transition-colors">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-red-700">{inv.number}</span>
                       <span className="text-slate-600">{inv.client_name}</span>
@@ -148,11 +161,11 @@ export default function Dashboard() {
             <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-semibold text-orange-800">Presupuestos que caducan en menos de 3 dias</span>
+                <span className="text-sm font-semibold text-orange-800">Presupuestos que caducan en menos de 3 días</span>
               </div>
               <div className="space-y-1.5">
                 {data.alerts.expiringBudgets.map((budget) => (
-                  <Link key={budget.id} href={`/presupuestos/${budget.id}`} className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm hover:bg-white transition-colors">
+                  <Link key={budget.id} href={isDemo ? "/presupuestos" : `/presupuestos/${budget.id}`} className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2 text-sm hover:bg-white transition-colors">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-orange-700">{budget.number}</span>
                       <span className="text-slate-600">{budget.client_name}</span>
@@ -219,7 +232,7 @@ export default function Dashboard() {
         <div className="card-static p-5 lg:col-span-2">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Top clientes por actividad</h3>
           {topClients.length === 0 ? (
-            <p className="text-sm text-slate-400">Sin datos aun</p>
+            <p className="text-sm text-slate-400">Sin datos aún</p>
           ) : (
             <div className="space-y-2">
               {topClients.slice(0, 3).map((client, idx) => (
@@ -262,7 +275,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card-static">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Ultimos documentos</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Últimos documentos</h2>
             <Link href="/facturas" className="text-sm text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1">Ver todas <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
           <div className="space-y-3">
@@ -272,7 +285,7 @@ export default function Dashboard() {
               (data?.ultimasFacturas ?? []).map((factura) => {
                 const status = statusLabels[factura.status] || statusLabels.draft;
                 return (
-                  <Link key={factura.id} href={`/facturas/${factura.id}`} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150">
+                  <Link key={factura.id} href={isDemo ? "/facturas" : `/facturas/${factura.id}`} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-blue-800">{factura.number}</span>
@@ -293,7 +306,7 @@ export default function Dashboard() {
 
         <div className="card-static">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">Proximas tareas</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Próximas tareas</h2>
             <Link href="/agenda" className="text-sm text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1">Ver agenda <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
           <div className="space-y-3">
@@ -322,5 +335,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-

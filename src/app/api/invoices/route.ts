@@ -5,6 +5,23 @@ import { generateTicketBAIXml, TICKETBAI_CONFIG } from "@/lib/ticketbai";
 import type { TicketBAIInvoice } from "@/lib/ticketbai";
 
 export async function GET(request: NextRequest) {
+  if (process.env.DEMO_MODE === "true") {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const fiveDaysAgo = new Date(now); fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    const tenDaysAgo = new Date(now); tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    const twentyDaysAgo = new Date(now); twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
+    const thirtyFiveDaysAgo = new Date(now); thirtyFiveDaysAgo.setDate(thirtyFiveDaysAgo.getDate() - 35);
+
+    return NextResponse.json([
+      { id: "demo-invoice-001", number: "DFB_0015", client_id: "demo-c1", client_name: "Comunidad Prop. Autonomía 14", date: today, status: "paid", total: 1240.00, subtotal: 1024.79, tax_rate: 21, tax_amount: 215.21 },
+      { id: "demo-invoice-002", number: "DFB_0014", client_id: "demo-c2", client_name: "Bar Restaurante Zubialde", date: fiveDaysAgo.toISOString().split("T")[0], status: "sent", total: 1850.00, subtotal: 1528.93, tax_rate: 21, tax_amount: 321.07 },
+      { id: "demo-invoice-003", number: "DFB_0013", client_id: "demo-c3", client_name: "Talleres Mecánicos Eibar S.L.", date: tenDaysAgo.toISOString().split("T")[0], status: "paid", total: 2380.00, subtotal: 1966.94, tax_rate: 21, tax_amount: 413.06 },
+      { id: "demo-invoice-004", number: "DFB_0012", client_id: "demo-c4", client_name: "Garaje Comunitario Bidebarrieta", date: thirtyFiveDaysAgo.toISOString().split("T")[0], status: "sent", total: 1850.00, subtotal: 1528.93, tax_rate: 21, tax_amount: 321.07 },
+      { id: "demo-invoice-005", number: "DFB_0011", client_id: "demo-c5", client_name: "María López García", date: twentyDaysAgo.toISOString().split("T")[0], status: "draft", total: 320.00, subtotal: 264.46, tax_rate: 21, tax_amount: 55.54 },
+    ]);
+  }
+
   try {
     await initializeDatabase();
     const db = getDbClient();
