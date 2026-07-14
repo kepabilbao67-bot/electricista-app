@@ -22,10 +22,10 @@ Sí. Desde la vista detalle del presupuesto, haz clic en "Convertir a factura".
 ## Facturas
 
 **¿Qué es TicketBAI?**
-Un sistema de facturación electrónica obligatorio en Euskadi (País Vasco). No aplica en el resto de España.
+TicketBAI es un sistema fiscal implantado en los territorios históricos de Euskadi. Su aplicación, calendario y requisitos dependen del territorio, la actividad y la situación fiscal. Batuz es la implementación específica de Bizkaia. Debe verificarse con la Hacienda Foral correspondiente o con un asesor.
 
-**¿Puedo cobrar IVA reducido (10%)?**
-En reformas de vivienda particular de más de 2 años, si el material no supera el 40% del total. Consulta con tu gestor.
+**¿Puedo aplicar IVA reducido (10%)?**
+El IVA reducido en obras de renovación o reparación depende de varios requisitos legales y de las circunstancias de la operación. No lo apliques automáticamente: verifica el caso con tu gestor o asesor fiscal y con la normativa vigente.
 
 ## Partes de trabajo
 

@@ -17,13 +17,13 @@ Panel de control con 6 KPIs, gráfico de facturación de los últimos 6 meses, a
 Gestión de contactos: crear, editar, eliminar. Tipos particular y empresa. Comunicación directa por WhatsApp, teléfono y email.
 
 ### Leads (/leads)
-Pipeline de captación comercial. Estados: nuevo → contactado → cualificado → convertido/descartado.
+Pipeline de captación comercial. Estados: nuevo → contactado → cualificado → convertido/descartado. Los leads se guardan en base de datos. Marcar como convertido no crea automáticamente un cliente.
 
 ### Presupuestos (/presupuestos)
 Creación con generador automático por zonas/estancias. Integración con catálogo. Conversión directa a factura.
 
 ### Facturas (/facturas)
-Facturación con descuentos por línea, métodos de pago y estados. TicketBAI disponible para Euskadi.
+Facturación con descuentos por línea, métodos de pago y estados. TicketBAI disponible para los territorios históricos de Euskadi (verificar aplicación con asesor).
 
 ### Partes de trabajo (/partes-trabajo)
 Registro de intervenciones con vista imprimible. Estado: DEMO (no persiste datos).

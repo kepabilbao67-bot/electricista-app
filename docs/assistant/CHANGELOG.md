@@ -1,6 +1,6 @@
 # Changelog del Asistente Autonomo360
 
-## 2025-07-15-v1 — Versión inicial
+## 2026-07-15-v1 — Versión inicial
 
 - Refactorización completa del asistente como guía integral de Autonomo360.
 - Mapa de 12 módulos con estado REAL/DEMO/PARCIAL documentado.

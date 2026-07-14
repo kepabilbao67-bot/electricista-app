@@ -55,7 +55,7 @@ export const APP_MODULES: AppModule[] = [
   {
     name: "Leads",
     route: "/leads",
-    status: "REAL",
+    status: "PARCIAL",
     description: "Pipeline de captación de clientes potenciales con estados de avance.",
     features: [
       "Crear leads con nombre, email, teléfono, origen, interés y mensaje",
@@ -63,8 +63,11 @@ export const APP_MODULES: AppModule[] = [
       "Cambio de estado inline desde la tabla",
       "Persistencia en base de datos",
     ],
-    limitations: ["No convierte automáticamente un lead en un registro de cliente al marcarlo como convertido"],
-    usage: "Ve a /leads. Haz clic en 'Nuevo lead' para registrar un contacto comercial. Cambia su estado desde el desplegable.",
+    limitations: [
+      "Marcar un lead como convertido NO crea automáticamente un registro de cliente",
+      "No existe un flujo de conversión lead→cliente integrado",
+    ],
+    usage: "Ve a /leads. Haz clic en 'Nuevo lead' para registrar un contacto comercial. Cambia su estado desde el desplegable. Para crear el cliente, hazlo manualmente en /clientes.",
   },
   {
     name: "Presupuestos",
@@ -88,7 +91,7 @@ export const APP_MODULES: AppModule[] = [
     name: "Facturas",
     route: "/facturas",
     status: "REAL",
-    description: "Facturación completa con descuentos, estados y TicketBAI (País Vasco).",
+    description: "Facturación completa con descuentos, estados y TicketBAI (territorios históricos de Euskadi).",
     features: [
       "Crear facturas con líneas, descuentos por línea (% o EUR) y métodos de pago",
       "Estados: borrador, enviada, cobrada, vencida",
@@ -97,11 +100,11 @@ export const APP_MODULES: AppModule[] = [
       "Eliminar borradores",
       "Numeración automática (DFB_XXXX)",
       "Integración con catálogo de materiales",
-      "TicketBAI/Batuz (solo País Vasco)",
+      "TicketBAI/Batuz (sistema de los territorios históricos de Euskadi, verificar aplicación)",
     ],
-    limitations: ["TicketBAI aplica únicamente en Euskadi"],
+    limitations: ["TicketBAI es un sistema fiscal implantado en los territorios históricos de Euskadi. Su aplicación, calendario y requisitos dependen del territorio, la actividad y la situación fiscal. Debe verificarse con la Hacienda Foral correspondiente o con un asesor."],
     usage: "Ve a /facturas. Haz clic en 'Nueva factura'. Selecciona cliente, añade líneas y guarda.",
-    warnings: ["TicketBAI solo aplica a autónomos dados de alta en Bizkaia, Gipuzkoa o Araba. No es obligatorio en el resto de España."],
+    warnings: ["TicketBAI es un sistema fiscal de los territorios históricos de Euskadi. No es una obligación nacional. Batuz es la implementación específica de Bizkaia. Consulta con tu asesor si te aplica."],
   },
   {
     name: "Partes de trabajo",
@@ -247,24 +250,66 @@ export function answerAboutApp(query: string): string | null {
     return `**Módulos de Autonomo360:**\n\n| Módulo | Ruta | Estado | Descripción |\n|--------|------|--------|-------------|\n${table}\n\n**Estados:**\n- REAL: funciona y persiste datos.\n- DEMO: muestra la interfaz pero no guarda datos permanentemente.\n- PARCIAL: funciona con limitaciones (ver detalle de cada módulo).\n\nPregúntame sobre un módulo concreto para obtener instrucciones detalladas.`;
   }
 
-  // Buscar módulo específico
+  // Buscar módulo específico — buscar la mejor coincidencia
+  let bestMatch: AppModule | null = null;
+  let bestScore = 0;
+
   for (const mod of APP_MODULES) {
     const nameNorm = mod.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const routeKey = mod.route.replace("/", "").replace("-", " ");
-    if (q.includes(nameNorm) || q.includes(routeKey)) {
-      let response = `**${mod.name}** (${mod.route}) — Estado: ${mod.status}\n\n${mod.description}\n\n`;
-      response += `**Cómo usarlo:**\n${mod.usage}\n\n`;
-      if (mod.features.length > 0) {
-        response += `**Funciones:**\n${mod.features.map((f) => `- ${f}`).join("\n")}\n\n`;
-      }
-      if (mod.limitations.length > 0) {
-        response += `**Limitaciones:**\n${mod.limitations.map((l) => `- ${l}`).join("\n")}\n\n`;
-      }
-      if (mod.warnings && mod.warnings.length > 0) {
-        response += `**Importante:**\n${mod.warnings.map((w) => `⚠️ ${w}`).join("\n")}\n`;
-      }
-      return response;
+    const routeKey = mod.route.replace(/^\//, "").replace(/-/g, " ");
+
+    let score = 0;
+
+    // Coincidencia exacta del nombre completo (mayor peso)
+    if (nameNorm.length > 2 && q.includes(nameNorm)) {
+      score = nameNorm.length * 3;
     }
+    // Coincidencia de route key (e.g. "partes trabajo")
+    else if (routeKey.length > 3 && q.includes(routeKey)) {
+      score = routeKey.length * 2;
+    }
+    // Coincidencia parcial: palabras clave del nombre de al menos 4 caracteres
+    else {
+      const words = nameNorm.split(/[\s\/]+/).filter((w) => w.length >= 4);
+      for (const word of words) {
+        if (q.includes(word)) {
+          score = Math.max(score, word.length + 2); // Bonus for exact word
+        }
+        // Singular/plural: "presupuesto" vs "presupuestos"
+        const stem = word.replace(/es$/, "").replace(/s$/, "");
+        if (stem.length >= 4) {
+          // Check word boundary: stem must not be part of a larger word in the query
+          const stemRegex = new RegExp(`\\b${stem}`);
+          if (stemRegex.test(q)) {
+            // Extra bonus if it looks like the primary subject (appears early or after "un/una/el/la/los/las")
+            const subjectRegex = new RegExp(`(un|una|el|la|los|las|mi|mis)\\s+${stem}`);
+            const subjectBonus = subjectRegex.test(q) ? 3 : 0;
+            score = Math.max(score, stem.length + subjectBonus);
+          }
+        }
+      }
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = mod;
+    }
+  }
+
+  if (bestMatch && bestScore >= 4) {
+    const mod = bestMatch;
+    let response = `**${mod.name}** (${mod.route}) — Estado: ${mod.status}\n\n${mod.description}\n\n`;
+    response += `**Cómo usarlo:**\n${mod.usage}\n\n`;
+    if (mod.features.length > 0) {
+      response += `**Funciones:**\n${mod.features.map((f) => `- ${f}`).join("\n")}\n\n`;
+    }
+    if (mod.limitations.length > 0) {
+      response += `**Limitaciones:**\n${mod.limitations.map((l) => `- ${l}`).join("\n")}\n\n`;
+    }
+    if (mod.warnings && mod.warnings.length > 0) {
+      response += `**Importante:**\n${mod.warnings.map((w) => `⚠️ ${w}`).join("\n")}\n`;
+    }
+    return response;
   }
 
   return null;
