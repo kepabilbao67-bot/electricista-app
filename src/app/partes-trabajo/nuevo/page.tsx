@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Plus, Trash2, Info } from "lucide-react";
 import Link from "next/link";
 import { showToast } from "@/components/Toast";
 
@@ -22,8 +21,8 @@ interface TrabajoLine {
 }
 
 export default function NuevoParteTrabajoPage() {
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [validated, setValidated] = useState(false);
 
   const [form, setForm] = useState({
     numero: "PT-2025-005",
@@ -98,11 +97,11 @@ export default function NuevoParteTrabajoPage() {
       return;
     }
 
-    // Demo: simula guardado y redirige a vista del parte
     setTimeout(() => {
-      showToast("success", "Parte de trabajo guardado correctamente");
-      router.push("/partes-trabajo/pt-001");
-    }, 500);
+      setValidated(true);
+      showToast("info", "Modo demo: el parte se ha validado, pero todavía no se guarda de forma permanente.");
+      setSubmitting(false);
+    }, 300);
   };
 
   return (
@@ -379,14 +378,29 @@ export default function NuevoParteTrabajoPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
-          <button type="submit" disabled={submitting} className="btn-primary">
-            <Save className="h-4 w-4" />
-            {submitting ? "Guardando..." : "Guardar parte"}
-          </button>
-          <Link href="/partes-trabajo" className="btn-secondary">
-            Cancelar
-          </Link>
+        <div className="space-y-3">
+          {validated && (
+            <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-emerald-800">Parte validado correctamente</p>
+                <p className="text-xs text-emerald-700 mt-0.5">Los datos son correctos. La persistencia se incorporará en la siguiente fase.</p>
+              </div>
+            </div>
+          )}
+          <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <Info className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-blue-700">Versión demo. La persistencia de partes se incorporará en la siguiente fase.</p>
+          </div>
+          <div className="flex gap-3">
+            <button type="submit" disabled={submitting} className="btn-primary">
+              <CheckCircle className="h-4 w-4" />
+              {submitting ? "Validando..." : "Validar parte (demo)"}
+            </button>
+            <Link href="/partes-trabajo" className="btn-secondary">
+              Cancelar
+            </Link>
+          </div>
         </div>
       </form>
     </div>

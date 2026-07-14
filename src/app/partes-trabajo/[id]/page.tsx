@@ -175,9 +175,9 @@ export default function ParteTrabajoDetailPage() {
         {/* ═══ CABECERA ═══ */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">S&H ELÉCTRICAS</h2>
-            <p className="text-sm text-slate-600 mt-1">Teléfono: 609 421 750</p>
-            <p className="text-sm text-slate-600">Email: sh.electricas@gmail.com</p>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">AUTONOMO360</h2>
+            <p className="text-sm text-slate-600 mt-1">Empresa de demostración</p>
+            <p className="text-sm text-slate-600">Gestión profesional para electricistas</p>
           </div>
           <div className="text-right">
             <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide">Parte de Trabajo</h3>
