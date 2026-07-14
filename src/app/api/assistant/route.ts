@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
-import { localAnswer, buildCatalogContext, CatalogItem } from "@/lib/ai-engine";
-import { checkAiSecret } from "@/lib/ai-guard";
+import { localAnswer, type CatalogItem } from "@/lib/ai-engine";
+import {
+  buildSystemPrompt,
+  answerAboutApp,
+  isDangerousElectricalQuery,
+  DANGEROUS_QUERY_RESPONSE,
+  KNOWLEDGE_VERSION,
+} from "@/lib/assistant";
 
 export const dynamic = "force-dynamic";
 
@@ -11,19 +17,13 @@ interface ChatMessage {
 }
 
 /**
- * Carga el catalogo del usuario de forma defensiva (la columna cost_price puede
- * no existir todavia en instalaciones antiguas).
+ * Carga el catálogo del usuario de forma defensiva.
+ * No ejecuta ALTER TABLE — las migraciones ya se gestionan en initializeDatabase().
  */
 async function loadCatalog(): Promise<CatalogItem[]> {
   try {
     await initializeDatabase();
     const db = getDbClient();
-    // Asegura la columna de precio de compra (idempotente).
-    try {
-      await db.execute("ALTER TABLE catalog_items ADD COLUMN cost_price REAL DEFAULT 0");
-    } catch {
-      /* la columna ya existe */
-    }
     const result = await db.execute(
       "SELECT id, name, unit_price, COALESCE(cost_price, 0) as cost_price, category FROM catalog_items ORDER BY category, name"
     );
@@ -31,25 +31,6 @@ async function loadCatalog(): Promise<CatalogItem[]> {
   } catch {
     return [];
   }
-}
-
-function buildSystemPrompt(catalog: CatalogItem[]): string {
-  return `Eres el asistente experto de una app de gestion para un electricista autonomo en Espana (Pais Vasco).
-
-Tu perfil de conocimiento:
-- Dominas el REBT (Reglamento Electrotecnico de Baja Tension) y sus instrucciones ITC-BT: secciones de cable, protecciones (magnetotermicos, diferenciales), circuitos minimos (C1-C12), grados de electrificacion (basica 5750W / elevada 9200W), puesta a tierra, caida de tension, banos, piscinas, garajes, locales de publica concurrencia, obras y agricolas.
-- Conoces la fiscalidad del autonomo espanol: IRPF, modelo 130, IVA, cuota de autonomo, y la facturacion electronica TicketBAI / Batuz del Pais Vasco.
-- Conoces precios de mercado de material electrico y mano de obra, tramites (boletin/CIE, inspecciones OCA, carnet de instalador REI), seguridad (EPIs, primeros auxilios, arco electrico) y tecnologia (domotica KNX, cargadores de vehiculo electrico, fotovoltaica).
-
-Instrucciones de respuesta:
-- Responde SIEMPRE en espanol, de forma clara, practica y directa, como un companero de profesion.
-- Usa formato Markdown: titulos en negrita, listas y tablas cuando ayuden.
-- Da valores concretos (secciones, intensidades, precios en euros) cuando el usuario lo necesite.
-- Para PRECIOS de material usa EXCLUSIVAMENTE el catalogo del usuario que aparece abajo (compra en SOKOEL). No inventes precios: si un material no esta en el catalogo, dilo y sugiere anadirlo en la seccion Catalogo. Puedes calcular margenes = (venta - compra) / compra * 100 y beneficio = venta - compra.
-- Si algo depende de una inspeccion o del criterio del tecnico competente, indicalo.
-- Se conciso: ve al grano.
-
-${buildCatalogContext(catalog)}`;
 }
 
 async function callLLM(
@@ -106,8 +87,8 @@ async function callLLM(
 
 export async function POST(request: NextRequest) {
   try {
-    const blocked = checkAiSecret(request);
-    if (blocked) return blocked;
+    // Protección: Basic Auth global (middleware.ts) protege este endpoint.
+    // No se requiere x-ai-secret adicional dado el esquema fail-closed de SEC-004B.
 
     const body = await request.json().catch(() => ({}));
     const query = typeof body?.query === "string" ? body.query.trim() : "";
@@ -117,18 +98,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Falta la pregunta" }, { status: 400 });
     }
 
+    // Seguridad eléctrica: interceptar consultas peligrosas antes de cualquier procesamiento.
+    if (isDangerousElectricalQuery(query)) {
+      return NextResponse.json({
+        answer: DANGEROUS_QUERY_RESPONSE,
+        source: "safety",
+        knowledgeVersion: KNOWLEDGE_VERSION,
+      });
+    }
+
     const catalog = await loadCatalog();
+
+    // Intentar responder sobre la app desde el mapa de módulos (rápido, sin LLM).
+    const appAnswer = answerAboutApp(query);
+    if (appAnswer) {
+      return NextResponse.json({
+        answer: appAnswer,
+        source: "app-knowledge",
+        knowledgeVersion: KNOWLEDGE_VERSION,
+      });
+    }
 
     // 1) Intentar con un modelo de IA real si hay clave configurada.
     const systemPrompt = buildSystemPrompt(catalog);
     const llmAnswer = await callLLM(systemPrompt, history, query);
     if (llmAnswer) {
-      return NextResponse.json({ answer: llmAnswer, source: "ai" });
+      return NextResponse.json({
+        answer: llmAnswer,
+        source: "ai",
+        knowledgeVersion: KNOWLEDGE_VERSION,
+      });
     }
 
-    // 2) Respaldo: motor offline con normativa + catalogo.
+    // 2) Respaldo: motor offline con normativa + catálogo.
     const answer = localAnswer(query, catalog);
-    return NextResponse.json({ answer, source: "local" });
+    return NextResponse.json({
+      answer,
+      source: "local",
+      knowledgeVersion: KNOWLEDGE_VERSION,
+    });
   } catch {
     return NextResponse.json(
       { error: "Error al procesar la consulta" },
