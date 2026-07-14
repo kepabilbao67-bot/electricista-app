@@ -1,0 +1,14 @@
+# Changelog del Asistente Autonomo360
+
+## 2025-07-15-v1 — Versión inicial
+
+- Refactorización completa del asistente como guía integral de Autonomo360.
+- Mapa de 12 módulos con estado REAL/DEMO/PARCIAL documentado.
+- Prompt territorial neutro (toda España, TicketBAI solo si aplica).
+- Reglas de seguridad eléctrica obligatorias.
+- Protección contra prompt injection.
+- Eliminación de ALTER TABLE durante consultas.
+- Versionado del conocimiento (knowledgeVersion en respuesta).
+- Fallback offline mejorado con conocimiento de la app.
+- Detección de consultas peligrosas con respuesta de seguridad.
+- Protección delegada a Basic Auth global (eliminado checkAiSecret redundante).
