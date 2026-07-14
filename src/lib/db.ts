@@ -305,6 +305,19 @@ export async function initializeDatabase(): Promise<void> {
       category TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS leads (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      source TEXT,
+      interest TEXT,
+      message TEXT,
+      status TEXT NOT NULL DEFAULT 'nuevo',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `);
 
   // Migracion: anade columnas que puedan faltar en tablas creadas por versiones
