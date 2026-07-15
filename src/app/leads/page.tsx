@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, UserPlus, RefreshCw } from "lucide-react";
+import { Plus, UserPlus, RefreshCw, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Lead {
@@ -114,6 +114,21 @@ export default function LeadsPage() {
       }
     } catch {
       showToast("error", "Error de conexion");
+    }
+  };
+
+  const handleDeleteLead = async (id: string) => {
+    if (!window.confirm("¿Seguro que quieres borrar este lead? Esta acción no se puede deshacer.")) return;
+    try {
+      const res = await fetch(`/api/leads/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setLeads(leads.filter((l) => l.id !== id));
+        showToast("success", "Lead eliminado");
+      } else {
+        showToast("error", "Error al eliminar el lead");
+      }
+    } catch {
+      showToast("error", "Error al eliminar el lead");
     }
   };
 
@@ -257,6 +272,7 @@ export default function LeadsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Interes</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Estado</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">Fecha</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -294,11 +310,20 @@ export default function LeadsPage() {
                   <td className="px-4 py-3.5 hidden md:table-cell">
                     <span className="text-xs text-slate-500">{formatDate(lead.created_at)}</span>
                   </td>
+                  <td className="px-4 py-3.5 text-right">
+                    <button
+                      onClick={() => handleDeleteLead(lead.id)}
+                      className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                      title="Eliminar lead"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {leads.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center">
+                  <td colSpan={7} className="px-4 py-16 text-center">
                     <div className="empty-state">
                       <UserPlus className="empty-state-icon" />
                       <p className="empty-state-title">Sin leads</p>
