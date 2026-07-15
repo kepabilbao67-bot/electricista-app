@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, ClipboardCheck, Eye, Search } from "lucide-react";
+import { Plus, ClipboardCheck, Eye, Search, FileText } from "lucide-react";
 
 interface ParteTrabajo {
   id: string;
@@ -84,10 +84,16 @@ export default function PartesTrabajoPage() {
           <h1 className="page-title">Partes de trabajo</h1>
           <p className="page-subtitle">{filtered.length} partes registrados</p>
         </div>
-        <Link href="/partes-trabajo/nuevo" className="btn-primary">
-          <Plus className="h-4 w-4" />
-          Nuevo parte
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/partes-trabajo/plantilla" className="btn-secondary">
+            <FileText className="h-4 w-4" />
+            Plantilla en blanco
+          </Link>
+          <Link href="/partes-trabajo/nuevo" className="btn-primary">
+            <Plus className="h-4 w-4" />
+            Nuevo parte
+          </Link>
+        </div>
       </div>
 
       {/* Search */}

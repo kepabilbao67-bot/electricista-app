@@ -26,7 +26,7 @@ Creación con generador automático por zonas/estancias. Integración con catál
 Facturación con descuentos por línea, métodos de pago y estados. TicketBAI disponible para los territorios históricos de Euskadi (verificar aplicación con asesor).
 
 ### Partes de trabajo (/partes-trabajo)
-Registro de intervenciones con vista imprimible. Estado: DEMO (no persiste datos).
+Registro de intervenciones con vista imprimible. Estado: DEMO (no persiste datos). Incluye plantilla en blanco imprimible con datos de empresa (/partes-trabajo/plantilla) para rellenar a mano.
 
 ### Gastos (/gastos)
 Registro de compras con 12 categorías específicas de electricista.

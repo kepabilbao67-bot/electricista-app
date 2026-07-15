@@ -7,7 +7,7 @@
 | Leads | /leads | PARCIAL | Pipeline de captación, estados nuevo→convertido (sin conversión automática a cliente) |
 | Presupuestos | /presupuestos | REAL | Generador por zonas, conversión a factura |
 | Facturas | /facturas | REAL | Creación, TicketBAI (ver nota territorial), descuentos, estados |
-| Partes de trabajo | /partes-trabajo | DEMO | Formulario y vista imprimible, sin persistencia |
+| Partes de trabajo | /partes-trabajo | DEMO | Formulario y vista imprimible, sin persistencia. Plantilla en blanco en /partes-trabajo/plantilla |
 | Gastos | /gastos | REAL | Categorías de electricista, descuentos, NIF proveedor |
 | Agenda | /agenda | REAL | Vista semanal, estados, Google Maps |
 | Catálogo | /catalogo | REAL | Materiales coste/venta, calculadora de márgenes |

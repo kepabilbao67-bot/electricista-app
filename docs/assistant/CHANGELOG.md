@@ -1,5 +1,13 @@
 # Changelog del Asistente Autonomo360
 
+## 2026-07-16-v3 — Plantilla imprimible de partes de trabajo
+
+- Nueva ruta /partes-trabajo/plantilla con plantilla en blanco profesional de S&H Eléctricas.
+- Botón "Plantilla en blanco" añadido en /partes-trabajo.
+- Datos de empresa centralizados en src/lib/company-profile.ts.
+- La plantilla incluye cabecera, tablas, firmas y texto legal en una sola hoja A4.
+- Puede reimprimirse tantas veces como sea necesario desde el diálogo de impresión del navegador.
+
 ## 2026-07-15-v1 — Versión inicial
 
 - Refactorización completa del asistente como guía integral de Autonomo360.
