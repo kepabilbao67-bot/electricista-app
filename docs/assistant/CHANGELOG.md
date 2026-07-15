@@ -1,5 +1,13 @@
 # Changelog del Asistente Autonomo360
 
+## 2026-07-16-v4 — Borrado seguro de facturas por estado
+
+- Solo se pueden eliminar facturas en estado Borrador sin registro TicketBAI.
+- Facturas pendientes de Batuz, enviadas, cobradas y vencidas muestran icono de candado con tooltip explicativo.
+- Backend protegido: devuelve 403 si la factura no es borrador eliminable o tiene TicketBAI.
+- Filtro "Pte. Batuz" añadido a la lista de facturas.
+- Confirmación mejorada: indica el número de factura y que la acción es definitiva.
+
 ## 2026-07-16-v3 — Plantilla imprimible de partes de trabajo
 
 - Nueva ruta /partes-trabajo/plantilla con plantilla en blanco profesional de S&H Eléctricas.
