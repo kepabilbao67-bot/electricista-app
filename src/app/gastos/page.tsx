@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Receipt, TrendingDown, Search } from "lucide-react";
+import { Plus, Receipt, TrendingDown, Search, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Expense {
@@ -144,6 +144,21 @@ export default function GastosPage() {
     });
     setExpenses(expenses.map((e) => e.id === id ? { ...e, status: "paid" } : e));
     showToast("success", "Gasto marcado como pagado");
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    if (!window.confirm("¿Seguro que quieres borrar este gasto? Esta acción no se puede deshacer.")) return;
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setExpenses(expenses.filter((e) => e.id !== id));
+        showToast("success", "Gasto eliminado");
+      } else {
+        showToast("error", "Error al eliminar el gasto");
+      }
+    } catch {
+      showToast("error", "Error al eliminar el gasto");
+    }
   };
 
   const filtered = expenses.filter((e) =>
@@ -317,6 +332,13 @@ export default function GastosPage() {
                 {expense.status === "pending" && (
                   <button onClick={() => markPaid(expense.id)} className="text-xs text-emerald-600 hover:text-emerald-800 font-medium">Pagada</button>
                 )}
+                <button
+                  onClick={() => handleDeleteExpense(expense.id)}
+                  className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                  title="Eliminar gasto"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
             );
           })
