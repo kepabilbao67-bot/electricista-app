@@ -4,9 +4,10 @@
 
 - Documentado modo demo (DEMO_MODE=true) en Dashboard, Facturas y Agenda.
 - Dashboard: limitación y advertencia sobre datos ficticios en modo demo.
-- Facturas y Agenda: indicación de que las listas demo no son registros persistidos.
+- Facturas y Agenda: las listas demo solo se devuelven con context=dashboard-demo, no en acceso directo a /facturas o /agenda.
 - Variable DEMO_MODE es solo de servidor, no expuesta al navegador.
 - Los enlaces demo conducen a páginas generales, nunca a IDs inexistentes.
+- Las páginas /facturas y /agenda muestran datos reales incluso con DEMO_MODE=true.
 
 ## 2026-07-15-v1 — Versión inicial
 

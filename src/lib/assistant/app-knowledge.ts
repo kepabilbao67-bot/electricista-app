@@ -37,7 +37,7 @@ export const APP_MODULES: AppModule[] = [
       "Cuando DEMO_MODE=true, los datos son ficticios y se utilizan únicamente para demostraciones comerciales. No representan actividad real del negocio.",
     ],
     usage: "Accede a / o haz clic en Dashboard en el menú lateral.",
-    warnings: ["En modo demostración (DEMO_MODE=true), el dashboard muestra KPIs, alertas, facturas y visitas ficticias con una etiqueta visible. Los enlaces conducen a páginas generales, no a registros inexistentes. DEMO_MODE es una variable de servidor que no escribe datos en la base de datos."],
+    warnings: ["En modo demostración (DEMO_MODE=true), el dashboard muestra KPIs, alertas, facturas y visitas ficticias con una etiqueta visible. Los datos ficticios solo se devuelven cuando el Dashboard añade context=dashboard-demo a las peticiones. Las páginas /facturas y /agenda continúan mostrando datos reales. Los enlaces conducen a páginas generales, no a registros inexistentes. DEMO_MODE es una variable de servidor que no escribe datos en la base de datos."],
   },
   {
     name: "Clientes",

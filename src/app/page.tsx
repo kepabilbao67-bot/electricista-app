@@ -53,8 +53,8 @@ export default function Dashboard() {
   useEffect(() => {
     Promise.all([
       fetch("/api/dashboard").then((res) => res.json()),
-      fetch("/api/invoices").then((res) => res.json()).catch(() => []),
-      fetch("/api/visits").then((res) => res.json()).catch(() => []),
+      fetch("/api/invoices?context=dashboard-demo").then((res) => res.json()).catch(() => []),
+      fetch("/api/visits?context=dashboard-demo").then((res) => res.json()).catch(() => []),
     ]).then(([dashboard, invoices, visits]) => {
       setData({
         ...dashboard,

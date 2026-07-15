@@ -36,13 +36,16 @@ Variable de servidor `DEMO_MODE=true` que activa datos ficticios para demostraci
 **Características:**
 - No escribe datos en la base de datos.
 - El Dashboard muestra KPIs, alertas, facturas y visitas ficticias identificados con etiqueta "Modo demostración".
+- Las facturas y visitas ficticias solo se devuelven cuando el Dashboard añade el parámetro context=dashboard-demo a las peticiones.
+- Las páginas /facturas y /agenda continúan mostrando datos reales incluso con DEMO_MODE=true.
+- Las operaciones de escritura (POST, PUT, DELETE) continúan trabajando con datos reales.
 - Los enlaces demo conducen a páginas generales (/facturas, /presupuestos, /agenda), no a registros inexistentes.
-- `DEMO_MODE=false` o ausente conserva el comportamiento real.
+- `DEMO_MODE=false` o ausente conserva el comportamiento real en todos los endpoints.
 - No se expone al navegador (no es NEXT_PUBLIC).
 
 **Módulos afectados en modo demo:**
-- Dashboard: datos ficticios completos.
-- Facturas (solo GET en dashboard): 5 facturas demo.
-- Agenda (solo GET en dashboard): 4 visitas demo.
+- Dashboard: datos ficticios completos (KPIs, gráfico, alertas, top clientes).
+- Facturas (solo GET con context=dashboard-demo): 5 facturas demo.
+- Agenda (solo GET con context=dashboard-demo): 4 visitas demo.
 
-Los módulos individuales (/facturas, /agenda) NO se modifican internamente — solo sus respuestas GET cuando se llaman desde el dashboard en modo demo.
+Las páginas /facturas y /agenda NO muestran datos ficticios. Solo el Dashboard consume los datos demo.

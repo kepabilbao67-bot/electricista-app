@@ -3,7 +3,11 @@ import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET(request: NextRequest) {
-  if (process.env.DEMO_MODE === "true") {
+  const isDashboardDemo =
+    process.env.DEMO_MODE === "true" &&
+    request.nextUrl.searchParams.get("context") === "dashboard-demo";
+
+  if (isDashboardDemo) {
     const now = new Date();
     const today = now.toISOString().split("T")[0];
     const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);

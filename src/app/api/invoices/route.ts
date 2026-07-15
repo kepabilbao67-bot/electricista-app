@@ -5,7 +5,11 @@ import { generateTicketBAIXml, TICKETBAI_CONFIG } from "@/lib/ticketbai";
 import type { TicketBAIInvoice } from "@/lib/ticketbai";
 
 export async function GET(request: NextRequest) {
-  if (process.env.DEMO_MODE === "true") {
+  const isDashboardDemo =
+    process.env.DEMO_MODE === "true" &&
+    request.nextUrl.searchParams.get("context") === "dashboard-demo";
+
+  if (isDashboardDemo) {
     const now = new Date();
     const today = now.toISOString().split("T")[0];
     const fiveDaysAgo = new Date(now); fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);

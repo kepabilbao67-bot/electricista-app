@@ -11,7 +11,7 @@ La app está protegida por usuario y contraseña (Basic Auth). Se accede desde c
 ## Módulos principales
 
 ### Dashboard (/)
-Panel de control con 6 KPIs, gráfico de facturación de los últimos 6 meses, alertas activas y acciones rápidas. Cuando DEMO_MODE=true, muestra datos ficticios identificados con etiqueta "Modo demostración".
+Panel de control con 6 KPIs, gráfico de facturación de los últimos 6 meses, alertas activas y acciones rápidas. Cuando DEMO_MODE=true, muestra datos ficticios identificados con etiqueta "Modo demostración". Las facturas y visitas demo solo se cargan con el parámetro context=dashboard-demo; las páginas /facturas y /agenda siguen mostrando datos reales.
 
 ### Clientes (/clientes)
 Gestión de contactos: crear, editar, eliminar. Tipos particular y empresa. Comunicación directa por WhatsApp, teléfono y email.
