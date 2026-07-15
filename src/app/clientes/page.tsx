@@ -97,11 +97,16 @@ export default function ClientesPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Seguro que desea eliminar este cliente? Esta accion no se puede deshacer.")) {
-      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        showToast("success", "Cliente eliminado");
-        fetchClients();
-      } else {
+      try {
+        const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          showToast("success", "Cliente eliminado");
+          fetchClients();
+        } else {
+          const data = await res.json();
+          showToast("error", data.error || "Error al eliminar el cliente");
+        }
+      } catch {
         showToast("error", "Error al eliminar el cliente");
       }
     }

@@ -94,7 +94,10 @@ export default function PresupuestosPage() {
   };
 
   const handleDelete = async (budget: Budget) => {
-    if (!confirm(`¿Eliminar presupuesto ${budget.number}? Esta accion no se puede deshacer.`)) return;
+    const confirmMsg = budget.converted_invoice_id
+      ? "Este presupuesto está convertido en factura. ¿Seguro que quieres borrarlo?"
+      : "¿Seguro que quieres borrar este presupuesto? Esta acción no se puede deshacer.";
+    if (!confirm(confirmMsg)) return;
     try {
       const res = await fetch(`/api/budgets/${budget.id}`, { method: "DELETE" });
       if (res.ok) {

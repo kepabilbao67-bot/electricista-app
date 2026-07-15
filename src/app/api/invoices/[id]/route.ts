@@ -86,6 +86,20 @@ export async function DELETE(
     const { id } = await params;
     await initializeDatabase();
     const db = getDbClient();
+
+    // Check if invoice has ticketbai_id (fiscal record protection)
+    const invoice = await db.execute({
+      sql: "SELECT ticketbai_id FROM invoices WHERE id = ?",
+      args: [id],
+    });
+
+    if (invoice.rows.length > 0 && invoice.rows[0].ticketbai_id) {
+      return NextResponse.json(
+        { error: "No se puede borrar una factura con registro fiscal (TicketBAI). Puedes marcarla como anulada si procede." },
+        { status: 403 }
+      );
+    }
+
     await db.execute({ sql: "DELETE FROM invoice_items WHERE invoice_id = ?", args: [id] });
     await db.execute({ sql: "DELETE FROM invoices WHERE id = ?", args: [id] });
     return NextResponse.json({ success: true });
