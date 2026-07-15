@@ -1,5 +1,13 @@
 # Changelog del Asistente Autonomo360
 
+## 2026-07-16-v4 — Marca S&H Eléctricas y limpieza de facturas demo
+
+- Marca visible en Sidebar y MobileNav cambiada a S&H Eléctricas (desde company-profile.ts).
+- Las facturas de ejemplo han sido eliminadas. La instalación comienza sin facturas demo.
+- El usuario puede crear su primera factura real desde /facturas/nueva.
+- Script de limpieza disponible en scripts/cleanup-invoices.mjs para uso excepcional.
+- La carpeta backups/ está en .gitignore (no se sube a GitHub).
+
 ## 2026-07-16-v3 — Plantilla imprimible de partes de trabajo
 
 - Nueva ruta /partes-trabajo/plantilla con plantilla en blanco profesional de S&H Eléctricas.
