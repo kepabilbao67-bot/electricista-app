@@ -6,7 +6,7 @@
 | Clientes | /clientes | REAL | CRUD, WhatsApp directo, tipos particular/empresa |
 | Leads | /leads | PARCIAL | Pipeline de captación, estados nuevo→convertido (sin conversión automática a cliente) |
 | Presupuestos | /presupuestos | REAL | Generador por zonas, conversión a factura |
-| Facturas | /facturas | REAL | Creación, TicketBAI (ver nota territorial), descuentos, estados |
+| Facturas | /facturas | REAL | Creación, TicketBAI (ver nota territorial), descuentos, estados. Solo borradores sin TicketBAI se pueden eliminar. |
 | Partes de trabajo | /partes-trabajo | DEMO | Formulario y vista imprimible, sin persistencia. Plantilla en blanco en /partes-trabajo/plantilla |
 | Gastos | /gastos | REAL | Categorías de electricista, descuentos, NIF proveedor |
 | Agenda | /agenda | REAL | Vista semanal, estados, Google Maps |

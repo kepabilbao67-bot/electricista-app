@@ -23,7 +23,7 @@ Pipeline de captación comercial. Estados: nuevo → contactado → cualificado 
 Creación con generador automático por zonas/estancias. Integración con catálogo. Conversión directa a factura.
 
 ### Facturas (/facturas)
-Facturación con descuentos por línea, métodos de pago y estados. TicketBAI disponible para los territorios históricos de Euskadi (verificar aplicación con asesor).
+Facturación con descuentos por línea, métodos de pago y estados. TicketBAI disponible para los territorios históricos de Euskadi (verificar aplicación con asesor). Solo se pueden eliminar facturas en estado Borrador que no tengan registro TicketBAI. Las facturas pendientes de Batuz, enviadas, cobradas o vencidas se conservan y no se pueden borrar.
 
 ### Partes de trabajo (/partes-trabajo)
 Registro de intervenciones con vista imprimible. Estado: DEMO (no persiste datos). Incluye plantilla en blanco imprimible con datos de empresa (/partes-trabajo/plantilla) para rellenar a mano.
