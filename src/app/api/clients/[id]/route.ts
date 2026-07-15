@@ -79,6 +79,25 @@ export async function DELETE(
     const { id } = await params;
     await initializeDatabase();
     const db = getDbClient();
+
+    // Check referential integrity: count invoices and budgets for this client
+    const invoiceCount = await db.execute({
+      sql: "SELECT COUNT(*) as count FROM invoices WHERE client_id = ?",
+      args: [id],
+    });
+    const budgetCount = await db.execute({
+      sql: "SELECT COUNT(*) as count FROM budgets WHERE client_id = ?",
+      args: [id],
+    });
+
+    const totalDocs = Number(invoiceCount.rows[0].count) + Number(budgetCount.rows[0].count);
+    if (totalDocs > 0) {
+      return NextResponse.json(
+        { error: "No se puede borrar este cliente porque tiene documentos asociados. Borra o revisa primero sus documentos." },
+        { status: 409 }
+      );
+    }
+
     await db.execute({ sql: "DELETE FROM clients WHERE id = ?", args: [id] });
     return NextResponse.json({ success: true });
   } catch {

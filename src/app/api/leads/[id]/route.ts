@@ -53,3 +53,21 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await initializeDatabase();
+    const db = getDbClient();
+    await db.execute({ sql: "DELETE FROM leads WHERE id = ?", args: [id] });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json(
+      { error: "Error al eliminar lead" },
+      { status: 500 }
+    );
+  }
+}
