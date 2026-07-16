@@ -4,7 +4,7 @@ import { KNOWLEDGE_VERSION } from "./knowledge-version";
 import { buildCatalogContext, type CatalogItem } from "@/lib/ai-engine";
 
 /**
- * Construye el prompt de sistema completo para el asistente de Autonomo360.
+ * Construye el prompt de sistema completo para el asistente de S&H Eléctricas.
  */
 export function buildSystemPrompt(catalog: CatalogItem[]): string {
   return `Eres el asistente integrado de S&H Eléctricas, una aplicación de gestión profesional para electricistas y autónomos en España.
