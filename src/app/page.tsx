@@ -319,6 +319,8 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <p className="text-center text-[10px] text-slate-400 mt-8 no-print">Sistema desarrollado por KepatecnologIA · KAOS System</p>
     </div>
   );
 }

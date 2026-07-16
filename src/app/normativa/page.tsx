@@ -113,6 +113,7 @@ export default function NormativaPage() {
             Asistente Autonomo360 <Sparkles className="h-4 w-4 text-amber-500" />
           </h1>
           <p className="text-xs text-slate-500">Normativa, negocio, seguridad, técnica y precios</p>
+          <p className="text-[9px] text-slate-400 mt-0.5">Tecnología KAOS por KepatecnologIA</p>
         </div>
       </div>
 

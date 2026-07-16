@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { KaosSignature } from "@/components/KaosSignature";
 import { COMPANY_PROFILE } from "@/lib/company-profile";
 import {
   LayoutDashboard,
@@ -85,6 +86,7 @@ export function Sidebar() {
           </div>
         </div>
       </div>
+      <KaosSignature />
     </aside>
   );
 }
