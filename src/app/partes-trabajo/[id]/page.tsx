@@ -111,7 +111,7 @@ const PARTES_DEMO: Record<string, {
 
 export default function ParteTrabajoDetailPage() {
   const params = useParams();
- const router = useRouter();
+  const router = useRouter();
   const id = params.id as string;
   const parte = PARTES_DEMO[id];
 
@@ -137,7 +137,7 @@ export default function ParteTrabajoDetailPage() {
   };
 
   const handleDelete = () => {
-    if (!window.confirm("Seguro que quieres borrar este parte de trabajo? Esta acción no se puede deshacer.")) return;
+    if (!window.confirm("¿Seguro que quieres borrar este parte de trabajo? Esta acción no se puede deshacer.")) return;
     showToast("success", "Parte de trabajo eliminado");
     router.push("/partes-trabajo");
   };
