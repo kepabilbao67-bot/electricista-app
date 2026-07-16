@@ -96,9 +96,9 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <h1 className="page-title">Panel de control del autónomo</h1>
+        <h1 className="page-title">Panel de control de S&H Eléctricas</h1>
         <p className="page-subtitle capitalize">
-          Resumen diario de facturación, clientes, tareas y actividad · {today}
+          Resumen diario de facturación, clientes, avisos, trabajos y actividad eléctrica · {today}
         </p>
       </div>
 

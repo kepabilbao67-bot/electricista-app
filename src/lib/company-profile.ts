@@ -10,6 +10,6 @@ export const COMPANY_PROFILE = {
   nif: "16063731W",
   addressLine1: "Lehendakari Aguirre 7B, 2.º derecha",
   addressLine2: "48640 Berango, Bizkaia",
-  phone: "688 867 530",
-  email: "",
+  phone: "609 421 750",
+  email: "sh.electricas@gmail.com",
 };
