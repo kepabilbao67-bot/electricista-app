@@ -137,7 +137,7 @@ export default function PresupuestoDetailPage() {
               ? "Rechazado"
               : budget.status;
 
-    const subject = `Presupuesto ${budget.number} - Autonomo360`;
+    const subject = `Presupuesto ${budget.number} - S&H Eléctricas`;
     const validUntilLine = budget.valid_until ? `\nVálido hasta: ${budget.valid_until}` : "";
     const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nAdjunto el presupuesto en PDF para que puedas revisarlo con todos los conceptos, importes e IVA desglosados.\n\nResumen:\nPresupuesto: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}${validUntilLine}\n\nPuedes responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
 
