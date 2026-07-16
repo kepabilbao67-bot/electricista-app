@@ -27,7 +27,7 @@ const WELCOME: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hola! Soy el asistente de Autonomo360. Puedo ayudarte con:\n\n- **Usar la app**: cómo crear presupuestos, facturas, partes de trabajo, gestionar clientes...\n- **Normativa REBT**: cable, protecciones, circuitos, baños, piscinas, garajes, locales, obras...\n- **Precios**: tu catálogo, márgenes, cómo calcular presupuestos\n- **Negocio**: IRPF, cuota autónomo, morosos, ayudas, boletines, carnet instalador\n- **Seguridad**: EPIs, primeros auxilios, arco eléctrico\n- **Técnico**: averías, domótica KNX, fotovoltaica, cargadores de coche, herramientas\n\nPregúntame lo que necesites o usa las sugerencias rápidas.",
+    "Hola! Soy el asistente de S&H Eléctricas. Puedo ayudarte con:\n\n- **Usar la app**: cómo crear presupuestos, facturas, partes de trabajo, gestionar clientes...\n- **Normativa REBT**: cable, protecciones, circuitos, baños, piscinas, garajes, locales, obras...\n- **Precios**: tu catálogo, márgenes, cómo calcular presupuestos\n- **Negocio**: IRPF, cuota autónomo, morosos, ayudas, boletines, carnet instalador\n- **Seguridad**: EPIs, primeros auxilios, arco eléctrico\n- **Técnico**: averías, domótica KNX, fotovoltaica, cargadores de coche, herramientas\n\nPregúntame lo que necesites o usa las sugerencias rápidas.",
 };
 
 export default function NormativaPage() {
@@ -110,7 +110,7 @@ export default function NormativaPage() {
         </div>
         <div>
           <h1 className="text-lg font-bold text-slate-900 flex items-center gap-1.5">
-            Asistente Autonomo360 <Sparkles className="h-4 w-4 text-amber-500" />
+            Asistente S&H Eléctricas <Sparkles className="h-4 w-4 text-amber-500" />
           </h1>
           <p className="text-xs text-slate-500">Normativa, negocio, seguridad, técnica y precios</p>
           <p className="text-[9px] text-slate-400 mt-0.5">Tecnología KAOS por KepatecnologIA</p>
