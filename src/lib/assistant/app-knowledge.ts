@@ -236,7 +236,7 @@ export function buildAppKnowledgeContext(): string {
     const limitText = m.limitations.length > 0 ? ` Limitaciones: ${m.limitations.join("; ")}` : "";
     return `- ${m.name} (${m.route}) ${statusTag}: ${m.description}${limitText}`;
   });
-  return `Módulos de la aplicación Autonomo360:\n${lines.join("\n")}`;
+  return `Módulos de la aplicación S&H Eléctricas:\n${lines.join("\n")}`;
 }
 
 /**
@@ -248,7 +248,7 @@ export function answerAboutApp(query: string): string | null {
   // Pregunta general sobre la app
   if (q.match(/como.*uso.*app|que.*hace.*app|ayuda.*app|modulos|funciones.*app|que.*puedo.*hacer/)) {
     const table = APP_MODULES.map((m) => `| ${m.name} | ${m.route} | ${m.status} | ${m.description.slice(0, 60)} |`).join("\n");
-    return `**Módulos de Autonomo360:**\n\n| Módulo | Ruta | Estado | Descripción |\n|--------|------|--------|-------------|\n${table}\n\n**Estados:**\n- REAL: funciona y persiste datos.\n- DEMO: muestra la interfaz pero no guarda datos permanentemente.\n- PARCIAL: funciona con limitaciones (ver detalle de cada módulo).\n\nPregúntame sobre un módulo concreto para obtener instrucciones detalladas.`;
+    return `**Módulos de S&H Eléctricas:**\n\n| Módulo | Ruta | Estado | Descripción |\n|--------|------|--------|-------------|\n${table}\n\n**Estados:**\n- REAL: funciona y persiste datos.\n- DEMO: muestra la interfaz pero no guarda datos permanentemente.\n- PARCIAL: funciona con limitaciones (ver detalle de cada módulo).\n\nPregúntame sobre un módulo concreto para obtener instrucciones detalladas.`;
   }
 
   // Buscar módulo específico — buscar la mejor coincidencia
