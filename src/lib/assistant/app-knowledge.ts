@@ -1,5 +1,5 @@
 /**
- * Mapa de módulos de Autonomo360.
+ * Mapa de módulos de S&H Eléctricas.
  * Fuente única de verdad sobre qué puede hacer la app.
  * Actualizar con cada PR que modifique funcionalidad.
  */
