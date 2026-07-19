@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { COMPANY_PROFILE } from "@/lib/company-profile";
 import {
   Menu,
   X,
@@ -47,7 +48,7 @@ export function MobileNav() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 shadow-sm">
             <Zap className="h-4 w-4 text-amber-400" />
           </div>
-          <span className="text-sm font-bold text-slate-800 tracking-tight">Autonomo360</span>
+          <span className="text-sm font-bold text-slate-800 tracking-tight">{COMPANY_PROFILE.tradeName}</span>
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -91,4 +92,3 @@ export function MobileNav() {
     </div>
   );
 }
-

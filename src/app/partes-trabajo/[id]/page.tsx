@@ -1,8 +1,9 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Printer } from "lucide-react";
+import { showToast } from "@/components/Toast";
+import { ArrowLeft, Printer, Trash2 } from "lucide-react";
 
 /* ─── Demo data (matches the list in /partes-trabajo) ─── */
 const PARTES_DEMO: Record<string, {
@@ -110,6 +111,7 @@ const PARTES_DEMO: Record<string, {
 
 export default function ParteTrabajoDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const parte = PARTES_DEMO[id];
 
@@ -132,6 +134,12 @@ export default function ParteTrabajoDetailPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDelete = () => {
+    if (!window.confirm("¿Seguro que quieres borrar este parte de trabajo? Esta acción no se puede deshacer.")) return;
+    showToast("success", "Parte de trabajo eliminado");
+    router.push("/partes-trabajo");
   };
 
   const formatDate = (dateStr: string) => {
@@ -163,7 +171,11 @@ export default function ParteTrabajoDetailPage() {
             <p className="page-subtitle">Parte de trabajo — {parte.cliente}</p>
           </div>
         </div>
-        <button onClick={handlePrint} className="btn-primary">
+        <button onClick={handleDelete} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 transition-all no-print">
+ <Trash2 className="h-4 w-4" />
+ Borrar parte
+ </button>
+ <button onClick={handlePrint} className="btn-primary">
           <Printer className="h-4 w-4" />
           Imprimir / Guardar PDF
         </button>
@@ -175,9 +187,9 @@ export default function ParteTrabajoDetailPage() {
         {/* ═══ CABECERA ═══ */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">AUTONOMO360</h2>
-            <p className="text-sm text-slate-600 mt-1">Empresa de demostración</p>
-            <p className="text-sm text-slate-600">Gestión profesional para electricistas</p>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">S&H ELÉCTRICAS</h2>
+            <p className="text-sm text-slate-600 mt-1">Iván Martín Oyarzabal — Electricista profesional</p>
+            <p className="text-sm text-slate-600">Tel: 609 421 750</p>
           </div>
           <div className="text-right">
             <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide">Parte de Trabajo</h3>

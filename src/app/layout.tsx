@@ -13,13 +13,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Autonomo360 — Gestión profesional para autónomos",
-  description: "Gestión profesional para electricistas y autónomos",
+  title: "S&H Eléctricas — Gestión eléctrica profesional",
+  description: "Gestión profesional para trabajos eléctricos",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Autonomo360",
+    title: "S&H Eléctricas",
   },
 };
 

@@ -34,3 +34,12 @@ next-env.d.ts
 
 # database
 *.db
+
+# backups (local only, never commit)
+backups/
+
+# local diagnostic files (do not commit)
+migration-production-report.txt
+scripts/check-env.mjs
+scripts/debug-env.mjs
+scripts/debug-env2.mjs

@@ -1,7 +1,7 @@
 {
-  "name": "Autonomo360",
-  "short_name": "Autonomo360",
-  "description": "Gestión profesional para electricistas y autónomos",
+  "name": "S&H Eléctricas",
+  "short_name": "S&H Eléctricas",
+  "description": "Gestión profesional para trabajos eléctricos",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",

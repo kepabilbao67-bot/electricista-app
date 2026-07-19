@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Eye, FileText, Search, Euro, Clock, CheckCircle2, AlertCircle, Copy, Trash2 } from "lucide-react";
+import { Plus, Eye, FileText, Search, Euro, Clock, CheckCircle2, AlertCircle, Copy, Trash2, Lock } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Invoice {
@@ -28,10 +28,18 @@ const statusLabels: Record<string, { label: string; color: string; icon: typeof 
 const statusFilters = [
   { value: "", label: "Todas" },
   { value: "draft", label: "Borrador" },
+  { value: "pending_batuz", label: "Pte. Batuz" },
   { value: "sent", label: "Enviadas" },
   { value: "paid", label: "Cobradas" },
   { value: "overdue", label: "Vencidas" },
 ];
+
+const lockTooltips: Record<string, string> = {
+  pending_batuz: "No se puede eliminar: la factura está pendiente de gestión en Batuz.",
+  sent: "No se puede eliminar una factura emitida.",
+  paid: "No se puede eliminar una factura cobrada.",
+  overdue: "No se puede eliminar una factura vencida.",
+};
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
@@ -82,14 +90,15 @@ export default function FacturasPage() {
   const handleDelete = async (invoice: Invoice, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm(`¿Eliminar factura borrador ${invoice.number}? Esta accion no se puede deshacer.`)) return;
+    if (!confirm(`¿Eliminar definitivamente el borrador ${invoice.number}? Esta acción no se puede deshacer.`)) return;
     try {
       const res = await fetch(`/api/invoices/${invoice.id}`, { method: "DELETE" });
       if (res.ok) {
         setInvoices(invoices.filter((inv) => inv.id !== invoice.id));
         showToast("success", `Factura ${invoice.number} eliminada`);
       } else {
-        showToast("error", "Error al eliminar la factura");
+        const data = await res.json();
+        showToast("error", data.error || "Error al eliminar la factura");
       }
     } catch {
       showToast("error", "Error al eliminar la factura");
@@ -139,7 +148,6 @@ export default function FacturasPage() {
     );
   }
 
-  // Filter invoices
   const filtered = invoices.filter((inv) => {
     const matchesStatus = !statusFilter || inv.status === statusFilter;
     const matchesSearch = !search ||
@@ -148,7 +156,6 @@ export default function FacturasPage() {
     return matchesStatus && matchesSearch;
   });
 
-  // Calculate totals
   const totalFacturado = invoices.reduce((acc, inv) => acc + inv.total, 0);
   const totalCobrado = invoices.filter((inv) => inv.status === "paid").reduce((acc, inv) => acc + inv.total, 0);
   const totalPendiente = invoices.filter((inv) => inv.status === "sent" || inv.status === "overdue").reduce((acc, inv) => acc + inv.total, 0);
@@ -166,7 +173,6 @@ export default function FacturasPage() {
         </Link>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
@@ -197,7 +203,6 @@ export default function FacturasPage() {
         </div>
       </div>
 
-      {/* Filters and Search */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -243,6 +248,8 @@ export default function FacturasPage() {
               {filtered.map((invoice) => {
                 const status = statusLabels[invoice.status] || statusLabels.draft;
                 const StatusIcon = status.icon;
+                const canDelete = invoice.status === "draft" && !invoice.ticketbai_id;
+                const lockTip = lockTooltips[invoice.status] || (invoice.ticketbai_id ? "No se puede eliminar una factura con registro fiscal TicketBAI." : "");
                 return (
                   <tr key={invoice.id} className="table-row">
                     <td className="px-4 py-3.5">
@@ -278,14 +285,22 @@ export default function FacturasPage() {
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
-                        {invoice.status === "draft" && !invoice.ticketbai_id && (
+                        {canDelete && (
                           <button
                             onClick={(e) => handleDelete(invoice, e)}
                             className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
-                            title="Eliminar factura borrador"
+                            title="Eliminar borrador"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
+                        )}
+                        {!canDelete && lockTip && (
+                          <span
+                            className="rounded-lg p-1.5 text-slate-300 cursor-default"
+                            title={lockTip}
+                          >
+                            <Lock className="h-3.5 w-3.5" />
+                          </span>
                         )}
                         <Link
                           href={`/facturas/${invoice.id}`}

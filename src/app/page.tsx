@@ -100,7 +100,7 @@ export default function Dashboard() {
     <div className="animate-fade-in">
       <div className="mb-8">
         <div className="flex items-center gap-3">
-          <h1 className="page-title">Panel de control del autónomo</h1>
+          <h1 className="page-title">Panel de control de S&H Eléctricas</h1>
           {isDemo && (
             <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-800">
               Modo demostración
@@ -108,7 +108,7 @@ export default function Dashboard() {
           )}
         </div>
         <p className="page-subtitle capitalize">
-          Resumen diario de facturación, clientes, tareas y actividad · {today}
+          Resumen diario de facturación, clientes, avisos, trabajos y actividad eléctrica · {today}
         </p>
         {isDemo && (
           <p className="text-xs text-slate-500 mt-1">Los datos mostrados son ejemplos y no representan actividad real.</p>
@@ -332,6 +332,8 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <p className="text-center text-[10px] text-slate-400 mt-8 no-print">Sistema desarrollado por KepatecnologIA · KAOS System</p>
     </div>
   );
 }

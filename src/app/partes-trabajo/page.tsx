@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, ClipboardCheck, Eye, Search } from "lucide-react";
+import { Plus, ClipboardCheck, Eye, Search, FileText, Trash2 } from "lucide-react";
+import { showToast } from "@/components/Toast";
 
 interface ParteTrabajo {
   id: string;
@@ -56,8 +57,9 @@ const PARTES_DEMO: ParteTrabajo[] = [
 
 export default function PartesTrabajoPage() {
   const [search, setSearch] = useState("");
+  const [partes, setPartes] = useState<ParteTrabajo[]>(PARTES_DEMO);
 
-  const filtered = PARTES_DEMO.filter(
+  const filtered = partes.filter(
     (p) =>
       p.numero.toLowerCase().includes(search.toLowerCase()) ||
       p.cliente.toLowerCase().includes(search.toLowerCase()) ||
@@ -76,6 +78,12 @@ export default function PartesTrabajoPage() {
     }
   };
 
+  const handleDelete = (id: string) => {
+    if (!window.confirm("¿Seguro que quieres borrar este parte de trabajo? Esta acción no se puede deshacer.")) return;
+    setPartes(partes.filter((p) => p.id !== id));
+    showToast("success", "Parte de trabajo eliminado");
+  };
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
@@ -84,10 +92,16 @@ export default function PartesTrabajoPage() {
           <h1 className="page-title">Partes de trabajo</h1>
           <p className="page-subtitle">{filtered.length} partes registrados</p>
         </div>
-        <Link href="/partes-trabajo/nuevo" className="btn-primary">
-          <Plus className="h-4 w-4" />
-          Nuevo parte
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/partes-trabajo/plantilla" className="btn-secondary">
+            <FileText className="h-4 w-4" />
+            Plantilla en blanco
+          </Link>
+          <Link href="/partes-trabajo/nuevo" className="btn-primary">
+            <Plus className="h-4 w-4" />
+            Nuevo parte
+          </Link>
+        </div>
       </div>
 
       {/* Search */}
@@ -139,13 +153,22 @@ export default function PartesTrabajoPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3.5">
-                    <Link
-                      href={`/partes-trabajo/${parte.id}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 transition-colors"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      Ver
-                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={`/partes-trabajo/${parte.id}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900 transition-colors"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Ver
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(parte.id)}
+                        className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                        title="Eliminar parte"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

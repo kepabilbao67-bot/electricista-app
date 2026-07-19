@@ -86,6 +86,35 @@ export async function DELETE(
     const { id } = await params;
     await initializeDatabase();
     const db = getDbClient();
+
+    const invoice = await db.execute({
+      sql: "SELECT id, status, ticketbai_id FROM invoices WHERE id = ?",
+      args: [id],
+    });
+
+    if (invoice.rows.length === 0) {
+      return NextResponse.json(
+        { error: "Factura no encontrada." },
+        { status: 404 }
+      );
+    }
+
+    const row = invoice.rows[0];
+
+    if (row.ticketbai_id) {
+      return NextResponse.json(
+        { error: "No se puede eliminar una factura con registro fiscal TicketBAI." },
+        { status: 403 }
+      );
+    }
+
+    if (row.status !== "draft") {
+      return NextResponse.json(
+        { error: "No se puede eliminar esta factura porque ya no es un borrador eliminable." },
+        { status: 403 }
+      );
+    }
+
     await db.execute({ sql: "DELETE FROM invoice_items WHERE invoice_id = ?", args: [id] });
     await db.execute({ sql: "DELETE FROM invoices WHERE id = ?", args: [id] });
     return NextResponse.json({ success: true });

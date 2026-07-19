@@ -1,7 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { KaosSignature } from "@/components/KaosSignature";
+import { COMPANY_PROFILE } from "@/lib/company-profile";
 import {
   LayoutDashboard,
   Users,
@@ -43,7 +45,7 @@ export function Sidebar() {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 shadow-lg shadow-blue-900/40 ring-1 ring-blue-500/20">
           <Zap className="h-5 w-5 text-amber-400" />
         </div>
-        <span className="text-sm font-bold text-slate-200 tracking-tight">Autonomo360</span>
+        <span className="text-sm font-bold text-slate-200 tracking-tight">{COMPANY_PROFILE.tradeName}</span>
       </div>
 
       {/* Navigation */}
@@ -76,17 +78,15 @@ export function Sidebar() {
       <div className="border-t border-slate-700/40 p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-700 to-blue-900 text-xs font-bold text-blue-200 ring-1 ring-blue-600/30">
-            A3
+            SH
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-300 truncate">Cuenta de demostración</p>
-            <p className="text-[10px] text-slate-500">Autonomo360</p>
+            <p className="text-xs font-semibold text-slate-300 truncate">{COMPANY_PROFILE.ownerName}</p>
+            <p className="text-[10px] text-slate-500">{COMPANY_PROFILE.tradeName}</p>
           </div>
         </div>
       </div>
+      <KaosSignature />
     </aside>
   );
 }
-
-
-
