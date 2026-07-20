@@ -1,7 +1,68 @@
 import { NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 
+function getDemoData() {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+  const monthlyBilling = [];
+  const demoTotals = [2850, 3420, 2980, 4100, 3680, 4250];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    monthlyBilling.push({
+      month: monthNames[d.getMonth()],
+      year: d.getFullYear(),
+      total: demoTotals[5 - i],
+    });
+  }
+
+  const thirtyFiveDaysAgo = new Date(now);
+  thirtyFiveDaysAgo.setDate(thirtyFiveDaysAgo.getDate() - 35);
+  const overdueDate = thirtyFiveDaysAgo.toISOString().split("T")[0];
+
+  const twoDaysFromNow = new Date(now);
+  twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+  const expiringDate = twoDaysFromNow.toISOString().split("T")[0];
+
+  return {
+    demoMode: true,
+    totalFacturacion: 18450,
+    pendienteCobro: 3200,
+    facturasPendientes: 2,
+    facturasEsteMes: 4,
+    presupuestosPendientes: 2,
+    proximasVisitas: 3,
+    clientesActivos: 12,
+    thisMonthTotal: 4250,
+    lastMonthTotal: 3680,
+    monthlyBilling,
+    topClients: [
+      { name: "Comunidad Prop. Autonomía 14", total: 4850.00 },
+      { name: "Talleres Mecánicos Eibar S.L.", total: 3220.00 },
+      { name: "Bar Restaurante Zubialde", total: 2180.00 },
+    ],
+    alerts: {
+      overdueInvoices: [
+        { id: "demo-invoice-overdue", number: "DFB_0012", total: 1850.00, date: overdueDate, client_name: "Garaje Comunitario Bidebarrieta" },
+      ],
+      expiringBudgets: [
+        { id: "demo-budget-expiring", number: "PRES_0008", valid_until: expiringDate, client_name: "Clínica Dental Arana" },
+      ],
+      todayVisits: [
+        { id: "demo-visit-today-1", title: "Revisión cuadro eléctrico", time: "09:30", client_name: "Comunidad Prop. Autonomía 14" },
+        { id: "demo-visit-today-2", title: "Instalación punto de recarga", time: "16:00", client_name: "María López García" },
+      ],
+    },
+  };
+}
+
 export async function GET() {
+  if (process.env.DEMO_MODE === "true") {
+    return NextResponse.json(getDemoData());
+  }
+
   try {
     await initializeDatabase();
     const db = getDbClient();
@@ -79,6 +140,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      demoMode: false,
       totalFacturacion: totalFacturacion.rows[0].total as number,
       facturasPendientes: facturasPendientes.rows[0].count as number,
       presupuestosPendientes: presupuestosPendientes.rows[0].count as number,

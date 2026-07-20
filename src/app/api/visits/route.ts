@@ -3,6 +3,24 @@ import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET(request: NextRequest) {
+  const isDashboardDemo =
+    process.env.DEMO_MODE === "true" &&
+    request.nextUrl.searchParams.get("context") === "dashboard-demo";
+
+  if (isDashboardDemo) {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+    return NextResponse.json([
+      { id: "demo-visit-001", client_id: "demo-c1", client_name: "Comunidad Prop. Autonomía 14", title: "Revisión cuadro eléctrico", description: "Inspección anual del cuadro general", date: today, time: "09:30", duration: 90, status: "scheduled", address: "C/ Autonomía 14, Eibar" },
+      { id: "demo-visit-002", client_id: "demo-c5", client_name: "María López García", title: "Instalación punto de recarga", description: "Punto de recarga vehículo eléctrico en garaje", date: today, time: "16:00", duration: 120, status: "scheduled", address: "C/ Errebal 22, Eibar" },
+      { id: "demo-visit-003", client_id: "demo-c3", client_name: "Talleres Mecánicos Eibar S.L.", title: "Ampliación línea trifásica", description: "Nueva línea para compresor industrial", date: tomorrowStr, time: "08:00", duration: 180, status: "scheduled", address: "Polígono Azitain, Nave 12, Eibar" },
+      { id: "demo-visit-004", client_id: "demo-c2", client_name: "Bar Restaurante Zubialde", title: "Revisión emergencia luminaria", description: "Sustitución de equipos de emergencia caducados", date: tomorrowStr, time: "14:30", duration: 60, status: "scheduled", address: "Plaza del Mercado 7, Eibar" },
+    ]);
+  }
+
   try {
     await initializeDatabase();
     const db = getDbClient();

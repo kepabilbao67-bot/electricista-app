@@ -1,4 +1,13 @@
-# Changelog del Asistente Autonomo360
+# Changelog del Asistente S&H Eléctricas
+
+## 2026-07-18-v5 — Modo demostración comercial integrado
+
+- Documentado modo demo (DEMO_MODE=true) en Dashboard, Facturas y Agenda.
+- Dashboard: limitación y advertencia sobre datos ficticios en modo demo.
+- Facturas y Agenda: las listas demo solo se devuelven con context=dashboard-demo, no en acceso directo a /facturas o /agenda.
+- Variable DEMO_MODE es solo de servidor, no expuesta al navegador.
+- Los enlaces demo conducen a páginas generales, nunca a IDs inexistentes.
+- Las páginas /facturas y /agenda muestran datos reales incluso con DEMO_MODE=true.
 
 ## 2026-07-16-v4 — Marca S&H Eléctricas y limpieza de facturas demo
 
@@ -26,7 +35,7 @@
 
 ## 2026-07-15-v1 — Versión inicial
 
-- Refactorización completa del asistente como guía integral de Autonomo360.
+- Refactorización completa del asistente como guía integral de S&H Eléctricas.
 - Mapa de 12 módulos con estado REAL/DEMO/PARCIAL documentado.
 - Prompt territorial neutro (toda España, TicketBAI solo si aplica).
 - Reglas de seguridad eléctrica obligatorias.
