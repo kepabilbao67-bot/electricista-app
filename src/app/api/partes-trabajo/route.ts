@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         body.personaContacto || null,
         body.observaciones || null,
         body.estado || "borrador",
-        safeNum(body.iva_rate) || 21,
+        body.iva_rate !== undefined && body.iva_rate !== null ? safeNum(body.iva_rate) : 21,
         safeNum(body.descuento),
         body.budget_id || null,
         body.visit_id || null,
