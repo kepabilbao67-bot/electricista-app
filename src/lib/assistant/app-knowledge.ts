@@ -125,13 +125,9 @@ export const APP_MODULES: AppModule[] = [
       "Botón Imprimir / Guardar PDF",
       "Plantilla en blanco imprimible con datos de empresa (/partes-trabajo/plantilla)",
     ],
-    limitations: [
-      "Los datos NO se guardan en base de datos",
-      "Al recargar la página se pierden los partes nuevos",
-      "Solo funcionan los partes de demostración precargados",
-    ],
-    usage: "Ve a /partes-trabajo. Puedes ver los partes de demostración haciendo clic en 'Ver'. El formulario de nuevo parte valida pero no persiste. Para imprimir un parte en blanco: pulsa 'Plantilla en blanco', luego 'Imprimir plantilla' y elige el número de copias en el diálogo de impresión.",
-    warnings: ["Módulo en fase demo. La persistencia se añadirá en una próxima versión."],
+    limitations: [],
+    usage: "Ve a /partes-trabajo. Crea un nuevo parte con 'Nuevo parte'. Añade trabajos y materiales con precios. Guarda, edita y elimina partes. Los datos se guardan en base de datos y persisten. Para imprimir: abre el detalle y pulsa 'Imprimir / PDF'. Plantilla en blanco disponible para copias manuales.",
+    warnings: [],
   },
   {
     name: "Gastos",
