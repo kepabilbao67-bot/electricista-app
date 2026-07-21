@@ -116,7 +116,7 @@ export const APP_MODULES: AppModule[] = [
   {
     name: "Partes de trabajo",
     route: "/partes-trabajo",
-    status: "DEMO",
+    status: "REAL",
     description: "Registro de intervenciones eléctricas con vista imprimible profesional.",
     features: [
       "Lista de partes con búsqueda y estados (borrador, firmado, cerrado)",
