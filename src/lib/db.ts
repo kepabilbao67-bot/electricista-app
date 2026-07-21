@@ -166,6 +166,31 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "created_at", def: "TEXT" },
   ]);
 
+  await ensureColumns(db, "partes_trabajo", [
+    { name: "client_id", def: "TEXT" },
+    { name: "budget_id", def: "TEXT" },
+    { name: "visit_id", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
+    { name: "iva_rate", def: "REAL DEFAULT 21" },
+    { name: "descuento", def: "REAL DEFAULT 0" },
+  ]);
+
+  await ensureColumns(db, "parte_trabajo_lineas", [
+    { name: "sort_order", def: "INTEGER DEFAULT 0" },
+    { name: "nombre_trabajo", def: "TEXT" },
+    { name: "cantidad", def: "REAL DEFAULT 1" },
+    { name: "unidad", def: "TEXT DEFAULT 'unidad'" },
+    { name: "precio_unitario", def: "REAL DEFAULT 0" },
+  ]);
+
+  await ensureColumns(db, "parte_materiales", [
+    { name: "sort_order", def: "INTEGER DEFAULT 0" },
+    { name: "nombre_material", def: "TEXT" },
+    { name: "unidad", def: "TEXT DEFAULT 'unidad'" },
+    { name: "precio_coste", def: "REAL DEFAULT 0" },
+  ]);
+
   // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
   // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
@@ -318,6 +343,59 @@ export async function initializeDatabase(): Promise<void> {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS partes_trabajo (
+      id TEXT PRIMARY KEY,
+      numero TEXT NOT NULL UNIQUE,
+      fecha TEXT NOT NULL,
+      tecnico TEXT,
+      hora_inicio TEXT,
+      hora_fin TEXT,
+      cliente TEXT NOT NULL,
+      client_id TEXT,
+      direccion TEXT,
+      telefono TEXT,
+      persona_contacto TEXT,
+      observaciones TEXT,
+      estado TEXT NOT NULL DEFAULT 'borrador',
+      iva_rate REAL DEFAULT 21,
+      descuento REAL DEFAULT 0,
+      budget_id TEXT,
+      visit_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (budget_id) REFERENCES budgets(id),
+      FOREIGN KEY (visit_id) REFERENCES visits(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS parte_trabajo_lineas (
+      id TEXT PRIMARY KEY,
+      parte_id TEXT NOT NULL,
+      nombre_trabajo TEXT,
+      hora TEXT,
+      descripcion TEXT NOT NULL,
+      cantidad REAL DEFAULT 1,
+      unidad TEXT DEFAULT 'unidad',
+      precio_unitario REAL DEFAULT 0,
+      estado TEXT DEFAULT 'completado',
+      sort_order INTEGER DEFAULT 0,
+      FOREIGN KEY (parte_id) REFERENCES partes_trabajo(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS parte_materiales (
+      id TEXT PRIMARY KEY,
+      parte_id TEXT NOT NULL,
+      nombre_material TEXT,
+      referencia TEXT,
+      descripcion TEXT NOT NULL,
+      cantidad REAL DEFAULT 1,
+      unidad TEXT DEFAULT 'unidad',
+      precio_coste REAL DEFAULT 0,
+      precio_unitario REAL DEFAULT 0,
+      sort_order INTEGER DEFAULT 0,
+      FOREIGN KEY (parte_id) REFERENCES partes_trabajo(id) ON DELETE CASCADE
+    );
   `);
 
   // Migracion: anade columnas que puedan faltar en tablas creadas por versiones
@@ -366,4 +444,20 @@ export async function generateBudgetNumber(): Promise<string> {
 
   const lastNum = parseInt((result.rows[0].number as string).replace("PRES_", ""), 10);
   return `PRES_${String(lastNum + 1).padStart(4, "0")}`;
+}
+
+export async function generateParteNumber(): Promise<string> {
+  const db = getDbClient();
+  const year = new Date().getFullYear();
+  const result = await db.execute({
+    sql: "SELECT numero FROM partes_trabajo WHERE numero LIKE ? ORDER BY created_at DESC LIMIT 1",
+    args: [`PT-${year}-%`],
+  });
+
+  if (result.rows.length === 0) {
+    return `PT-${year}-001`;
+  }
+
+  const lastNum = parseInt((result.rows[0].numero as string).split("-").pop() || "0", 10);
+  return `PT-${year}-${String(lastNum + 1).padStart(3, "0")}`;
 }
