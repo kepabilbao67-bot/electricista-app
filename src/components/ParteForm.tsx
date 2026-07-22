@@ -205,6 +205,17 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
     (sum, t) => sum + calcLineImporte(t.cantidad, t.precio_unitario), 0
   );
 
+  // Total hours: sum all trabajo quantities (this section is mano de obra)
+  const totalHorasTrabajo = trabajos.reduce((sum, t) => {
+    const cantidad = typeof t.cantidad === "string"
+      ? Number(t.cantidad.replace(",", "."))
+      : Number(t.cantidad || 0);
+    return sum + (Number.isFinite(cantidad) ? cantidad : 0);
+  }, 0);
+  const totalHorasTrabajoLabel = Number.isInteger(totalHorasTrabajo)
+    ? String(totalHorasTrabajo)
+    : String(parseFloat(totalHorasTrabajo.toFixed(2)));
+
   const subtotalMateriales = materiales.reduce(
     (sum, m) => sum + calcLineImporte(m.cantidad, m.precio_unitario), 0
   );
@@ -417,6 +428,13 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                     <td className="px-2 py-2 text-right text-sm font-bold text-slate-900">{subtotalTrabajos.toFixed(2)} €</td>
                     <td colSpan={2}></td>
                   </tr>
+                  {totalHorasTrabajo > 0 && (
+                    <tr className="bg-slate-50">
+                      <td colSpan={6} className="px-2 py-1.5 text-right text-xs font-semibold text-slate-700">Total horas de trabajo:</td>
+                      <td className="px-2 py-1.5 text-right text-sm font-bold text-slate-900">{totalHorasTrabajoLabel} h</td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  )}
                 </tfoot>
               </table>
             </div>
@@ -460,7 +478,12 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
               })}
               <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
                 <button type="button" onClick={addTrabajo} className="inline-flex items-center gap-1 text-sm font-medium text-blue-700"><Plus className="h-4 w-4" /> Añadir fila</button>
-                <span className="text-sm font-bold text-slate-900">Subtotal: {subtotalTrabajos.toFixed(2)} €</span>
+                <div className="text-right">
+                  <span className="text-sm font-bold text-slate-900">Subtotal: {subtotalTrabajos.toFixed(2)} €</span>
+                  {totalHorasTrabajo > 0 && (
+                    <p className="text-xs font-semibold text-slate-700">Total horas: {totalHorasTrabajoLabel} h</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -593,6 +616,12 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
             <span className="text-slate-600">Subtotal mano de obra</span>
             <span className="font-medium">{subtotalTrabajos.toFixed(2)} €</span>
           </div>
+          {totalHorasTrabajo > 0 && (
+            <div className="flex justify-between font-semibold">
+              <span className="text-slate-700">Total horas de trabajo</span>
+              <span>{totalHorasTrabajoLabel} h</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-slate-600">Subtotal materiales</span>
             <span className="font-medium">{subtotalMateriales.toFixed(2)} €</span>
