@@ -219,6 +219,15 @@ function ParteTrabajoDetail() {
   const ivaAmount = baseImponible * (ivaRate / 100);
   const totalParte = baseImponible + ivaAmount;
 
+  // Total hours: sum cantidad where unidad is hour-like
+  const totalHoras = parte.trabajos.reduce((sum, t) => {
+    const u = (t.unidad || "").toLowerCase();
+    if (u === "h" || u === "hora" || u === "horas") {
+      return sum + (t.cantidad || 0);
+    }
+    return sum;
+  }, 0);
+
   const UNIDAD_LABELS: Record<string, string> = {
     hora: "h", unidad: "ud", metro: "m", punto: "pto", servicio: "srv",
     rollo: "rollo", caja: "caja", paquete: "paq",
@@ -273,7 +282,7 @@ function ParteTrabajoDetail() {
         <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">S&H ELÉCTRICAS</h2>
-            <p className="text-sm text-slate-600 mt-1">Iván Martín Oyarzabal — Electricista profesional</p>
+            <p className="text-sm text-slate-600 mt-1">Iván Martín Oyarzabal</p>
             <p className="text-sm text-slate-600">Tel: 609 421 750</p>
           </div>
           <div className="text-right">
@@ -407,6 +416,9 @@ function ParteTrabajoDetail() {
           <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Resumen económico</h4>
           <div className="max-w-xs ml-auto space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-slate-600">Subtotal mano de obra</span><span>{subtotalTrabajos.toFixed(2)} €</span></div>
+            {totalHoras > 0 && (
+              <div className="flex justify-between"><span className="text-slate-600">Total horas</span><span>{totalHoras % 1 === 0 ? totalHoras : totalHoras.toFixed(2)} h</span></div>
+            )}
             <div className="flex justify-between"><span className="text-slate-600">Subtotal materiales</span><span>{subtotalMateriales.toFixed(2)} €</span></div>
             {descuentoNum > 0 && (
               <div className="flex justify-between"><span className="text-slate-600">Descuento</span><span>-{descuentoNum.toFixed(2)} €</span></div>
