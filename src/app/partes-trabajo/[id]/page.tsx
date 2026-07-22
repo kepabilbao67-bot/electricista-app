@@ -219,13 +219,18 @@ function ParteTrabajoDetail() {
   const ivaAmount = baseImponible * (ivaRate / 100);
   const totalParte = baseImponible + ivaAmount;
 
-  // Total hours: sum cantidad where unidad is hour-like
+  // Total hours: sum cantidad where unidad represents hours
+  const isHourUnit = (unidad?: string | null): boolean => {
+    const raw = (unidad || "").trim().toLowerCase();
+    return ["h", "hora", "horas", "hr", "hrs", "hour", "hours", "mano_obra", "mano-obra", "mano de obra"].includes(raw);
+  };
+
   const totalHoras = parte.trabajos.reduce((sum, t) => {
-    const u = (t.unidad || "").toLowerCase();
-    if (u === "h" || u === "hora" || u === "horas") {
-      return sum + (t.cantidad || 0);
-    }
-    return sum;
+    if (!isHourUnit(t.unidad)) return sum;
+    const cantidad = typeof t.cantidad === "number"
+      ? t.cantidad
+      : Number(String(t.cantidad || "0").replace(",", "."));
+    return sum + (Number.isFinite(cantidad) ? cantidad : 0);
   }, 0);
 
   const UNIDAD_LABELS: Record<string, string> = {
@@ -417,7 +422,7 @@ function ParteTrabajoDetail() {
           <div className="max-w-xs ml-auto space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-slate-600">Subtotal mano de obra</span><span>{subtotalTrabajos.toFixed(2)} €</span></div>
             {totalHoras > 0 && (
-              <div className="flex justify-between"><span className="text-slate-600">Total horas</span><span>{totalHoras % 1 === 0 ? totalHoras : totalHoras.toFixed(2)} h</span></div>
+              <div className="flex justify-between font-semibold"><span className="text-slate-700">Total horas</span><span>{Number.isInteger(totalHoras) ? totalHoras : parseFloat(totalHoras.toFixed(2))} h</span></div>
             )}
             <div className="flex justify-between"><span className="text-slate-600">Subtotal materiales</span><span>{subtotalMateriales.toFixed(2)} €</span></div>
             {descuentoNum > 0 && (
