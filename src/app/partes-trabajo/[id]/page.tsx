@@ -219,19 +219,16 @@ function ParteTrabajoDetail() {
   const ivaAmount = baseImponible * (ivaRate / 100);
   const totalParte = baseImponible + ivaAmount;
 
-  // Total hours: sum cantidad where unidad represents hours
-  const isHourUnit = (unidad?: string | null): boolean => {
-    const raw = (unidad || "").trim().toLowerCase();
-    return ["h", "hora", "horas", "hr", "hrs", "hour", "hours", "mano_obra", "mano-obra", "mano de obra"].includes(raw);
-  };
-
+  // Total hours: sum ALL trabajo quantities (this section IS mano de obra)
   const totalHoras = parte.trabajos.reduce((sum, t) => {
-    if (!isHourUnit(t.unidad)) return sum;
     const cantidad = typeof t.cantidad === "number"
       ? t.cantidad
       : Number(String(t.cantidad || "0").replace(",", "."));
     return sum + (Number.isFinite(cantidad) ? cantidad : 0);
   }, 0);
+  const totalHorasLabel = Number.isInteger(totalHoras)
+    ? String(totalHoras)
+    : String(parseFloat(totalHoras.toFixed(2)));
 
   const UNIDAD_LABELS: Record<string, string> = {
     hora: "h", unidad: "ud", metro: "m", punto: "pto", servicio: "srv",
@@ -363,6 +360,12 @@ function ParteTrabajoDetail() {
                   <td colSpan={5} className="px-2 py-2 text-xs font-semibold text-slate-700 text-right">Subtotal mano de obra:</td>
                   <td className="px-2 py-2 text-sm font-bold text-slate-900 text-right">{subtotalTrabajos.toFixed(2)} €</td>
                 </tr>
+                {totalHoras > 0 && (
+                  <tr className="bg-slate-50">
+                    <td colSpan={5} className="px-2 py-1.5 text-xs font-semibold text-slate-700 text-right">Total horas de trabajo:</td>
+                    <td className="px-2 py-1.5 text-sm font-bold text-slate-900 text-right">{totalHorasLabel} h</td>
+                  </tr>
+                )}
               </tfoot>
             </table>
           ) : (
@@ -422,7 +425,7 @@ function ParteTrabajoDetail() {
           <div className="max-w-xs ml-auto space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-slate-600">Subtotal mano de obra</span><span>{subtotalTrabajos.toFixed(2)} €</span></div>
             {totalHoras > 0 && (
-              <div className="flex justify-between font-semibold"><span className="text-slate-700">Total horas</span><span>{Number.isInteger(totalHoras) ? totalHoras : parseFloat(totalHoras.toFixed(2))} h</span></div>
+              <div className="flex justify-between font-semibold"><span className="text-slate-700">Total horas de trabajo</span><span>{totalHorasLabel} h</span></div>
             )}
             <div className="flex justify-between"><span className="text-slate-600">Subtotal materiales</span><span>{subtotalMateriales.toFixed(2)} €</span></div>
             {descuentoNum > 0 && (
