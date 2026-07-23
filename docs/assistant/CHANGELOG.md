@@ -1,5 +1,14 @@
 # Changelog del Asistente S&H Eléctricas
 
+## 2026-07-18-v6 — Colores en descripciones de trabajos (PR #51)
+
+- Cada línea de trabajo en partes puede tener un color de texto: normal, rojo, naranja, azul, verde o morado.
+- Selector controlado en el formulario (desktop y móvil), sin input HEX libre.
+- El color se muestra en el formulario, en el detalle del parte y en la impresión.
+- Columna `color` añadida a `parte_trabajo_lineas` vía `ensureColumns` (sin migración manual).
+- Partes antiguos sin color siguen funcionando (se tratan como "default").
+- No se tocaron facturas, presupuestos, TicketBAI, auth ni base de datos existente.
+
 ## 2026-07-18-v5 — Modo demostración comercial integrado
 
 - Documentado modo demo (DEMO_MODE=true) en Dashboard, Facturas y Agenda.
