@@ -7,6 +7,20 @@ import { showToast } from "@/components/Toast";
 import { CATALOGO_TRABAJOS, UNIDADES_TRABAJO } from "@/lib/catalogo-trabajos";
 import { CATALOGO_MATERIALES, UNIDADES_MATERIAL } from "@/lib/catalogo-materiales";
 
+export const TRABAJO_COLORS = [
+  { value: "default", label: "Normal", className: "text-slate-900" },
+  { value: "red", label: "Rojo", className: "text-red-700" },
+  { value: "orange", label: "Naranja", className: "text-orange-700" },
+  { value: "blue", label: "Azul", className: "text-blue-700" },
+  { value: "green", label: "Verde", className: "text-green-700" },
+  { value: "purple", label: "Morado", className: "text-purple-700" },
+] as const;
+
+export function getTrabajoColorClass(color?: string | null): string {
+  const found = TRABAJO_COLORS.find((c) => c.value === color);
+  return found ? found.className : "text-slate-900";
+}
+
 export interface TrabajoLine {
   id: string;
   nombre_trabajo: string;
@@ -16,6 +30,7 @@ export interface TrabajoLine {
   unidad: string;
   precio_unitario: string;
   estado: string;
+  color?: string;
 }
 
 export interface MaterialLine {
@@ -55,7 +70,7 @@ interface ParteFormProps {
 }
 
 function createEmptyTrabajo(idx: number): TrabajoLine {
-  return { id: `t${idx}_${Date.now()}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado" };
+  return { id: `t${idx}_${Date.now()}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default" };
 }
 
 function createEmptyMaterial(idx: number): MaterialLine {
@@ -162,7 +177,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
 
   const clearTrabajo = (id: string) => {
     setTrabajos((prev) => prev.map((t) =>
-      t.id === id ? { ...t, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado" } : t
+      t.id === id ? { ...t, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default" } : t
     ));
   };
 
@@ -374,12 +389,14 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                     <th className="px-2 py-2 text-right w-20">Precio</th>
                     <th className="px-2 py-2 text-right w-20">Importe</th>
                     <th className="px-2 py-2 text-center w-16">Estado</th>
+                    <th className="px-2 py-2 text-center w-20">Color</th>
                     <th className="px-2 py-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {trabajos.map((t, idx) => {
                     const importe = calcLineImporte(t.cantidad, t.precio_unitario);
+                    const colorClass = getTrabajoColorClass(t.color);
                     return (
                       <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                         <td className="px-2 py-1.5 text-slate-400 text-center">{idx + 1}</td>
@@ -392,7 +409,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="text" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className="input-field !py-1 text-xs w-full" placeholder="Descripción del trabajo" />
+                          <input type="text" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field !py-1 text-xs w-full ${colorClass}`} placeholder="Descripción del trabajo" />
                         </td>
                         <td className="px-1 py-1.5">
                           <input type="number" min="0" step="0.5" value={t.cantidad} onChange={(e) => updateTrabajo(t.id, "cantidad", e.target.value)} className="input-field !py-1 text-xs text-center w-full" placeholder="0" />
@@ -413,6 +430,11 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                             <option value="en_curso">Curso</option>
                           </select>
                         </td>
+                        <td className="px-1 py-1.5">
+                          <select value={t.color || "default"} onChange={(e) => updateTrabajo(t.id, "color", e.target.value)} className={`input-field !py-1 text-xs w-full ${colorClass}`}>
+                            {TRABAJO_COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                          </select>
+                        </td>
                         <td className="px-1 py-1.5 text-center">
                           <button type="button" onClick={() => clearTrabajo(t.id)} className="p-1 text-slate-400 hover:text-red-500" title="Limpiar fila">
                             <Trash2 className="h-3 w-3" />
@@ -424,13 +446,13 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                 </tbody>
                 <tfoot>
                   <tr className="bg-slate-50 border-t border-slate-300">
-                    <td colSpan={6} className="px-2 py-2 text-right text-xs font-semibold text-slate-700">Subtotal mano de obra:</td>
+                    <td colSpan={7} className="px-2 py-2 text-right text-xs font-semibold text-slate-700">Subtotal mano de obra:</td>
                     <td className="px-2 py-2 text-right text-sm font-bold text-slate-900">{subtotalTrabajos.toFixed(2)} €</td>
                     <td colSpan={2}></td>
                   </tr>
                   {totalHorasTrabajo > 0 && (
                     <tr className="bg-slate-50">
-                      <td colSpan={6} className="px-2 py-1.5 text-right text-xs font-semibold text-slate-700">Total horas de trabajo:</td>
+                      <td colSpan={7} className="px-2 py-1.5 text-right text-xs font-semibold text-slate-700">Total horas de trabajo:</td>
                       <td className="px-2 py-1.5 text-right text-sm font-bold text-slate-900">{totalHorasTrabajoLabel} h</td>
                       <td colSpan={2}></td>
                     </tr>
@@ -443,6 +465,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
             <div className="md:hidden space-y-3">
               {trabajos.map((t, idx) => {
                 const importe = calcLineImporte(t.cantidad, t.precio_unitario);
+                const colorClass = getTrabajoColorClass(t.color);
                 return (
                   <div key={t.id} className="border border-slate-200 rounded-lg p-3 space-y-2">
                     <div className="flex items-center justify-between">
@@ -455,8 +478,8 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       <option value="">Seleccionar trabajo...</option>
                       {CATALOGO_TRABAJOS.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                     </select>
-                    <input type="text" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className="input-field text-sm w-full" placeholder="Descripción" />
-                    <div className="grid grid-cols-3 gap-2">
+                    <input type="text" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field text-sm w-full ${colorClass}`} placeholder="Descripción" />
+                    <div className="grid grid-cols-4 gap-2">
                       <div>
                         <label className="text-xs text-slate-500">Cant.</label>
                         <input type="number" min="0" step="0.5" value={t.cantidad} onChange={(e) => updateTrabajo(t.id, "cantidad", e.target.value)} className="input-field text-sm text-center" placeholder="0" />
@@ -470,6 +493,12 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       <div>
                         <label className="text-xs text-slate-500">Precio</label>
                         <input type="number" min="0" step="0.01" value={t.precio_unitario} onChange={(e) => updateTrabajo(t.id, "precio_unitario", e.target.value)} className="input-field text-sm text-right" placeholder="0.00" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-500">Color</label>
+                        <select value={t.color || "default"} onChange={(e) => updateTrabajo(t.id, "color", e.target.value)} className={`input-field text-sm ${colorClass}`}>
+                          {TRABAJO_COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        </select>
                       </div>
                     </div>
                     {importe > 0 && <p className="text-right text-sm font-semibold text-slate-800">Importe: {importe.toFixed(2)} €</p>}

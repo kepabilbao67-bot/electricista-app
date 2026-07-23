@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
         const t = body.trabajos[i];
         if (!t.descripcion?.trim() && !t.nombre_trabajo?.trim()) continue;
         statements.push({
-          sql: `INSERT INTO parte_trabajo_lineas (id, parte_id, nombre_trabajo, hora, descripcion, cantidad, unidad, precio_unitario, estado, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sql: `INSERT INTO parte_trabajo_lineas (id, parte_id, nombre_trabajo, hora, descripcion, cantidad, unidad, precio_unitario, estado, sort_order, color)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           args: [
             uuidv4(),
             id,
@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
             safeNum(t.precio_unitario),
             t.estado || "completado",
             i,
+            t.color && t.color !== "default" ? t.color : null,
           ],
         });
       }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { showToast } from "@/components/Toast";
 import { ArrowLeft, Printer, Trash2, Loader2, Pencil, X } from "lucide-react";
 import ParteForm from "@/components/ParteForm";
+import { getTrabajoColorClass } from "@/components/ParteForm";
 import type { ParteFormData, TrabajoLine, MaterialLine } from "@/components/ParteForm";
 
 interface TrabajoDB {
@@ -17,6 +18,7 @@ interface TrabajoDB {
   unidad: string;
   precio_unitario: number;
   estado: string;
+  color?: string | null;
 }
 
 interface MaterialDB {
@@ -135,14 +137,15 @@ function ParteTrabajoDetail() {
           unidad: t.unidad || "unidad",
           precio_unitario: t.precio_unitario ? String(t.precio_unitario) : "",
           estado: t.estado || "completado",
+          color: t.color || "default",
         }))
       : Array.from({ length: 20 }, (_, i) => ({
-          id: `t${i}_${Date.now()}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado"
+          id: `t${i}_${Date.now()}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default"
         }));
 
     // Pad to at least 20 rows
     while (formTrabajos.length < 20) {
-      formTrabajos.push({ id: `t${formTrabajos.length}_${Date.now() + formTrabajos.length}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado" });
+      formTrabajos.push({ id: `t${formTrabajos.length}_${Date.now() + formTrabajos.length}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default" });
     }
 
     const formMateriales: MaterialLine[] = parte.materiales.length > 0
@@ -340,10 +343,11 @@ function ParteTrabajoDetail() {
               <tbody>
                 {parte.trabajos.map((t, idx) => {
                   const importe = (t.cantidad || 0) * (t.precio_unitario || 0);
+                  const colorClass = getTrabajoColorClass(t.color);
                   return (
                     <tr key={t.id} className="border-t border-slate-100">
                       <td className="px-2 py-2 text-xs text-slate-400">{idx + 1}</td>
-                      <td className="px-2 py-2 text-sm text-slate-800">
+                      <td className={`px-2 py-2 text-sm ${colorClass}`}>
                         {t.nombre_trabajo && <span className="font-medium">{t.nombre_trabajo}: </span>}
                         {t.descripcion}
                       </td>
