@@ -409,7 +409,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="text" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field !py-1 text-xs w-full ${colorClass}`} placeholder="Descripción del trabajo" />
+                          <input type="text" spellCheck={true} lang="es" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field !py-1 text-xs w-full ${colorClass}`} placeholder="Descripción del trabajo" />
                         </td>
                         <td className="px-1 py-1.5">
                           <input type="number" min="0" step="0.5" value={t.cantidad} onChange={(e) => updateTrabajo(t.id, "cantidad", e.target.value)} className="input-field !py-1 text-xs text-center w-full" placeholder="0" />
@@ -478,7 +478,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       <option value="">Seleccionar trabajo...</option>
                       {CATALOGO_TRABAJOS.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                     </select>
-                    <input type="text" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field text-sm w-full ${colorClass}`} placeholder="Descripción" />
+                    <input type="text" spellCheck={true} lang="es" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field text-sm w-full ${colorClass}`} placeholder="Descripción" />
                     <div className="grid grid-cols-4 gap-2">
                       <div>
                         <label className="text-xs text-slate-500">Cant.</label>
@@ -558,7 +558,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="text" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", e.target.value)} className="input-field !py-1 text-xs w-full" placeholder="Descripción o referencia" />
+                          <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", e.target.value)} className="input-field !py-1 text-xs w-full" placeholder="Descripción o referencia" />
                         </td>
                         <td className="px-1 py-1.5">
                           <input type="number" min="0" step="1" value={m.cantidad} onChange={(e) => updateMaterial(m.id, "cantidad", e.target.value)} className="input-field !py-1 text-xs text-center w-full" placeholder="0" />
@@ -607,7 +607,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       <option value="">Seleccionar material...</option>
                       {CATALOGO_MATERIALES.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                     </select>
-                    <input type="text" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", e.target.value)} className="input-field text-sm w-full" placeholder="Descripción o referencia" />
+                    <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", e.target.value)} className="input-field text-sm w-full" placeholder="Descripción o referencia" />
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="text-xs text-slate-500">Cant.</label>
@@ -689,7 +689,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
       {/* Observaciones */}
       <div className="card-static">
         <h2 className="text-base font-semibold text-slate-900 mb-4">Observaciones</h2>
-        <textarea value={form.observaciones} onChange={(e) => updateForm("observaciones", e.target.value)} rows={3} className="input-field" placeholder="Notas adicionales, incidencias, recomendaciones al cliente..." />
+        <textarea spellCheck={true} lang="es" value={form.observaciones} onChange={(e) => updateForm("observaciones", e.target.value)} rows={3} className="input-field" placeholder="Notas adicionales, incidencias, recomendaciones al cliente..." />
       </div>
 
       {/* Actions */}
