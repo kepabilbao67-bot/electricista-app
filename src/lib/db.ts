@@ -174,6 +174,8 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "updated_at", def: "TEXT" },
     { name: "iva_rate", def: "REAL DEFAULT 21" },
     { name: "descuento", def: "REAL DEFAULT 0" },
+    { name: "direccion_color", def: "TEXT" },
+    { name: "observaciones_color", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "parte_trabajo_lineas", [
