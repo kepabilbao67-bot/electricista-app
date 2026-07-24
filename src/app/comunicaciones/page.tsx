@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Send, MessageSquare, Mail, Phone, ExternalLink, Filter, Copy, CheckCircle2 } from "lucide-react";
 import { templates } from "@/lib/templates";
 import { showToast } from "@/components/Toast";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client {
   id: string;
@@ -31,6 +33,8 @@ export default function ComunicacionesPage() {
   const [messageType, setMessageType] = useState<"whatsapp" | "email" | "sms">("whatsapp");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [subjectColor, setSubjectColor] = useState("default");
+  const [messageColor, setMessageColor] = useState("default");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -84,6 +88,8 @@ export default function ComunicacionesPage() {
         type: messageType,
         subject: subject || null,
         message,
+        subject_color: subjectColor,
+        message_color: messageColor,
       }),
     });
 
@@ -92,6 +98,8 @@ export default function ComunicacionesPage() {
       setMessage("");
       setSubject("");
       setSelectedTemplate("");
+      setSubjectColor("default");
+      setMessageColor("default");
       fetch("/api/communications").then((r) => r.json()).then(setCommunications);
     } else {
       showToast("error", "Error al registrar la comunicacion");
@@ -197,14 +205,20 @@ export default function ComunicacionesPage() {
 
             {messageType === "email" && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Asunto</label>
-                <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className="input-field" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-slate-700">Asunto</label>
+                  <ColorSelect value={subjectColor} onChange={setSubjectColor} />
+                </div>
+                <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className={`input-field ${getTextColorClass(subjectColor)}`} />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Mensaje *</label>
-              <textarea required value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className="input-field" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Mensaje *</label>
+                <ColorSelect value={messageColor} onChange={setMessageColor} />
+              </div>
+              <textarea required value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className={`input-field ${getTextColorClass(messageColor)}`} />
             </div>
 
             <div className="flex flex-wrap gap-2">

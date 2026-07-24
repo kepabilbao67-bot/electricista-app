@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
     const id = uuidv4();
 
     await db.execute({
-      sql: `INSERT INTO clients (id, name, nif, email, phone, address, city, postal_code, province, notes, client_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO clients (id, name, nif, email, phone, address, city, postal_code, province, notes, client_type, address_color, notes_color)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         body.name,
@@ -61,6 +61,8 @@ export async function POST(request: NextRequest) {
         body.province || null,
         body.notes || null,
         body.client_type || "particular",
+        body.address_color || null,
+        body.notes_color || null,
       ],
     });
 

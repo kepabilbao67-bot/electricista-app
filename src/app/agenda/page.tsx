@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Calendar, Clock, MapPin, Edit2, Trash2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client {
   id: string;
@@ -21,6 +23,9 @@ interface Visit {
   status: string;
   address: string;
   notes: string;
+  title_color?: string | null;
+  description_color?: string | null;
+  address_color?: string | null;
 }
 
 const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
@@ -64,6 +69,9 @@ export default function AgendaPage() {
     status: "scheduled",
     address: "",
     notes: "",
+    title_color: "default",
+    description_color: "default",
+    address_color: "default",
   });
 
   const fetchVisits = () => {
@@ -106,6 +114,9 @@ export default function AgendaPage() {
         status: "scheduled",
         address: "",
         notes: "",
+        title_color: "default",
+        description_color: "default",
+        address_color: "default",
       });
       fetchVisits();
     } else {
@@ -125,6 +136,9 @@ export default function AgendaPage() {
       status: visit.status || "scheduled",
       address: visit.address || "",
       notes: visit.notes || "",
+      title_color: visit.title_color || "default",
+      description_color: visit.description_color || "default",
+      address_color: visit.address_color || "default",
     });
     setShowForm(true);
   };
@@ -219,6 +233,9 @@ export default function AgendaPage() {
                 status: "scheduled",
                 address: "",
                 notes: "",
+                title_color: "default",
+                description_color: "default",
+                address_color: "default",
               });
               setShowForm(true);
             }}
@@ -238,13 +255,16 @@ export default function AgendaPage() {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Titulo *</label>
-              <input
-                type="text"
-                required
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="input-field"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  className={`input-field flex-1 ${getTextColorClass(form.title_color)}`}
+                />
+                <ColorSelect value={form.title_color} onChange={(v) => setForm({ ...form, title_color: v })} />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente</label>
@@ -303,21 +323,27 @@ export default function AgendaPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Direccion</label>
-              <input
-                type="text"
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                className="input-field"
-                placeholder="Ej: Calle Lehendakari Aguirre 7, Berango"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className={`input-field flex-1 ${getTextColorClass(form.address_color)}`}
+                  placeholder="Ej: Calle Lehendakari Aguirre 7, Berango"
+                />
+                <ColorSelect value={form.address_color} onChange={(v) => setForm({ ...form, address_color: v })} />
+              </div>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Descripcion</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Descripcion</label>
+                <ColorSelect value={form.description_color} onChange={(v) => setForm({ ...form, description_color: v })} />
+              </div>
               <textarea
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={2}
-                className="input-field"
+                className={`input-field ${getTextColorClass(form.description_color)}`}
               />
             </div>
             <div className="md:col-span-2 flex gap-3">

@@ -79,7 +79,7 @@ export async function PUT(
       // Actualizar datos del presupuesto
       await db.execute({
         sql: `UPDATE budgets SET 
-          client_id = ?, date = ?, valid_until = ?, notes = ?,
+          client_id = ?, date = ?, valid_until = ?, notes = ?, notes_color = ?,
           subtotal = ?, tax_rate = ?, tax_amount = ?, total = ?,
           updated_at = datetime('now')
           WHERE id = ?`,
@@ -88,6 +88,7 @@ export async function PUT(
           body.date,
           body.valid_until || null,
           body.notes || null,
+          body.notes_color || null,
           subtotal,
           taxRate,
           taxAmount,

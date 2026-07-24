@@ -45,8 +45,8 @@ export async function POST(request: NextRequest) {
     const id = uuidv4();
 
     await db.execute({
-      sql: `INSERT INTO communications (id, client_id, type, subject, message, status)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO communications (id, client_id, type, subject, message, status, subject_color, message_color)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         body.client_id,
@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
         body.subject || null,
         body.message,
         body.status || "sent",
+        body.subject_color || null,
+        body.message_color || null,
       ],
     });
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Package, Search, Save, TrendingUp, Calculator } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/components/Toast";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface CatalogItem {
   id: string;
@@ -27,6 +29,9 @@ export default function CatalogoPage() {
     unit_price: 0,
     cost_price: 0,
     category: "",
+    name_color: "default",
+    description_color: "default",
+    category_color: "default",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -71,7 +76,7 @@ export default function CatalogoPage() {
         showToast("success", "Item actualizado");
         setShowForm(false);
         setEditingId(null);
-        setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" });
+        setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "", name_color: "default", description_color: "default", category_color: "default" });
         fetchItems();
       }
     } else {
@@ -84,7 +89,7 @@ export default function CatalogoPage() {
       if (res.ok) {
         showToast("success", "Item creado");
         setShowForm(false);
-        setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" });
+        setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "", name_color: "default", description_color: "default", category_color: "default" });
         fetchItems();
       }
     }
@@ -108,6 +113,9 @@ export default function CatalogoPage() {
       unit_price: item.unit_price,
       cost_price: item.cost_price || 0,
       category: item.category || "",
+      name_color: (item as any).name_color || "default",
+      description_color: (item as any).description_color || "default",
+      category_color: (item as any).category_color || "default",
     });
     setEditingId(item.id);
     setShowForm(true);
@@ -129,7 +137,7 @@ export default function CatalogoPage() {
             <Calculator className="h-4 w-4" />
             Calculadora
           </button>
-          <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "" }); }} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition-all">
+          <button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", description: "", unit_price: 0, cost_price: 0, category: "", name_color: "default", description_color: "default", category_color: "default" }); }} className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600 transition-all">
             <Plus className="h-4 w-4" />
             Anadir item
           </button>
@@ -142,12 +150,18 @@ export default function CatalogoPage() {
           <h2 className="text-base font-semibold text-slate-900 mb-4">{editingId ? "Editar item" : "Nuevo item"}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-slate-700 mb-1">Nombre *</label>
-              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Magnetotermico 2x16" className="input-field" />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-slate-700">Nombre *</label>
+                <ColorSelect value={form.name_color} onChange={(v) => setForm({ ...form, name_color: v })} />
+              </div>
+              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Magnetotermico 2x16" className={`input-field ${getTextColorClass(form.name_color)}`} />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-slate-700 mb-1">Descripcion</label>
-              <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Detalles opcionales..." className="input-field" />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-slate-700">Descripcion</label>
+                <ColorSelect value={form.description_color} onChange={(v) => setForm({ ...form, description_color: v })} />
+              </div>
+              <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Detalles opcionales..." className={`input-field ${getTextColorClass(form.description_color)}`} />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Precio COMPRA (lo que te cuesta)</label>
@@ -158,8 +172,11 @@ export default function CatalogoPage() {
               <input type="number" min="0" step="0.01" required value={form.unit_price || ""} onChange={(e) => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="input-field" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Categoria</label>
-              <input type="text" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Proteccion, Mecanismos, Lineas..." className="input-field" list="categories" />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-slate-700">Categoria</label>
+                <ColorSelect value={form.category_color} onChange={(v) => setForm({ ...form, category_color: v })} />
+              </div>
+              <input type="text" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Proteccion, Mecanismos, Lineas..." className={`input-field ${getTextColorClass(form.category_color)}`} list="categories" />
               <datalist id="categories">
                 {categories.map((c) => <option key={c} value={c || ""} />)}
               </datalist>

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Plus, UserPlus, RefreshCw, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface Lead {
   id: string;
@@ -39,6 +41,10 @@ export default function LeadsPage() {
     source: "",
     interest: "",
     message: "",
+    name_color: "default",
+    source_color: "default",
+    interest_color: "default",
+    message_color: "default",
   });
 
   const fetchLeads = () => {
@@ -66,6 +72,10 @@ export default function LeadsPage() {
       source: "Web",
       interest: "Instalación eléctrica",
       message: "Solicita presupuesto para una instalación eléctrica.",
+      name_color: "default",
+      source_color: "default",
+      interest_color: "default",
+      message_color: "default",
     });
     if (!showForm) setShowForm(true);
   };
@@ -83,7 +93,7 @@ export default function LeadsPage() {
 
       if (res.ok) {
         showToast("success", "Lead creado correctamente");
-        setForm({ name: "", email: "", phone: "", source: "", interest: "", message: "" });
+        setForm({ name: "", email: "", phone: "", source: "", interest: "", message: "", name_color: "default", source_color: "default", interest_color: "default", message_color: "default" });
         setShowForm(false);
         fetchLeads();
       } else {
@@ -170,7 +180,7 @@ export default function LeadsPage() {
           </button>
           <button
             onClick={() => {
-              setForm({ name: "", email: "", phone: "", source: "", interest: "", message: "" });
+              setForm({ name: "", email: "", phone: "", source: "", interest: "", message: "", name_color: "default", source_color: "default", interest_color: "default", message_color: "default" });
               setShowForm(true);
             }}
             className="btn-primary"
@@ -187,13 +197,16 @@ export default function LeadsPage() {
           <h2 className="text-base font-semibold text-slate-900 mb-4">Nuevo lead</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Nombre *</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Nombre *</label>
+                <ColorSelect value={form.name_color} onChange={(v) => setForm({ ...form, name_color: v })} />
+              </div>
               <input
                 type="text"
                 required
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="input-field"
+                className={`input-field ${getTextColorClass(form.name_color)}`}
                 placeholder="Nombre del contacto"
               />
             </div>
@@ -218,32 +231,41 @@ export default function LeadsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Origen</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Origen</label>
+                <ColorSelect value={form.source_color} onChange={(v) => setForm({ ...form, source_color: v })} />
+              </div>
               <input
                 type="text"
                 value={form.source}
                 onChange={(e) => setForm({ ...form, source: e.target.value })}
-                className="input-field"
+                className={`input-field ${getTextColorClass(form.source_color)}`}
                 placeholder="Web, WhatsApp, Referido..."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Interes</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Interes</label>
+                <ColorSelect value={form.interest_color} onChange={(v) => setForm({ ...form, interest_color: v })} />
+              </div>
               <input
                 type="text"
                 value={form.interest}
                 onChange={(e) => setForm({ ...form, interest: e.target.value })}
-                className="input-field"
+                className={`input-field ${getTextColorClass(form.interest_color)}`}
                 placeholder="Instalacion electrica, revision..."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Mensaje</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Mensaje</label>
+                <ColorSelect value={form.message_color} onChange={(v) => setForm({ ...form, message_color: v })} />
+              </div>
               <textarea
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
                 rows={2}
-                className="input-field"
+                className={`input-field ${getTextColorClass(form.message_color)}`}
                 placeholder="Detalle de la solicitud..."
               />
             </div>

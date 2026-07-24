@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
 
     await db.execute({
-      sql: `INSERT INTO leads (id, name, email, phone, source, interest, message, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'nuevo', ?, ?)`,
+      sql: `INSERT INTO leads (id, name, email, phone, source, interest, message, status, created_at, updated_at, name_color, source_color, interest_color, message_color)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'nuevo', ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         body.name.trim(),
@@ -49,6 +49,10 @@ export async function POST(request: NextRequest) {
         body.message || null,
         now,
         now,
+        body.name_color || null,
+        body.source_color || null,
+        body.interest_color || null,
+        body.message_color || null,
       ],
     });
 
