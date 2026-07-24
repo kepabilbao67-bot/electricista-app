@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
 
     // 1. Insert header
     statements.push({
-      sql: `INSERT INTO partes_trabajo (id, numero, fecha, tecnico, hora_inicio, hora_fin, cliente, client_id, direccion, telefono, persona_contacto, observaciones, estado, iva_rate, descuento, budget_id, visit_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO partes_trabajo (id, numero, fecha, tecnico, hora_inicio, hora_fin, cliente, client_id, direccion, telefono, persona_contacto, observaciones, estado, iva_rate, descuento, budget_id, visit_id, direccion_color, observaciones_color, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         numero,
@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
         safeNum(body.descuento),
         body.budget_id || null,
         body.visit_id || null,
+        body.direccion_color || null,
+        body.observaciones_color || null,
         now,
         now,
       ],

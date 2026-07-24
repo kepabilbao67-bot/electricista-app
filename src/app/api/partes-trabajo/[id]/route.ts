@@ -87,7 +87,8 @@ export async function PUT(
         fecha = ?, tecnico = ?, hora_inicio = ?, hora_fin = ?,
         cliente = ?, client_id = ?, direccion = ?, telefono = ?,
         persona_contacto = ?, observaciones = ?, estado = ?,
-        iva_rate = ?, descuento = ?, budget_id = ?, visit_id = ?, updated_at = ?
+        iva_rate = ?, descuento = ?, budget_id = ?, visit_id = ?,
+        direccion_color = ?, observaciones_color = ?, updated_at = ?
         WHERE id = ?`,
       args: [
         body.fecha,
@@ -105,6 +106,8 @@ export async function PUT(
         safeNum(body.descuento),
         body.budget_id || null,
         body.visit_id || null,
+        body.direccion_color || null,
+        body.observaciones_color || null,
         now,
         id,
       ],

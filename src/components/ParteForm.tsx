@@ -52,7 +52,9 @@ export interface ParteFormData {
   cliente: string;
   client_id: string;
   direccion: string;
+  direccion_color: string;
   observaciones: string;
+  observaciones_color: string;
   estado: string;
   iva_rate: string;
   descuento: string;
@@ -100,7 +102,9 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
     cliente: "",
     client_id: "",
     direccion: "",
+    direccion_color: "default",
     observaciones: "",
+    observaciones_color: "default",
     estado: "borrador",
     iva_rate: "21",
     descuento: "0",
@@ -257,7 +261,9 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
         cliente: form.cliente,
         client_id: form.client_id || null,
         direccion: form.direccion,
+        direccion_color: form.direccion_color && form.direccion_color !== "default" ? form.direccion_color : null,
         observaciones: form.observaciones,
+        observaciones_color: form.observaciones_color && form.observaciones_color !== "default" ? form.observaciones_color : null,
         estado: form.estado,
         iva_rate: parseFloat(form.iva_rate) || 21,
         descuento: parseFloat(form.descuento) || 0,
@@ -346,7 +352,12 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Dirección</label>
-            <input type="text" value={form.direccion} onChange={(e) => updateForm("direccion", e.target.value)} className="input-field" placeholder="Dirección del trabajo" />
+            <div className="flex gap-2">
+              <input type="text" value={form.direccion} onChange={(e) => updateForm("direccion", e.target.value)} className={`input-field flex-1 ${getTrabajoColorClass(form.direccion_color)}`} placeholder="Dirección del trabajo" />
+              <select value={form.direccion_color || "default"} onChange={(e) => updateForm("direccion_color", e.target.value)} className={`input-field w-24 text-xs ${getTrabajoColorClass(form.direccion_color)}`} title="Color del texto">
+                {TRABAJO_COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -688,8 +699,13 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
 
       {/* Observaciones */}
       <div className="card-static">
-        <h2 className="text-base font-semibold text-slate-900 mb-4">Observaciones</h2>
-        <textarea spellCheck={true} lang="es" value={form.observaciones} onChange={(e) => updateForm("observaciones", e.target.value)} rows={3} className="input-field" placeholder="Notas adicionales, incidencias, recomendaciones al cliente..." />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-slate-900">Observaciones</h2>
+          <select value={form.observaciones_color || "default"} onChange={(e) => updateForm("observaciones_color", e.target.value)} className={`input-field w-24 text-xs ${getTrabajoColorClass(form.observaciones_color)}`} title="Color del texto">
+            {TRABAJO_COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <textarea spellCheck={true} lang="es" value={form.observaciones} onChange={(e) => updateForm("observaciones", e.target.value)} rows={3} className={`input-field ${getTrabajoColorClass(form.observaciones_color)}`} placeholder="Notas adicionales, incidencias, recomendaciones al cliente..." />
       </div>
 
       {/* Actions */}

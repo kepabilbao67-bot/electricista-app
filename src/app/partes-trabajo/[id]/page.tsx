@@ -41,7 +41,9 @@ interface ParteDetalle {
   hora_fin: string | null;
   cliente: string;
   direccion: string | null;
+  direccion_color?: string | null;
   observaciones: string | null;
+  observaciones_color?: string | null;
   estado: string;
   iva_rate: number | null;
   descuento: number | null;
@@ -114,7 +116,8 @@ function ParteTrabajoDetail() {
     const formData: ParteFormData = {
       fecha: parte.fecha, tecnico: parte.tecnico || "", horaInicio: parte.hora_inicio || "",
       horaFin: parte.hora_fin || "", cliente: parte.cliente, client_id: "",
-      direccion: parte.direccion || "", observaciones: parte.observaciones || "",
+      direccion: parte.direccion || "", direccion_color: parte.direccion_color || "default",
+      observaciones: parte.observaciones || "", observaciones_color: parte.observaciones_color || "default",
       estado: parte.estado, iva_rate: String(parte.iva_rate ?? 21),
       descuento: String(parte.descuento ?? 0), budget_id: "", visit_id: "",
     };
@@ -215,7 +218,7 @@ function ParteTrabajoDetail() {
           <div><span className="font-semibold text-slate-500 block">Inicio</span><span className="text-slate-900">{parte.hora_inicio || "—"}</span></div>
           <div><span className="font-semibold text-slate-500 block">Fin</span><span className="text-slate-900">{parte.hora_fin || "—"}</span></div>
           <div><span className="font-semibold text-slate-500 block">Cliente</span><span className="text-slate-900 font-medium">{parte.cliente}</span></div>
-          <div><span className="font-semibold text-slate-500 block">Dirección</span><span className="text-slate-900">{parte.direccion || "—"}</span></div>
+          <div><span className="font-semibold text-slate-500 block">Dirección</span><span className={`${getTrabajoColorClass(parte.direccion_color)} text-slate-900`}>{parte.direccion || "—"}</span></div>
         </div>
 
         {/* TRABAJOS — always visible on screen if active tab, always visible in print */}
@@ -307,7 +310,7 @@ function ParteTrabajoDetail() {
         {parte.observaciones && (
           <div className="mb-3 p-2 border border-slate-200 rounded bg-amber-50/50 print:bg-transparent">
             <h4 className="text-xs font-bold text-slate-500 uppercase mb-0.5">Observaciones</h4>
-            <p className="text-xs text-slate-700 whitespace-pre-line">{parte.observaciones}</p>
+            <p className={`text-xs whitespace-pre-line ${getTrabajoColorClass(parte.observaciones_color)}`}>{parte.observaciones}</p>
           </div>
         )}
 
