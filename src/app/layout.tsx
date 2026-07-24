@@ -36,8 +36,8 @@ export default function RootLayout({
         <style>{`
           @media print {
             @page {
-              size: A4;
-              margin: 12mm;
+              size: A4 portrait;
+              margin: 9mm;
             }
 
             html,
@@ -52,12 +52,16 @@ export default function RootLayout({
               min-height: 0 !important;
               max-height: none !important;
               overflow: visible !important;
+              width: 100% !important;
+            }
+
+            .app-shell {
+              flex-direction: column !important;
             }
 
             .app-main,
             .budget-page,
             .budget-print {
-              width: 100% !important;
               max-width: none !important;
               margin: 0 !important;
               padding: 0 !important;
@@ -68,6 +72,19 @@ export default function RootLayout({
             button,
             .no-print {
               display: none !important;
+            }
+
+            .print-show {
+              display: block !important;
+            }
+
+            .print-parte {
+              padding: 0 !important;
+              margin: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
+              border-radius: 0 !important;
+              max-width: none !important;
             }
 
             .budget-print {

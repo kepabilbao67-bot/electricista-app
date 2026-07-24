@@ -182,6 +182,7 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "cantidad", def: "REAL DEFAULT 1" },
     { name: "unidad", def: "TEXT DEFAULT 'unidad'" },
     { name: "precio_unitario", def: "REAL DEFAULT 0" },
+    { name: "color", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "parte_materiales", [

@@ -121,6 +121,7 @@ export const APP_MODULES: AppModule[] = [
     features: [
       "Lista de partes con búsqueda y estados (borrador, firmado, cerrado)",
       "Formulario: datos generales, cliente, trabajos realizados, materiales, observaciones",
+      "Color de texto por línea de trabajo: normal, rojo, naranja, azul, verde, morado (selector controlado)",
       "Vista imprimible con cabecera, tablas, firmas y texto legal",
       "Botón Imprimir / Guardar PDF",
       "Plantilla en blanco imprimible con datos de empresa (/partes-trabajo/plantilla)",
