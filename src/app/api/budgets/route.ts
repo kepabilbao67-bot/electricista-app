@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
     const total = subtotal + taxAmount;
 
     await db.execute({
-      sql: `INSERT INTO budgets (id, number, client_id, date, valid_until, status, subtotal, tax_rate, tax_amount, total, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO budgets (id, number, client_id, date, valid_until, status, subtotal, tax_rate, tax_amount, total, notes, notes_color)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         number,
@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
         taxAmount,
         total,
         body.notes || null,
+        body.notes_color || null,
       ],
     });
 

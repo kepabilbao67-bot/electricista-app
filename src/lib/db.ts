@@ -90,6 +90,8 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "client_type", def: "TEXT DEFAULT 'particular'" },
     { name: "created_at", def: "TEXT" },
     { name: "updated_at", def: "TEXT" },
+    { name: "address_color", def: "TEXT" },
+    { name: "notes_color", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "invoices", [
@@ -127,6 +129,7 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "converted_invoice_id", def: "TEXT" },
     { name: "created_at", def: "TEXT" },
     { name: "updated_at", def: "TEXT" },
+    { name: "notes_color", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "budget_items", [
@@ -137,6 +140,8 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "subject", def: "TEXT" },
     { name: "status", def: "TEXT DEFAULT 'sent'" },
     { name: "created_at", def: "TEXT" },
+    { name: "subject_color", def: "TEXT" },
+    { name: "message_color", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "calls", [
@@ -157,6 +162,9 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "notes", def: "TEXT" },
     { name: "created_at", def: "TEXT" },
     { name: "updated_at", def: "TEXT" },
+    { name: "title_color", def: "TEXT" },
+    { name: "description_color", def: "TEXT" },
+    { name: "address_color", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "catalog_items", [
@@ -164,6 +172,16 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "category", def: "TEXT" },
     { name: "cost_price", def: "REAL DEFAULT 0" },
     { name: "created_at", def: "TEXT" },
+    { name: "name_color", def: "TEXT" },
+    { name: "description_color", def: "TEXT" },
+    { name: "category_color", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "leads", [
+    { name: "name_color", def: "TEXT" },
+    { name: "source_color", def: "TEXT" },
+    { name: "interest_color", def: "TEXT" },
+    { name: "message_color", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "partes_trabajo", [

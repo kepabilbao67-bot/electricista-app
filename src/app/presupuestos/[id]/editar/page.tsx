@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronDown, ChevronRight, Copy, ArrowLeft, Save } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client { id: string; name: string; }
 interface CatalogItem { id: string; name: string; unit_price: number; category: string; }
@@ -25,6 +27,7 @@ export default function EditarPresupuestoPage() {
   const [date, setDate] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
+  const [notesColor, setNotesColor] = useState("default");
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -44,6 +47,7 @@ export default function EditarPresupuestoPage() {
           setDate(data.date);
           setValidUntil(data.valid_until || "");
           setNotes(data.notes || "");
+          setNotesColor(data.notes_color || "default");
           setBudgetNumber(data.number);
 
           // Parse items into zones
@@ -175,6 +179,7 @@ export default function EditarPresupuestoPage() {
         date,
         valid_until: validUntil || null,
         notes,
+        notes_color: notesColor,
         tax_rate: 21,
         items: allItems,
       }),
@@ -230,8 +235,11 @@ export default function EditarPresupuestoPage() {
               <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="input-field" />
             </div>
             <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Descripcion / Notas</label>
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="input-field" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Descripcion / Notas</label>
+                <ColorSelect value={notesColor} onChange={setNotesColor} />
+              </div>
+              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={`input-field ${getTextColorClass(notesColor)}`} />
             </div>
           </div>
         </div>

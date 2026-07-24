@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText, Users, Eye, Upload } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client {
   id: string;
@@ -39,6 +41,8 @@ export default function ClientesPage() {
     province: "",
     notes: "",
     client_type: "particular",
+    address_color: "default",
+    notes_color: "default",
   });
 
   const fetchClients = () => {
@@ -71,7 +75,7 @@ export default function ClientesPage() {
       showToast("success", editingClient ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
       setShowForm(false);
       setEditingClient(null);
-      setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular" });
+      setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
       fetchClients();
     } else {
       showToast("error", "Error al guardar el cliente");
@@ -91,6 +95,8 @@ export default function ClientesPage() {
       province: client.province || "",
       notes: client.notes || "",
       client_type: client.client_type || "particular",
+      address_color: (client as any).address_color || "default",
+      notes_color: (client as any).notes_color || "default",
     });
     setShowForm(true);
   };
@@ -148,7 +154,7 @@ export default function ClientesPage() {
           <button
             onClick={() => {
               setEditingClient(null);
-              setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular" });
+              setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
               setShowForm(true);
             }}
             className="btn-primary"
@@ -200,8 +206,11 @@ export default function ClientesPage() {
               <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Direccion</label>
-              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Direccion</label>
+                <ColorSelect value={form.address_color} onChange={(v) => setForm({ ...form, address_color: v })} />
+              </div>
+              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={`input-field ${getTextColorClass(form.address_color)}`} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Ciudad</label>
@@ -216,8 +225,11 @@ export default function ClientesPage() {
               <input type="text" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Notas rapidas</label>
-              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="input-field" placeholder="Ej: llaves del portal en porteria" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Notas rapidas</label>
+                <ColorSelect value={form.notes_color} onChange={(v) => setForm({ ...form, notes_color: v })} />
+              </div>
+              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className={`input-field ${getTextColorClass(form.notes_color)}`} placeholder="Ej: llaves del portal en porteria" />
             </div>
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" className="btn-primary">

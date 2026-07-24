@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronDown, ChevronRight, Copy, Wand2, X } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client {
   id: string;
@@ -56,6 +58,7 @@ export default function NuevoPresupuestoPage() {
     return d.toISOString().split("T")[0];
   });
   const [notes, setNotes] = useState("");
+  const [notesColor, setNotesColor] = useState("default");
   const [zones, setZones] = useState<Zone[]>([
     { name: "Instalacion general", items: [{ description: "", quantity: 1, unit_price: 0 }], collapsed: false },
   ]);
@@ -345,6 +348,7 @@ export default function NuevoPresupuestoPage() {
         date,
         valid_until: validUntil || null,
         notes,
+        notes_color: notesColor,
         tax_rate: 21,
         items: allItems,
       }),
@@ -413,12 +417,15 @@ export default function NuevoPresupuestoPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Notas</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-slate-700">Notas</label>
+                <ColorSelect value={notesColor} onChange={setNotesColor} />
+              </div>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="input-field"
+                className={`input-field ${getTextColorClass(notesColor)}`}
               />
             </div>
           </div>

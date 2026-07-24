@@ -41,7 +41,7 @@ export async function PUT(
     const body = await request.json();
 
     await db.execute({
-      sql: `UPDATE clients SET name = ?, nif = ?, email = ?, phone = ?, address = ?, city = ?, postal_code = ?, province = ?, notes = ?, client_type = ?, updated_at = datetime('now')
+      sql: `UPDATE clients SET name = ?, nif = ?, email = ?, phone = ?, address = ?, city = ?, postal_code = ?, province = ?, notes = ?, client_type = ?, address_color = ?, notes_color = ?, updated_at = datetime('now')
        WHERE id = ?`,
       args: [
         body.name,
@@ -54,6 +54,8 @@ export async function PUT(
         body.province || null,
         body.notes || null,
         body.client_type || "particular",
+        body.address_color || null,
+        body.notes_color || null,
         id,
       ],
     });
