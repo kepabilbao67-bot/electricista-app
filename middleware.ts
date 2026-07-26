@@ -24,6 +24,7 @@ export function middleware(request: NextRequest) {
   if (!expectedUser || !expectedPassword) {
     return new NextResponse("Acceso no disponible: falta configuracion.", {
       status: 503,
+      headers: { "Cache-Control": "no-store" },
     });
   }
 
@@ -48,7 +49,10 @@ export function middleware(request: NextRequest) {
 
   return new NextResponse("Autenticacion requerida.", {
     status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="ElectricistApp"' },
+    headers: {
+      "WWW-Authenticate": 'Basic realm="ElectricistApp"',
+      "Cache-Control": "no-store",
+    },
   });
 }
 

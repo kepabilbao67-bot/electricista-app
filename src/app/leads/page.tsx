@@ -171,13 +171,15 @@ export default function LeadsPage() {
           <p className="page-subtitle">{leads.length} leads registrados</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={fillTestData}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Rellenar datos de prueba
-          </button>
+          {process.env.NODE_ENV === "development" && (
+            <button
+              onClick={fillTestData}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Rellenar datos de prueba
+            </button>
+          )}
           <button
             onClick={() => {
               setForm({ name: "", email: "", phone: "", source: "", interest: "", message: "", name_color: "default", source_color: "default", interest_color: "default", message_color: "default" });
