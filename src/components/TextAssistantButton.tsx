@@ -118,7 +118,7 @@ export default function TextAssistantButton({
                     <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-slate-900 whitespace-pre-wrap">{corrected}</div>
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-400">Revisa el resultado antes de aceptar. No se modifican importes ni datos fiscales.</p>
+                <p className="text-[10px] text-slate-400">Revisa el resultado antes de aceptar. La IA puede cometer errores. No se modifican importes ni datos fiscales.</p>
               </>
             )}
 

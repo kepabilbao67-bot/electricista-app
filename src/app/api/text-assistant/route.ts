@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { containsHighRiskData, protectedTokensPreserved, stripTags } from "@/lib/sensitive-text-filter";
 
 const SYSTEM_PROMPT = `Eres el Asistente de Redacción Profesional de Autónomo360, una aplicación para autónomos en España (electricistas, fontaneros, reformistas, etc.).
 
@@ -57,6 +58,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Strip HTML tags
+  const cleanText = stripTags(trimmed);
+
+  // Check for high-risk sensitive data
+  if (containsHighRiskData(cleanText)) {
+    return NextResponse.json(
+      { error: "Este texto contiene datos sensibles o cifras protegidas. Revísalo manualmente antes de usar el asistente." },
+      { status: 400 }
+    );
+  }
+
   if (!mode || !VALID_MODES.includes(mode as typeof VALID_MODES[number])) {
     return NextResponse.json({ error: "Modo no válido. Usa: CORREGIR." }, { status: 400 });
   }
@@ -77,7 +89,7 @@ export async function POST(request: NextRequest) {
         max_tokens: 1000,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `MODO: ${mode}\n\nTEXTO:\n${trimmed}` },
+          { role: "user", content: `MODO: ${mode}\n\nTEXTO:\n${cleanText}` },
         ],
       }),
     });
@@ -98,6 +110,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "No se obtuvo respuesta del asistente." },
         { status: 502 }
+      );
+    }
+
+    // Verify protected tokens were not altered
+    if (!protectedTokensPreserved(cleanText, result)) {
+      return NextResponse.json(
+        { error: "La corrección fue bloqueada porque modificaba datos protegidos." },
+        { status: 422 }
       );
     }
 
