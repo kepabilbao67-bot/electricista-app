@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Calendar, Clock, MapPin, Edit2, Trash2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
+import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
