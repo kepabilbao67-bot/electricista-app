@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (!resp.ok) {
-      const errData = await resp.text();
-      console.error("OpenAI error:", resp.status, errData);
+      await resp.text(); // consume body
+      console.error("OpenAI text assistant error:", resp.status);
       return NextResponse.json(
         { error: "Error del servicio de corrección. Inténtalo de nuevo." },
         { status: 502 }
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ corrected: result, mode });
   } catch (err) {
-    console.error("Text assistant error:", err);
+    console.error("Text assistant connection error");
     return NextResponse.json(
       { error: "Error de conexión con el servicio de corrección." },
       { status: 502 }

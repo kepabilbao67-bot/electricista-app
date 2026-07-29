@@ -430,6 +430,7 @@ export default function NuevoPresupuestoPage() {
                 rows={2}
                 className={`input-field ${getTextColorClass(notesColor)}`}
               />
+              <div className="mt-1"><TextAssistantButton value={notes} onAccept={setNotes} /></div>
             </div>
           </div>
         </div>

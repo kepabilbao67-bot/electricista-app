@@ -350,6 +350,7 @@ export default function AgendaPage() {
                 rows={2}
                 className={`input-field ${getTextColorClass(form.description_color)}`}
               />
+              <div className="mt-1"><TextAssistantButton value={form.description} onAccept={(t) => setForm({ ...form, description: t })} /></div>
             </div>
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" className="btn-primary">

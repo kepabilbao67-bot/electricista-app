@@ -232,6 +232,7 @@ export default function ClientesPage() {
                 <ColorSelect value={form.notes_color} onChange={(v) => setForm({ ...form, notes_color: v })} />
               </div>
               <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, notes: c })); }} rows={2} className={`input-field ${getTextColorClass(form.notes_color)}`} placeholder="Ej: llaves del portal en porteria" />
+              <div className="mt-1"><TextAssistantButton value={form.notes} onAccept={(t) => setForm({ ...form, notes: t })} /></div>
             </div>
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" className="btn-primary">

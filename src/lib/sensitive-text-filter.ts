@@ -106,3 +106,20 @@ export function protectedTokensPreserved(original: string, corrected: string): b
 export function stripTags(text: string): string {
   return text.replace(/<[^>]*>/g, "");
 }
+
+// Aliases for compatibility
+export const hasSensitiveText = containsHighRiskData;
+export const stripHtml = stripTags;
+
+export function extractProtectedTokens(text: string): string[] {
+  const tokens = extractSensitiveTokens(text);
+  return [
+    ...tokens.nif, ...tokens.email, ...tokens.phone,
+    ...tokens.amount, ...tokens.date, ...tokens.time,
+    ...tokens.iban, ...tokens.url,
+  ];
+}
+
+export function protectedTokensChanged(original: string, corrected: string): boolean {
+  return !protectedTokensPreserved(original, corrected);
+}
