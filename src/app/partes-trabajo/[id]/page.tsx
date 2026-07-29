@@ -186,6 +186,7 @@ function ParteTrabajoDetail() {
           <button onClick={handleDelete} disabled={deleting} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 transition-all disabled:opacity-50"><Trash2 className="h-4 w-4" /> Borrar</button>
           <button onClick={handlePrint} className="btn-primary"><Printer className="h-4 w-4" /> Imprimir / PDF</button>
         </div>
+        <p className="text-[10px] text-slate-400 mt-2 text-right no-print">Consejo: al imprimir, desactiva &quot;Encabezado y pie de pagina&quot; y usa margenes minimos para evitar paginas extra.</p>
       </div>
 
       {/* Screen-only tabs */}
