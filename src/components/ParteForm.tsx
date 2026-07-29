@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Loader2, CheckCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { showToast } from "@/components/Toast";
+import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import { CATALOGO_TRABAJOS, UNIDADES_TRABAJO } from "@/lib/catalogo-trabajos";
 import { CATALOGO_MATERIALES, UNIDADES_MATERIAL } from "@/lib/catalogo-materiales";
 
@@ -353,7 +354,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Dirección</label>
             <div className="flex gap-2">
-              <input type="text" value={form.direccion} onChange={(e) => updateForm("direccion", e.target.value)} className={`input-field flex-1 ${getTrabajoColorClass(form.direccion_color)}`} placeholder="Dirección del trabajo" />
+              <input type="text" value={form.direccion} onChange={(e) => updateForm("direccion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateForm("direccion", c); }} className={`input-field flex-1 ${getTrabajoColorClass(form.direccion_color)}`} placeholder="Dirección del trabajo" />
               <select value={form.direccion_color || "default"} onChange={(e) => updateForm("direccion_color", e.target.value)} className={`input-field w-24 text-xs ${getTrabajoColorClass(form.direccion_color)}`} title="Color del texto">
                 {TRABAJO_COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
@@ -420,7 +421,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="text" spellCheck={true} lang="es" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field !py-1 text-xs w-full ${colorClass}`} placeholder="Descripción del trabajo" />
+                          <input type="text" spellCheck={true} lang="es" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateTrabajo(t.id, "descripcion", c); }} className={`input-field !py-1 text-xs w-full ${colorClass}`} placeholder="Descripción del trabajo" />
                         </td>
                         <td className="px-1 py-1.5">
                           <input type="number" min="0" step="0.5" value={t.cantidad} onChange={(e) => updateTrabajo(t.id, "cantidad", e.target.value)} className="input-field !py-1 text-xs text-center w-full" placeholder="0" />
@@ -489,7 +490,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       <option value="">Seleccionar trabajo...</option>
                       {CATALOGO_TRABAJOS.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                     </select>
-                    <input type="text" spellCheck={true} lang="es" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", e.target.value)} className={`input-field text-sm w-full ${colorClass}`} placeholder="Descripción" />
+                    <input type="text" spellCheck={true} lang="es" value={t.descripcion} onChange={(e) => updateTrabajo(t.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateTrabajo(t.id, "descripcion", c); }} className={`input-field text-sm w-full ${colorClass}`} placeholder="Descripción" />
                     <div className="grid grid-cols-4 gap-2">
                       <div>
                         <label className="text-xs text-slate-500">Cant.</label>
@@ -569,7 +570,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", e.target.value)} className="input-field !py-1 text-xs w-full" placeholder="Descripción o referencia" />
+                          <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateMaterial(m.id, "descripcion", c); }} className="input-field !py-1 text-xs w-full" placeholder="Descripción o referencia" />
                         </td>
                         <td className="px-1 py-1.5">
                           <input type="number" min="0" step="1" value={m.cantidad} onChange={(e) => updateMaterial(m.id, "cantidad", e.target.value)} className="input-field !py-1 text-xs text-center w-full" placeholder="0" />
@@ -618,7 +619,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       <option value="">Seleccionar material...</option>
                       {CATALOGO_MATERIALES.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                     </select>
-                    <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", e.target.value)} className="input-field text-sm w-full" placeholder="Descripción o referencia" />
+                    <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateMaterial(m.id, "descripcion", c); }} className="input-field text-sm w-full" placeholder="Descripción o referencia" />
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="text-xs text-slate-500">Cant.</label>
@@ -705,7 +706,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
             {TRABAJO_COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
         </div>
-        <textarea spellCheck={true} lang="es" value={form.observaciones} onChange={(e) => updateForm("observaciones", e.target.value)} rows={3} className={`input-field ${getTrabajoColorClass(form.observaciones_color)}`} placeholder="Notas adicionales, incidencias, recomendaciones al cliente..." />
+        <textarea spellCheck={true} lang="es" value={form.observaciones} onChange={(e) => updateForm("observaciones", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateForm("observaciones", c); }} rows={3} className={`input-field ${getTrabajoColorClass(form.observaciones_color)}`} placeholder="Notas adicionales, incidencias, recomendaciones al cliente..." />
       </div>
 
       {/* Actions */}
