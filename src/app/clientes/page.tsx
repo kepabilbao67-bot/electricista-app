@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText, Users, Eye, Upload } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -210,7 +211,7 @@ export default function ClientesPage() {
                 <label className="block text-sm font-medium text-slate-700">Direccion</label>
                 <ColorSelect value={form.address_color} onChange={(v) => setForm({ ...form, address_color: v })} />
               </div>
-              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className={`input-field ${getTextColorClass(form.address_color)}`} />
+              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, address: c })); }} className={`input-field ${getTextColorClass(form.address_color)}`} />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Ciudad</label>
@@ -229,7 +230,7 @@ export default function ClientesPage() {
                 <label className="block text-sm font-medium text-slate-700">Notas rapidas</label>
                 <ColorSelect value={form.notes_color} onChange={(v) => setForm({ ...form, notes_color: v })} />
               </div>
-              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className={`input-field ${getTextColorClass(form.notes_color)}`} placeholder="Ej: llaves del portal en porteria" />
+              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, notes: c })); }} rows={2} className={`input-field ${getTextColorClass(form.notes_color)}`} placeholder="Ej: llaves del portal en porteria" />
             </div>
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" className="btn-primary">

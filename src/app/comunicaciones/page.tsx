@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Send, MessageSquare, Mail, Phone, ExternalLink, Filter, Copy, CheckCircle2 } from "lucide-react";
 import { templates } from "@/lib/templates";
 import { showToast } from "@/components/Toast";
+import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -209,7 +210,7 @@ export default function ComunicacionesPage() {
                   <label className="block text-sm font-medium text-slate-700">Asunto</label>
                   <ColorSelect value={subjectColor} onChange={setSubjectColor} />
                 </div>
-                <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} className={`input-field ${getTextColorClass(subjectColor)}`} />
+                <input type="text" value={subject} onChange={(e) => setSubject(autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setSubject(c); }} className={`input-field ${getTextColorClass(subjectColor)}`} />
               </div>
             )}
 
@@ -218,7 +219,7 @@ export default function ComunicacionesPage() {
                 <label className="block text-sm font-medium text-slate-700">Mensaje *</label>
                 <ColorSelect value={messageColor} onChange={setMessageColor} />
               </div>
-              <textarea required value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className={`input-field ${getTextColorClass(messageColor)}`} />
+              <textarea required value={message} onChange={(e) => setMessage(autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setMessage(c); }} rows={5} className={`input-field ${getTextColorClass(messageColor)}`} />
             </div>
 
             <div className="flex flex-wrap gap-2">
