@@ -1,7 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Wand2, X, Check, Loader2 } from "lucide-react";
+
+// Module-level cache: avoids repeated ping requests from multiple button instances
+let _serviceCheck: Promise<boolean> | null = null;
+function checkServiceAvailability(): Promise<boolean> {
+  if (!_serviceCheck) {
+    _serviceCheck = fetch("/api/text-assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "", mode: "CORREGIR" }),
+    })
+      .then((res) => res.status !== 503)
+      .catch(() => true); // network error: keep button, will show error on actual use
+  }
+  return _serviceCheck;
+}
 
 interface TextAssistantButtonProps {
   value: string;
@@ -22,8 +37,19 @@ export default function TextAssistantButton({
   const [loading, setLoading] = useState(false);
   const [corrected, setCorrected] = useState("");
   const [error, setError] = useState("");
+  const [serviceAvailable, setServiceAvailable] = useState(true);
 
   const canCorrect = value.trim().length >= 8;
+
+  // Check service availability once (shared across all instances)
+  useEffect(() => {
+    checkServiceAvailability().then((available) => {
+      if (!available) setServiceAvailable(false);
+    });
+  }, []);
+
+  // If service is not available, don't render the button at all
+  if (!serviceAvailable) return null;
 
   const handleCorrect = async () => {
     setOpen(true);
@@ -41,7 +67,11 @@ export default function TextAssistantButton({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Error al corregir el texto.");
+        if (res.status === 503) {
+          setError("Asistente de redacción pendiente de activar.");
+        } else {
+          setError(data.error || "Error al corregir el texto.");
+        }
         setLoading(false);
         return;
       }

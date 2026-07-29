@@ -176,17 +176,19 @@ function ParteTrabajoDetail() {
   return (
     <div className="animate-fade-in">
       {/* Screen-only header */}
-      <div className="flex items-center justify-between mb-6 no-print">
-        <div className="flex items-center gap-3">
-          <Link href="/partes-trabajo" className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 transition-all"><ArrowLeft className="h-4 w-4" /></Link>
-          <div><h1 className="page-title">{parte.numero}</h1><p className="page-subtitle">Parte de trabajo — {parte.cliente}</p></div>
+      <div className="mb-6 no-print">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link href="/partes-trabajo" className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 transition-all"><ArrowLeft className="h-4 w-4" /></Link>
+            <div><h1 className="page-title">{parte.numero}</h1><p className="page-subtitle">Parte de trabajo — {parte.cliente}</p></div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => setEditing(true)} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 transition-all"><Pencil className="h-4 w-4" /> Editar</button>
+            <button onClick={handleDelete} disabled={deleting} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 transition-all disabled:opacity-50"><Trash2 className="h-4 w-4" /> Borrar</button>
+            <button onClick={handlePrint} className="btn-primary"><Printer className="h-4 w-4" /> Imprimir / PDF</button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setEditing(true)} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 transition-all"><Pencil className="h-4 w-4" /> Editar</button>
-          <button onClick={handleDelete} disabled={deleting} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 transition-all disabled:opacity-50"><Trash2 className="h-4 w-4" /> Borrar</button>
-          <button onClick={handlePrint} className="btn-primary"><Printer className="h-4 w-4" /> Imprimir / PDF</button>
-        </div>
-        <p className="text-[10px] text-slate-400 mt-2 text-right no-print">Consejo: al imprimir, desactiva &quot;Encabezado y pie de pagina&quot; y usa margenes minimos para evitar paginas extra.</p>
+        <p className="text-[10px] text-slate-400 mt-2 text-right">Consejo: al imprimir, desactiva &quot;Encabezado y pie de pagina&quot; y usa margenes minimos para evitar paginas extra.</p>
       </div>
 
       {/* Screen-only tabs */}
