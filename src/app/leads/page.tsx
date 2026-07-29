@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, UserPlus, RefreshCw, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -238,7 +239,8 @@ export default function LeadsPage() {
               <input
                 type="text"
                 value={form.source}
-                onChange={(e) => setForm({ ...form, source: e.target.value })}
+                onChange={(e) => setForm({ ...form, source: autocorrectSpanishOnBoundary(e.target.value) })}
+                onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, source: c })); }}
                 className={`input-field ${getTextColorClass(form.source_color)}`}
                 placeholder="Web, WhatsApp, Referido..."
               />
@@ -251,7 +253,8 @@ export default function LeadsPage() {
               <input
                 type="text"
                 value={form.interest}
-                onChange={(e) => setForm({ ...form, interest: e.target.value })}
+                onChange={(e) => setForm({ ...form, interest: autocorrectSpanishOnBoundary(e.target.value) })}
+                onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, interest: c })); }}
                 className={`input-field ${getTextColorClass(form.interest_color)}`}
                 placeholder="Instalacion electrica, revision..."
               />
@@ -263,7 +266,8 @@ export default function LeadsPage() {
               </div>
               <textarea
                 value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                onChange={(e) => setForm({ ...form, message: autocorrectSpanishOnBoundary(e.target.value) })}
+                onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, message: c })); }}
                 rows={2}
                 className={`input-field ${getTextColorClass(form.message_color)}`}
                 placeholder="Detalle de la solicitud..."

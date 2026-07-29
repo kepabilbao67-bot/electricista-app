@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Package, Search, Save, TrendingUp, Calculator } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/components/Toast";
+import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -154,14 +155,14 @@ export default function CatalogoPage() {
                 <label className="block text-xs font-medium text-slate-700">Nombre *</label>
                 <ColorSelect value={form.name_color} onChange={(v) => setForm({ ...form, name_color: v })} />
               </div>
-              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Magnetotermico 2x16" className={`input-field ${getTextColorClass(form.name_color)}`} />
+              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, name: c })); }} placeholder="Ej: Magnetotermico 2x16" className={`input-field ${getTextColorClass(form.name_color)}`} />
             </div>
             <div className="md:col-span-2">
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-medium text-slate-700">Descripcion</label>
                 <ColorSelect value={form.description_color} onChange={(v) => setForm({ ...form, description_color: v })} />
               </div>
-              <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Detalles opcionales..." className={`input-field ${getTextColorClass(form.description_color)}`} />
+              <input type="text" value={form.description} onChange={(e) => setForm({ ...form, description: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, description: c })); }} placeholder="Detalles opcionales..." className={`input-field ${getTextColorClass(form.description_color)}`} />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Precio COMPRA (lo que te cuesta)</label>
@@ -176,7 +177,7 @@ export default function CatalogoPage() {
                 <label className="block text-xs font-medium text-slate-700">Categoria</label>
                 <ColorSelect value={form.category_color} onChange={(v) => setForm({ ...form, category_color: v })} />
               </div>
-              <input type="text" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Proteccion, Mecanismos, Lineas..." className={`input-field ${getTextColorClass(form.category_color)}`} list="categories" />
+              <input type="text" value={form.category} onChange={(e) => setForm({ ...form, category: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, category: c })); }} placeholder="Proteccion, Mecanismos, Lineas..." className={`input-field ${getTextColorClass(form.category_color)}`} list="categories" />
               <datalist id="categories">
                 {categories.map((c) => <option key={c} value={c || ""} />)}
               </datalist>

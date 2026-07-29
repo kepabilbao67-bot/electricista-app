@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Calendar, Clock, MapPin, Edit2, Trash2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -260,7 +261,8 @@ export default function AgendaPage() {
                   type="text"
                   required
                   value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  onChange={(e) => setForm({ ...form, title: autocorrectSpanishOnBoundary(e.target.value) })}
+                  onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f: typeof form) => ({ ...f, title: c })); }}
                   className={`input-field flex-1 ${getTextColorClass(form.title_color)}`}
                 />
                 <ColorSelect value={form.title_color} onChange={(v) => setForm({ ...form, title_color: v })} />
@@ -327,7 +329,8 @@ export default function AgendaPage() {
                 <input
                   type="text"
                   value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  onChange={(e) => setForm({ ...form, address: autocorrectSpanishOnBoundary(e.target.value) })}
+                  onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f: typeof form) => ({ ...f, address: c })); }}
                   className={`input-field flex-1 ${getTextColorClass(form.address_color)}`}
                   placeholder="Ej: Calle Lehendakari Aguirre 7, Berango"
                 />
@@ -341,7 +344,8 @@ export default function AgendaPage() {
               </div>
               <textarea
                 value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                onChange={(e) => setForm({ ...form, description: autocorrectSpanishOnBoundary(e.target.value) })}
+                onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f: typeof form) => ({ ...f, description: c })); }}
                 rows={2}
                 className={`input-field ${getTextColorClass(form.description_color)}`}
               />

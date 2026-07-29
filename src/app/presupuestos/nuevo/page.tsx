@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronDown, ChevronRight, Copy, Wand2, X } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -423,7 +424,8 @@ export default function NuevoPresupuestoPage() {
               </div>
               <textarea
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => setNotes(autocorrectSpanishOnBoundary(e.target.value))}
+                onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setNotes(c); }}
                 rows={2}
                 className={`input-field ${getTextColorClass(notesColor)}`}
               />
