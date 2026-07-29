@@ -5,6 +5,7 @@ import { Plus, Trash2, Loader2, CheckCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
+import TextAssistantButton from "@/components/TextAssistantButton";
 import { CATALOGO_TRABAJOS, UNIDADES_TRABAJO } from "@/lib/catalogo-trabajos";
 import { CATALOGO_MATERIALES, UNIDADES_MATERIAL } from "@/lib/catalogo-materiales";
 
@@ -705,6 +706,9 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
           <select value={form.observaciones_color || "default"} onChange={(e) => updateForm("observaciones_color", e.target.value)} className={`input-field w-24 text-xs ${getTrabajoColorClass(form.observaciones_color)}`} title="Color del texto">
             {TRABAJO_COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <TextAssistantButton value={form.observaciones} onAccept={(t) => updateForm("observaciones", t)} />
         </div>
         <textarea spellCheck={true} lang="es" value={form.observaciones} onChange={(e) => updateForm("observaciones", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateForm("observaciones", c); }} rows={3} className={`input-field ${getTrabajoColorClass(form.observaciones_color)}`} placeholder="Notas adicionales, incidencias, recomendaciones al cliente..." />
       </div>

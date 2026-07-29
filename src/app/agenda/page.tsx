@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Calendar, Clock, MapPin, Edit2, Trash2, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
+import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -349,6 +350,7 @@ export default function AgendaPage() {
                 rows={2}
                 className={`input-field ${getTextColorClass(form.description_color)}`}
               />
+              <div className="mt-1"><TextAssistantButton value={form.description} onAccept={(t) => setForm({ ...form, description: t })} /></div>
             </div>
             <div className="md:col-span-2 flex gap-3">
               <button type="submit" className="btn-primary">

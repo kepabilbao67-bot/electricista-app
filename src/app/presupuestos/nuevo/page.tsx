@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronDown, ChevronRight, Copy, Wand2, X } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
+import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -429,6 +430,7 @@ export default function NuevoPresupuestoPage() {
                 rows={2}
                 className={`input-field ${getTextColorClass(notesColor)}`}
               />
+              <div className="mt-1"><TextAssistantButton value={notes} onAccept={setNotes} /></div>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { Send, MessageSquare, Mail, Phone, ExternalLink, Filter, Copy, CheckCirc
 import { templates } from "@/lib/templates";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
+import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
@@ -220,6 +221,7 @@ export default function ComunicacionesPage() {
                 <ColorSelect value={messageColor} onChange={setMessageColor} />
               </div>
               <textarea required value={message} onChange={(e) => setMessage(autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setMessage(c); }} rows={5} className={`input-field ${getTextColorClass(messageColor)}`} />
+              <div className="mt-1"><TextAssistantButton value={message} onAccept={setMessage} /></div>
             </div>
 
             <div className="flex flex-wrap gap-2">
