@@ -95,10 +95,24 @@ export async function POST(request: NextRequest) {
     });
 
     if (!resp.ok) {
-      await resp.text(); // consume body
+      await resp.text(); // consume body without logging content
       console.error("OpenAI text assistant error:", resp.status);
+
+      // User-friendly messages per status — no technical details exposed
+      if (resp.status === 401 || resp.status === 403) {
+        return NextResponse.json(
+          { error: "Asistente de redacción pendiente de activar." },
+          { status: 503 }
+        );
+      }
+      if (resp.status === 429) {
+        return NextResponse.json(
+          { error: "Asistente de redacción temporalmente no disponible." },
+          { status: 503 }
+        );
+      }
       return NextResponse.json(
-        { error: "Error del servicio de corrección. Inténtalo de nuevo." },
+        { error: "No se pudo corregir el texto ahora. Inténtalo más tarde." },
         { status: 502 }
       );
     }
