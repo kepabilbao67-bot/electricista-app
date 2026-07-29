@@ -49,15 +49,21 @@ export function extractSensitiveTokens(text: string): SensitiveTokens {
 }
 
 /**
- * Returns true if the text contains high-risk sensitive data
+ * Returns true if the text contains ANY sensitive data
  * that should not be sent to an external AI service.
+ * Blocks: NIF/CIF/NIE, IBAN, email, phone, amounts, dates, times, URLs.
  */
 export function containsHighRiskData(text: string): boolean {
   const tokens = extractSensitiveTokens(text);
   return (
     tokens.nif.length > 0 ||
     tokens.iban.length > 0 ||
-    tokens.email.length > 0
+    tokens.email.length > 0 ||
+    tokens.phone.length > 0 ||
+    tokens.amount.length > 0 ||
+    tokens.date.length > 0 ||
+    tokens.time.length > 0 ||
+    tokens.url.length > 0
   );
 }
 
