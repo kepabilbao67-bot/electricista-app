@@ -8,82 +8,77 @@ export interface MessageTemplate {
 
 export const templates: MessageTemplate[] = [
   {
-    id: "presupuesto_enviado",
-    name: "Presupuesto enviado",
-    type: "whatsapp",
-    body: "Hola {nombre}, le envio el presupuesto solicitado por un importe de {total}EUR (IVA incluido). Quedo a su disposicion para cualquier consulta. Un saludo, Ivan Oyarzabal.",
-  },
-  {
-    id: "presupuesto_aceptado",
-    name: "Presupuesto aceptado",
-    type: "whatsapp",
-    body: "Hola {nombre}, le confirmo que hemos recibido la aceptacion de su presupuesto. Procedemos a organizar la ejecucion del trabajo. Le contactare para fijar fecha y hora. Un saludo, Ivan Oyarzabal.",
-  },
-  {
-    id: "factura_enviada",
-    name: "Factura enviada",
-    type: "email",
-    subject: "Factura {numero} - Ivan Martin Oyarzabal",
-    body: "Estimado/a {nombre},\n\nAdjunto le remito la factura {numero} por importe de {total}EUR.\n\nDatos de pago:\nBBVA: ES66 0182 0450 1102 0150 3156\n\nQuedo a su disposicion.\n\nUn saludo,\nIvan Martin Oyarzabal\nTfno: 688 867 530",
-  },
-  {
-    id: "factura_adjunta",
-    name: "Factura adjunta",
-    type: "email",
-    subject: "Factura adjunta - Ivan Martin Oyarzabal Electricista",
-    body: "Estimado/a {nombre},\n\nLe adjunto la factura correspondiente al trabajo realizado.\n\nForma de pago: Transferencia bancaria\nBBVA: ES66 0182 0450 1102 0150 3156\nTitular: MARTIN OYARZABAL IVAN\n\nSi tiene alguna duda no dude en contactarme.\n\nUn saludo,\nIvan Martin Oyarzabal\nTfno: 688 867 530",
-  },
-  {
-    id: "recordatorio_pago",
-    name: "Recordatorio de pago",
-    type: "whatsapp",
-    body: "Hola {nombre}, le recuerdo que tiene pendiente el pago de la factura {numero} por importe de {total}EUR. Puede realizar la transferencia a BBVA ES66 0182 0450 1102 0150 3156. Gracias, Ivan.",
-  },
-  {
-    id: "recordatorio_pago_amable",
-    name: "Recordatorio de pago (amable)",
-    type: "whatsapp",
-    body: "Hola {nombre}, espero que este bien. Le escribo para recordarle amablemente que la factura {numero} por {total}EUR esta pendiente de pago. Si ya ha realizado la transferencia, disculpe la molestia. Datos bancarios: BBVA ES66 0182 0450 1102 0150 3156. Gracias, Ivan Oyarzabal.",
-  },
-  {
     id: "confirmar_visita",
-    name: "Confirmar visita",
+    name: "Confirmación de visita",
     type: "whatsapp",
-    body: "Hola {nombre}, le confirmo la visita para el {fecha} a las {hora}. Direccion: {direccion}. Si necesita cambiarla, contacteme al 688 867 530. Ivan Oyarzabal.",
+    body: "Hola {nombre}, confirmamos la visita prevista para el {fecha} a las {hora}. Dirección: {direccion}. Si necesitas cambiarla, responde a este mensaje. Gracias.",
+  },
+  {
+    id: "recordatorio_visita",
+    name: "Recordatorio de visita",
+    type: "whatsapp",
+    body: "Hola {nombre}, te recordamos la visita prevista para el {fecha} a las {hora}. Si necesitas cambiarla, indícanoslo. Gracias.",
+  },
+  {
+    id: "presupuesto_enviado",
+    name: "Presupuesto preparado",
+    type: "whatsapp",
+    body: "Hola {nombre}, hemos preparado el presupuesto {numero} por un total de {total} EUR. Puedes revisarlo antes de confirmar si estás conforme o necesitas algún ajuste.",
+  },
+  {
+    id: "solicitar_aceptacion",
+    name: "Solicitud de aceptación",
+    type: "whatsapp",
+    body: "Hola {nombre}, ¿has podido revisar el presupuesto {numero}? Cuando estés conforme, responde indicando que lo aceptas para que podamos organizar el trabajo. Gracias.",
+  },
+  {
+    id: "parte_preparado",
+    name: "Parte de trabajo preparado",
+    type: "whatsapp",
+    body: "Hola {nombre}, el parte de trabajo {numero} está preparado para tu revisión. Si detectas algún dato que deba corregirse, indícanoslo antes de confirmarlo.",
+  },
+  {
+    id: "factura_preparada",
+    name: "Factura preparada",
+    type: "whatsapp",
+    body: "Hola {nombre}, la factura {numero} por {total} EUR está preparada. Puedes revisar el documento y consultarnos cualquier duda.",
   },
   {
     id: "trabajo_finalizado",
     name: "Trabajo finalizado",
     type: "whatsapp",
-    body: "Hola {nombre}, le informo que el trabajo ha sido finalizado correctamente. Todo queda funcionando en perfecto estado. Proximamente le enviare la factura correspondiente. Gracias por su confianza. Un saludo, Ivan Oyarzabal. Tel: 688 867 530.",
+    body: "Hola {nombre}, el trabajo ha finalizado. Si observas cualquier incidencia o necesitas una aclaración, responde a este mensaje. Gracias por tu confianza.",
+  },
+  {
+    id: "recordatorio_pago_amable",
+    name: "Recordatorio de pago amable",
+    type: "whatsapp",
+    body: "Hola {nombre}, te recordamos amablemente que la factura {numero} por {total} EUR figura pendiente. Si ya has realizado el pago, disculpa la molestia. Si necesitas revisar algún dato, estamos a tu disposición.",
   },
   {
     id: "seguimiento",
     name: "Seguimiento post-trabajo",
     type: "whatsapp",
-    body: "Hola {nombre}, espero que todo funcione correctamente tras la instalacion realizada. Si tiene cualquier duda o incidencia, no dude en contactarme. Un saludo, Ivan Oyarzabal.",
+    body: "Hola {nombre}, queríamos comprobar que todo continúa funcionando correctamente después del trabajo. Si necesitas ayuda, responde a este mensaje.",
   },
   {
     id: "solicitar_resena",
-    name: "Solicitar resena",
+    name: "Solicitud de reseña",
     type: "whatsapp",
-    body: "Hola {nombre}, espero que este satisfecho/a con el trabajo realizado. Si es asi, le agradeceria mucho una resena en Google. Esto me ayuda a seguir ofreciendo un buen servicio. Muchas gracias, Ivan Oyarzabal.",
+    body: "Hola {nombre}, gracias por confiar en nuestro trabajo. Si tu experiencia ha sido positiva, agradeceríamos que compartieras una reseña. Muchas gracias.",
   },
 ];
 
 export function fillTemplate(
   template: MessageTemplate,
-  variables: Record<string, string>
+  values: Record<string, string | number | null | undefined>
 ): { subject?: string; body: string } {
-  let body = template.body;
-  let subject = template.subject;
-
-  for (const [key, value] of Object.entries(variables)) {
-    body = body.replace(new RegExp(`\\{${key}\\}`, "g"), value);
-    if (subject) {
-      subject = subject.replace(new RegExp(`\\{${key}\\}`, "g"), value);
-    }
-  }
-
-  return { subject, body };
+  const replace = (text: string) => text.replace(/\{([a-z_]+)\}/gi, (match, key: string) => {
+    const value = values[key];
+    return value === null || value === undefined || value === "" ? match : String(value);
+  });
+  return {
+    subject: template.subject ? replace(template.subject) : undefined,
+    body: replace(template.body),
+  };
 }

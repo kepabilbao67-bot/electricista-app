@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, ClipboardList, Calendar, Euro, Clock, ArrowRight, Users, MessageSquare, BarChart3, TrendingUp, TrendingDown, AlertTriangle, AlertCircle, Bell } from "lucide-react";
+import { FileText, ClipboardList, Calendar, Euro, Clock, ArrowRight, Users, MessageSquare, BarChart3, TrendingUp, TrendingDown, AlertTriangle, AlertCircle, Bell, BriefcaseBusiness } from "lucide-react";
 
 interface MonthlyBilling { month: string; year: number; total: number; }
 interface TopClient { name: string; total: number; }
@@ -18,6 +18,8 @@ interface DashboardData {
   proximasVisitas: number;
   facturasEsteMes: number;
   clientesActivos: number;
+  oportunidadesActivas: number;
+  tareasPendientes: number;
   monthlyBilling: MonthlyBilling[];
   pendienteCobro: number;
   topClients: TopClient[];
@@ -77,6 +79,8 @@ export default function Dashboard() {
     { label: "Presupuestos pendientes", value: data?.presupuestosPendientes ?? 0, icon: ClipboardList, gradient: "from-amber-500 to-orange-500", href: "/presupuestos" },
     { label: "Próximas tareas", value: data?.proximasVisitas ?? 0, icon: Calendar, gradient: "from-purple-500 to-purple-600", href: "/agenda" },
     { label: "Clientes activos", value: data?.clientesActivos ?? 0, icon: Users, gradient: "from-blue-700 to-blue-900", href: "/clientes" },
+    { label: "Oportunidades activas", value: data?.oportunidadesActivas ?? 0, icon: BriefcaseBusiness, gradient: "from-cyan-600 to-blue-700", href: "/crm" },
+    { label: "Acciones CRM", value: data?.tareasPendientes ?? 0, icon: Bell, gradient: "from-fuchsia-600 to-purple-700", href: "/crm" },
   ];
 
   const monthlyBilling = data?.monthlyBilling ?? [];
@@ -91,6 +95,7 @@ export default function Dashboard() {
     { label: "Nuevo presupuesto", href: "/presupuestos/nuevo", icon: ClipboardList, color: "bg-emerald-600 hover:bg-emerald-700" },
     { label: "Nueva tarea", href: "/agenda", icon: Calendar, color: "bg-purple-600 hover:bg-purple-700" },
     { label: "Nuevo cliente", href: "/clientes", icon: Users, color: "bg-amber-600 hover:bg-amber-700" },
+    { label: "Abrir CRM", href: "/crm", icon: BriefcaseBusiness, color: "bg-cyan-700 hover:bg-cyan-800" },
     { label: "Enviar mensaje", href: "/comunicaciones", icon: MessageSquare, color: "bg-blue-600 hover:bg-blue-700" },
   ];
 
@@ -103,7 +108,7 @@ export default function Dashboard() {
           <h1 className="page-title">Panel de control de S&H Eléctricas</h1>
           {isDemo && (
             <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-800">
-              Modo demostración
+              DEMO / SIN VALIDEZ FISCAL
             </span>
           )}
         </div>
@@ -111,7 +116,7 @@ export default function Dashboard() {
           Resumen diario de facturación, clientes, avisos, trabajos y actividad eléctrica · {today}
         </p>
         {isDemo && (
-          <p className="text-xs text-slate-500 mt-1">Los datos mostrados son ejemplos y no representan actividad real.</p>
+          <p className="text-xs text-slate-500 mt-1">Datos completamente ficticios. El modo DEMO usa almacenamiento aislado y bloquea todas las escrituras.</p>
         )}
       </div>
 

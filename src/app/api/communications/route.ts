@@ -44,20 +44,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const id = uuidv4();
 
-    await db.execute({
-      sql: `INSERT INTO communications (id, client_id, type, subject, message, status, subject_color, message_color)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [
-        id,
-        body.client_id,
-        body.type,
-        body.subject || null,
-        body.message,
-        body.status || "sent",
-        body.subject_color || null,
-        body.message_color || null,
-      ],
-    });
+    const allowedStatuses = ["draft", "prepared", "opened_external", "follow_up_logged"];
+    const status = allowedStatuses.includes(body.status) ? body.status : "prepared";
+    await db.batch([
+      {
+        sql: `INSERT INTO communications (id, client_id, type, subject, message, status, subject_color, message_color)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [id, body.client_id, body.type, body.subject || null, body.message, status,
+          body.subject_color || null, body.message_color || null],
+      },
+      {
+        sql: `INSERT INTO crm_activities
+              (id, client_id, type, title, description, related_type, related_id)
+              VALUES (?, ?, 'communication_prepared', 'Comunicación preparada', ?, 'communication', ?)`,
+        args: [uuidv4(), body.client_id, `${body.type}: ${body.subject || "sin asunto"}`, id],
+      },
+    ], "write");
 
     const result = await db.execute({
       sql: "SELECT * FROM communications WHERE id = ?",

@@ -35,6 +35,8 @@ function getDemoData() {
     presupuestosPendientes: 2,
     proximasVisitas: 3,
     clientesActivos: 12,
+    oportunidadesActivas: 6,
+    tareasPendientes: 4,
     thisMonthTotal: 4250,
     lastMonthTotal: 3680,
     monthlyBilling,
@@ -79,6 +81,8 @@ export async function GET() {
     const firstOfMonthStr = firstOfMonth.toISOString().split("T")[0];
     const facturasEsteMes = await db.execute({ sql: "SELECT COUNT(*) as count FROM invoices WHERE date >= ?", args: [firstOfMonthStr] });
     const clientesActivos = await db.execute("SELECT COUNT(*) as count FROM clients");
+    const oportunidadesActivas = await db.execute("SELECT COUNT(*) as count FROM opportunities WHERE stage NOT IN ('cobrado')");
+    const tareasPendientes = await db.execute("SELECT COUNT(*) as count FROM crm_tasks WHERE status = 'pending'");
 
     // Monthly billing data for the last 6 months
     const monthlyBilling = [];
@@ -147,6 +151,8 @@ export async function GET() {
       proximasVisitas: proximasVisitas.rows[0].count as number,
       facturasEsteMes: facturasEsteMes.rows[0].count as number,
       clientesActivos: clientesActivos.rows[0].count as number,
+      oportunidadesActivas: oportunidadesActivas.rows[0].count as number,
+      tareasPendientes: tareasPendientes.rows[0].count as number,
       monthlyBilling,
       pendienteCobro: pendienteCobro.rows[0].total as number,
       topClients,

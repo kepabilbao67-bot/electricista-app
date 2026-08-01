@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Phone, Mail, MessageCircle, FileText, ClipboardList, MapPin, User, Building2, StickyNote } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageCircle, FileText, ClipboardList, MapPin, User, Building2, StickyNote, BriefcaseBusiness, CheckCircle2, History } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 interface ClientDetail {
   id: string;
@@ -44,6 +45,10 @@ interface Communication {
   created_at: string;
 }
 
+interface Opportunity { id: string; title: string; stage: string; estimated_value: number; next_action: string | null; next_action_at: string | null }
+interface CrmTask { id: string; title: string; due_at: string | null; status: string }
+interface CrmActivity { id: string; title: string; description: string | null; occurred_at: string }
+
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
   const parts = dateStr.split("-");
@@ -68,6 +73,9 @@ export default function ClienteDetailPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [communications, setCommunications] = useState<Communication[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [tasks, setTasks] = useState<CrmTask[]>([]);
+  const [activities, setActivities] = useState<CrmActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -77,25 +85,21 @@ export default function ClienteDetailPage() {
         fetch(`/api/invoices?client_id=${params.id}`).then((r) => r.json()).catch(() => []),
         fetch(`/api/budgets?client_id=${params.id}`).then((r) => r.json()).catch(() => []),
         fetch(`/api/communications?client_id=${params.id}`).then((r) => r.json()).catch(() => []),
-      ]).then(([clientData, invoiceData, budgetData, commData]) => {
+        fetch(`/api/opportunities?client_id=${params.id}`).then((r) => r.json()).catch(() => []),
+        fetch(`/api/crm-tasks?client_id=${params.id}`).then((r) => r.json()).catch(() => []),
+        fetch(`/api/crm-activities?client_id=${params.id}`).then((r) => r.json()).catch(() => []),
+      ]).then(([clientData, invoiceData, budgetData, commData, opportunityData, taskData, activityData]) => {
         setClient(clientData);
         setInvoices(Array.isArray(invoiceData) ? invoiceData : []);
         setBudgets(Array.isArray(budgetData) ? budgetData : []);
         setCommunications(Array.isArray(commData) ? commData : []);
+        setOpportunities(Array.isArray(opportunityData) ? opportunityData : []);
+        setTasks(Array.isArray(taskData) ? taskData : []);
+        setActivities(Array.isArray(activityData) ? activityData : []);
         setLoading(false);
       }).catch(() => setLoading(false));
     }
   }, [params.id]);
-
-  const formatPhoneForWhatsApp = (phone: string) => {
-    let cleaned = phone.replace(/[\s\-\(\)]/g, "");
-    if (cleaned.startsWith("6") || cleaned.startsWith("7") || cleaned.startsWith("9")) {
-      cleaned = "34" + cleaned;
-    } else if (cleaned.startsWith("+")) {
-      cleaned = cleaned.substring(1);
-    }
-    return cleaned;
-  };
 
   if (loading) {
     return (
@@ -146,9 +150,7 @@ export default function ClienteDetailPage() {
                 <a href={`tel:${client.phone}`} className="rounded-md p-1 text-blue-600 hover:bg-blue-50" title="Llamar">
                   <Phone className="h-3.5 w-3.5" />
                 </a>
-                <a href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`} target="_blank" rel="noopener noreferrer" className="rounded-md p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp">
-                  <MessageCircle className="h-3.5 w-3.5" />
-                </a>
+                <WhatsAppButton compact phone={client.phone} />
               </div>
             )}
             {client.email && (
@@ -219,6 +221,37 @@ export default function ClienteDetailPage() {
                 })}
               </div>
             )}
+          </div>
+
+          <div className="card-static">
+            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4">
+              <BriefcaseBusiness className="h-4 w-4 text-blue-700" /> Oportunidades ({opportunities.length})
+            </h3>
+            <div className="space-y-2">
+              {opportunities.map((opportunity) => (
+                <Link href="/crm" key={opportunity.id} className="block rounded-lg border border-slate-100 p-3 hover:bg-slate-50">
+                  <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">{opportunity.title}</p><span className="badge bg-blue-50 text-blue-700 capitalize">{opportunity.stage}</span></div>
+                  <p className="mt-1 text-xs text-slate-500">{Number(opportunity.estimated_value || 0).toFixed(2)} EUR{opportunity.next_action ? ` · ${opportunity.next_action}` : ""}</p>
+                </Link>
+              ))}
+              {opportunities.length === 0 && <p className="text-sm text-slate-400">Sin oportunidades</p>}
+            </div>
+          </div>
+
+          <div className="card-static">
+            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4">
+              <CheckCircle2 className="h-4 w-4 text-amber-600" /> Tareas y recordatorios
+            </h3>
+            <div className="space-y-2">{tasks.filter((task) => task.status === "pending").map((task) => (
+              <div key={task.id} className="rounded-lg border border-slate-100 p-3"><p className="text-sm font-medium">{task.title}</p><p className="text-xs text-slate-500">{task.due_at ? new Date(task.due_at).toLocaleString("es-ES") : "Sin fecha"}</p></div>
+            ))}{tasks.filter((task) => task.status === "pending").length === 0 && <p className="text-sm text-slate-400">Sin tareas pendientes</p>}</div>
+          </div>
+
+          <div className="card-static md:col-span-2">
+            <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2 mb-4"><History className="h-4 w-4 text-slate-600" /> Historial CRM</h3>
+            <div className="space-y-2 max-h-72 overflow-y-auto">{activities.map((activity) => (
+              <div key={activity.id} className="border-l-2 border-blue-200 pl-3 py-1"><div className="flex justify-between gap-3"><p className="text-sm font-medium">{activity.title}</p><span className="text-[10px] text-slate-400">{new Date(activity.occurred_at).toLocaleString("es-ES")}</span></div>{activity.description && <p className="text-xs text-slate-500">{activity.description}</p>}</div>
+            ))}{activities.length === 0 && <p className="text-sm text-slate-400">Sin actividad CRM registrada</p>}</div>
           </div>
 
           {/* Budgets */}

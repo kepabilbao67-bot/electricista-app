@@ -7,6 +7,7 @@ import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/auto
 import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 interface Client {
   id: string;
@@ -17,6 +18,7 @@ interface Visit {
   id: string;
   client_id: string;
   client_name: string;
+  client_phone?: string | null;
   title: string;
   description: string;
   date: string;
@@ -478,6 +480,7 @@ export default function AgendaPage() {
                     )}
                   </div>
                   <div className="flex gap-1 ml-4">
+                    {visit.client_phone && <WhatsAppButton compact phone={visit.client_phone} message={`Hola ${visit.client_name || ""}, te recordamos la visita prevista para el ${visit.date}${visit.time ? ` a las ${visit.time}` : ""}. Si necesitas cambiarla, indícanoslo. Gracias.`} onOpen={() => showToast("success", "WhatsApp abierto. Confirma manualmente el resultado del seguimiento.")} />}
                     {visit.status === "scheduled" && (
                       <button
                         onClick={() => handleStatusChange(visit, "completed")}

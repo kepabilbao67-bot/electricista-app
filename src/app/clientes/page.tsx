@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Edit2, Trash2, Phone, Mail, MessageCircle, FileText, Users, Eye, Upload } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Phone, Mail, FileText, Users, Eye, Upload } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 interface Client {
   id: string;
@@ -118,16 +119,6 @@ export default function ClientesPage() {
         showToast("error", "Error al eliminar el cliente");
       }
     }
-  };
-
-  const formatPhoneForWhatsApp = (phone: string) => {
-    let cleaned = phone.replace(/[\s\-\(\)]/g, "");
-    if (cleaned.startsWith("6") || cleaned.startsWith("7") || cleaned.startsWith("9")) {
-      cleaned = "34" + cleaned;
-    } else if (cleaned.startsWith("+")) {
-      cleaned = cleaned.substring(1);
-    }
-    return cleaned;
   };
 
   if (loading) {
@@ -280,9 +271,7 @@ export default function ClientesPage() {
                         <a href={`tel:${client.phone}`} className="rounded-md p-1 text-blue-500 hover:bg-blue-50 transition-colors" title="Llamar">
                           <Phone className="h-3.5 w-3.5" />
                         </a>
-                        <a href={`https://wa.me/${formatPhoneForWhatsApp(client.phone)}`} target="_blank" rel="noopener noreferrer" className="rounded-md p-1 text-emerald-500 hover:bg-emerald-50 transition-colors" title="WhatsApp">
-                          <MessageCircle className="h-3.5 w-3.5" />
-                        </a>
+                        <WhatsAppButton compact phone={client.phone} />
                       </div>
                     ) : (
                       <span className="text-xs text-slate-300">-</span>

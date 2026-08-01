@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Printer, Send, CheckCircle, Shield, Download, ExternalLink, QrCode, FileCode, AlertCircle, Upload, Mail, Copy } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { showToast } from "@/components/Toast";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 interface InvoiceDetail {
   id: string;
@@ -16,6 +17,7 @@ interface InvoiceDetail {
   client_postal_code: string;
   client_province: string;
   client_email?: string;
+  client_phone?: string;
   date: string;
   due_date: string;
   status: string;
@@ -213,6 +215,13 @@ export default function FacturaDetailPage() {
             <Mail className="h-4 w-4" />
             Enviar email
           </button>
+          {invoice.client_phone && (
+            <WhatsAppButton
+              phone={invoice.client_phone}
+              label="Abrir WhatsApp"
+              message={`Hola ${invoice.client_name || ""}, la factura ${invoice.number} por ${invoice.total.toFixed(2)} EUR está preparada. Puedes revisar el documento y consultarnos cualquier duda.`}
+            />
+          )}
           <button onClick={duplicateInvoice} className="btn-secondary">
             <Copy className="h-4 w-4" />
             Duplicar

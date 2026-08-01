@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Printer, FileText, Send, Pencil, Mail } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 interface BudgetItem {
   id: string;
@@ -23,6 +24,7 @@ interface BudgetDetail {
   client_postal_code: string;
   client_province: string;
   client_email?: string;
+  client_phone?: string;
   date: string;
   valid_until: string;
   status: string;
@@ -199,6 +201,13 @@ export default function PresupuestoDetailPage() {
             <Mail className="h-4 w-4" />
             Enviar por Gmail
           </button>
+          {budget.client_phone && (
+            <WhatsAppButton
+              phone={budget.client_phone}
+              label="Abrir WhatsApp"
+              message={`Hola ${budget.client_name || ""}, hemos preparado el presupuesto ${budget.number} por ${budget.total.toFixed(2)} EUR. Puedes revisarlo antes de confirmar si estás conforme o necesitas algún ajuste.`}
+            />
+          )}
           {!budget.converted_invoice_id && budget.status !== "rejected" && (
             <button
               onClick={convertToInvoice}

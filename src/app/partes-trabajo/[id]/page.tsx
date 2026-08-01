@@ -7,6 +7,7 @@ import { showToast } from "@/components/Toast";
 import { ArrowLeft, Printer, Trash2, Loader2, Pencil, X } from "lucide-react";
 import ParteForm from "@/components/ParteForm";
 import { getTrabajoColorClass } from "@/components/ParteForm";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import type { ParteFormData, TrabajoLine, MaterialLine } from "@/components/ParteForm";
 
 interface TrabajoDB {
@@ -40,6 +41,7 @@ interface ParteDetalle {
   hora_inicio: string | null;
   hora_fin: string | null;
   cliente: string;
+  telefono: string | null;
   direccion: string | null;
   direccion_color?: string | null;
   observaciones: string | null;
@@ -184,6 +186,7 @@ function ParteTrabajoDetail() {
         <div className="flex items-center gap-2">
           <button onClick={() => setEditing(true)} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 transition-all"><Pencil className="h-4 w-4" /> Editar</button>
           <button onClick={handleDelete} disabled={deleting} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 transition-all disabled:opacity-50"><Trash2 className="h-4 w-4" /> Borrar</button>
+          {parte.telefono && <WhatsAppButton phone={parte.telefono} label="Abrir WhatsApp" message={`Hola ${parte.cliente}, el parte de trabajo ${parte.numero} está preparado para tu revisión. Si detectas algún dato que deba corregirse, indícanoslo.`} />}
           <button onClick={handlePrint} className="btn-primary"><Printer className="h-4 w-4" /> Imprimir / PDF</button>
         </div>
         <p className="text-[10px] text-slate-400 mt-2 text-right no-print">Consejo: al imprimir, desactiva &quot;Encabezado y pie de pagina&quot; y usa margenes minimos para evitar paginas extra.</p>

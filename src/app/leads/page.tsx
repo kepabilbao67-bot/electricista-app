@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, UserPlus, RefreshCw, Trash2 } from "lucide-react";
+import { Plus, UserPlus, RefreshCw, Trash2, ArrowRightCircle } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
@@ -140,6 +140,26 @@ export default function LeadsPage() {
       }
     } catch {
       showToast("error", "Error al eliminar el lead");
+    }
+  };
+
+  const handleConvertLead = async (lead: Lead) => {
+    if (!window.confirm(`Convertir a ${lead.name} en cliente y crear su oportunidad?`)) return;
+    try {
+      const res = await fetch(`/api/leads/${lead.id}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: lead.interest || `Oportunidad de ${lead.name}` }),
+      });
+      if (res.ok) {
+        showToast("success", "Lead convertido en cliente y oportunidad");
+        fetchLeads();
+      } else {
+        const data = await res.json();
+        showToast("error", data.error || "No se pudo convertir el lead");
+      }
+    } catch {
+      showToast("error", "Error de conexión");
     }
   };
 
@@ -339,6 +359,15 @@ export default function LeadsPage() {
                     <span className="text-xs text-slate-500">{formatDate(lead.created_at)}</span>
                   </td>
                   <td className="px-4 py-3.5 text-right">
+                    {lead.status !== "convertido" && lead.status !== "descartado" && (
+                      <button
+                        onClick={() => handleConvertLead(lead)}
+                        className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-800 transition-colors"
+                        title="Convertir en cliente y oportunidad"
+                      >
+                        <ArrowRightCircle className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDeleteLead(lead.id)}
                       className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"

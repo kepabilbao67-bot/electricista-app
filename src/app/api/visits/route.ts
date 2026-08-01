@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
 
     let query = `
-      SELECT visits.*, clients.name as client_name 
+      SELECT visits.*, clients.name as client_name, clients.phone as client_phone
       FROM visits 
       LEFT JOIN clients ON visits.client_id = clients.id
     `;
