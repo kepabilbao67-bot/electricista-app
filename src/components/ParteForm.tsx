@@ -253,6 +253,26 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
     if (submitting) return;
     if (!form.cliente.trim()) { showToast("error", "El cliente es obligatorio"); return; }
 
+    // Validar precios unitarios: deben ser enteros >= 1 en filas utilizadas
+    const trabajosReales = trabajos.filter((t) => t.descripcion.trim() || t.nombre_trabajo.trim());
+    const materialesReales = materiales.filter((m) => m.descripcion.trim() || m.nombre_material.trim());
+    for (const t of trabajosReales) {
+      const precio = t.precio_unitario.trim();
+      const v = Number(precio);
+      if (precio === "" || !Number.isFinite(v) || !Number.isInteger(v) || v < 1) {
+        showToast("error", "El precio por unidad debe ser un número entero igual o superior a 1 € (trabajo: " + (t.nombre_trabajo || t.descripcion).slice(0, 30) + ")");
+        return;
+      }
+    }
+    for (const m of materialesReales) {
+      const precio = m.precio_unitario.trim();
+      const v = Number(precio);
+      if (precio === "" || !Number.isFinite(v) || !Number.isInteger(v) || v < 1) {
+        showToast("error", "El precio por unidad debe ser un número entero igual o superior a 1 € (material: " + (m.nombre_material || m.descripcion).slice(0, 30) + ")");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -433,7 +453,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="number" min="0" step="0.01" value={t.precio_unitario} onChange={(e) => updateTrabajo(t.id, "precio_unitario", e.target.value)} className="input-field !py-1 text-xs text-right w-full" placeholder="0.00" />
+                          <input type="number" min="1" step="1" value={t.precio_unitario} onChange={(e) => updateTrabajo(t.id, "precio_unitario", e.target.value)} className="input-field !py-1 text-xs text-right w-full" placeholder="" />
                         </td>
                         <td className="px-2 py-1.5 text-right font-medium text-slate-700">{importe > 0 ? importe.toFixed(2) : ""}</td>
                         <td className="px-1 py-1.5">
@@ -505,7 +525,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       </div>
                       <div>
                         <label className="text-xs text-slate-500">Precio</label>
-                        <input type="number" min="0" step="0.01" value={t.precio_unitario} onChange={(e) => updateTrabajo(t.id, "precio_unitario", e.target.value)} className="input-field text-sm text-right" placeholder="0.00" />
+                        <input type="number" min="1" step="1" value={t.precio_unitario} onChange={(e) => updateTrabajo(t.id, "precio_unitario", e.target.value)} className="input-field text-sm text-right" placeholder="" />
                       </div>
                       <div>
                         <label className="text-xs text-slate-500">Color</label>
@@ -582,7 +602,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="number" min="0" step="0.01" value={m.precio_unitario} onChange={(e) => updateMaterial(m.id, "precio_unitario", e.target.value)} className="input-field !py-1 text-xs text-right w-full" placeholder="0.00" />
+                          <input type="number" min="1" step="1" value={m.precio_unitario} onChange={(e) => updateMaterial(m.id, "precio_unitario", e.target.value)} className="input-field !py-1 text-xs text-right w-full" placeholder="" />
                         </td>
                         <td className="px-2 py-1.5 text-right font-medium text-slate-700">{importe > 0 ? importe.toFixed(2) : ""}</td>
                         <td className="px-1 py-1.5 text-center">
@@ -634,7 +654,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       </div>
                       <div>
                         <label className="text-xs text-slate-500">P. Venta</label>
-                        <input type="number" min="0" step="0.01" value={m.precio_unitario} onChange={(e) => updateMaterial(m.id, "precio_unitario", e.target.value)} className="input-field text-sm text-right" placeholder="0.00" />
+                        <input type="number" min="1" step="1" value={m.precio_unitario} onChange={(e) => updateMaterial(m.id, "precio_unitario", e.target.value)} className="input-field text-sm text-right" placeholder="" />
                       </div>
                     </div>
                     {importe > 0 && <p className="text-right text-sm font-semibold text-slate-800">Importe: {importe.toFixed(2)} €</p>}
