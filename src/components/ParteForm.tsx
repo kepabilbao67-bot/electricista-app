@@ -8,6 +8,7 @@ import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/auto
 import TextAssistantButton from "@/components/TextAssistantButton";
 import { CATALOGO_TRABAJOS, UNIDADES_TRABAJO } from "@/lib/catalogo-trabajos";
 import { CATALOGO_MATERIALES, UNIDADES_MATERIAL } from "@/lib/catalogo-materiales";
+import { normalizeUnitPriceInput } from "@/lib/normalize-unit-price";
 
 export const TRABAJO_COLORS = [
   { value: "default", label: "Normal", className: "text-slate-900" },
@@ -162,6 +163,12 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
 
   // --- Trabajo line handlers ---
   const updateTrabajo = (id: string, field: string, value: string) => {
+    if (field === "precio_unitario") {
+      const normalized = normalizeUnitPriceInput(value);
+      if (normalized === null) return;
+      setTrabajos((prev) => prev.map((t) => (t.id === id ? { ...t, precio_unitario: normalized } : t)));
+      return;
+    }
     setTrabajos((prev) => prev.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
   };
 
@@ -189,6 +196,12 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
 
   // --- Material line handlers ---
   const updateMaterial = (id: string, field: string, value: string) => {
+    if (field === "precio_unitario") {
+      const normalized = normalizeUnitPriceInput(value);
+      if (normalized === null) return;
+      setMateriales((prev) => prev.map((m) => (m.id === id ? { ...m, precio_unitario: normalized } : m)));
+      return;
+    }
     setMateriales((prev) => prev.map((m) => (m.id === id ? { ...m, [field]: value } : m)));
   };
 
