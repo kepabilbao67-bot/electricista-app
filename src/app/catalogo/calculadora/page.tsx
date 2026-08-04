@@ -179,7 +179,7 @@ export default function CalculadoraPage() {
                   <input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     placeholder="Coste"
                     value={line.cost_price || ""}
                     onChange={(e) => updateLine(line.id, "cost_price", parseFloat(e.target.value) || 0)}

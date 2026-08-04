@@ -11,13 +11,16 @@ La app está protegida por usuario y contraseña (Basic Auth). Se accede desde c
 ## Módulos principales
 
 ### Dashboard (/)
-Panel de control con 6 KPIs, gráfico de facturación de los últimos 6 meses, alertas activas y acciones rápidas. Cuando DEMO_MODE=true, muestra datos ficticios identificados con etiqueta "Modo demostración". Las facturas y visitas demo solo se cargan con el parámetro context=dashboard-demo; las páginas /facturas y /agenda siguen mostrando datos reales.
+Panel de control con KPIs financieros y comerciales, gráfico, alertas y acciones rápidas. Cuando DEMO_MODE=true, usa almacenamiento temporal aislado, bloquea escrituras y muestra la etiqueta “DEMO / SIN VALIDEZ FISCAL”.
 
 ### Clientes (/clientes)
-Gestión de contactos: crear, editar, eliminar. Tipos particular y empresa. Comunicación directa por WhatsApp, teléfono y email.
+Gestión de contactos y ficha 360 con oportunidades, tareas, historial, documentos y comunicación directa.
+
+### CRM comercial (/crm)
+Pipeline: nuevo → contactado → visita → presupuesto → aceptado → trabajo → facturado → cobrado. Incluye valor estimado, origen, próxima acción, tareas y recordatorios. Los cambios comerciales no alteran automáticamente estados fiscales.
 
 ### Leads (/leads)
-Pipeline de captación comercial. Estados: nuevo → contactado → cualificado → convertido/descartado. Los leads se guardan en base de datos. Marcar como convertido no crea automáticamente un cliente.
+Captación comercial. La acción de conversión crea de forma conjunta el cliente y su primera oportunidad CRM.
 
 ### Presupuestos (/presupuestos)
 Creación con generador automático por zonas/estancias. Integración con catálogo. Conversión directa a factura.
@@ -26,7 +29,7 @@ Creación con generador automático por zonas/estancias. Integración con catál
 Facturación con descuentos por línea, métodos de pago y estados. TicketBAI disponible para los territorios históricos de Euskadi (verificar aplicación con asesor). Solo se pueden eliminar facturas en estado Borrador que no tengan registro TicketBAI. Las facturas pendientes de Batuz, enviadas, cobradas o vencidas se conservan y no se pueden borrar.
 
 ### Partes de trabajo (/partes-trabajo)
-Registro de intervenciones con vista imprimible. Estado: DEMO (no persiste datos). Incluye plantilla en blanco imprimible con datos de empresa (/partes-trabajo/plantilla) para rellenar a mano.
+Registro persistente de intervenciones con líneas de trabajo, materiales, relaciones con cliente/presupuesto/visita y vista imprimible.
 
 ### Gastos (/gastos)
 Registro de compras con 12 categorías específicas de electricista.
@@ -38,7 +41,7 @@ Calendario semanal con visitas. Estados programada/completada/cancelada.
 Materiales con precio de coste y venta. Calculadora de márgenes.
 
 ### Comunicaciones (/comunicaciones)
-Plantillas para WhatsApp y email. No envía directamente (genera texto).
+Plantillas genéricas editables para WhatsApp y otros canales. `wa.me` abre la aplicación externa; el sistema registra preparación manual y nunca afirma envío, entrega o lectura.
 
 ### Asistente (/normativa)
 Chat con IA para normativa REBT, precios, negocio y seguridad.

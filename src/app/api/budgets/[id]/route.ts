@@ -14,7 +14,7 @@ export async function GET(
       sql: `SELECT budgets.*, clients.name as client_name, clients.nif as client_nif,
          clients.address as client_address, clients.city as client_city,
          clients.postal_code as client_postal_code, clients.province as client_province,
-         clients.email as client_email
+         clients.email as client_email, clients.phone as client_phone
          FROM budgets 
          LEFT JOIN clients ON budgets.client_id = clients.id 
          WHERE budgets.id = ?`,

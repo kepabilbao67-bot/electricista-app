@@ -20,6 +20,9 @@ let client: Client;
  *   durable storage.
  */
 function resolveDatabaseUrl(): string {
+  if (process.env.DEMO_MODE === "true") {
+    return `file:${join(tmpdir(), "autonomo360-demo.db")}`;
+  }
   const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
   if (tursoUrl) {
     return tursoUrl;
@@ -364,6 +367,63 @@ export async function initializeDatabase(): Promise<void> {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS opportunities (
+      id TEXT PRIMARY KEY,
+      client_id TEXT,
+      lead_id TEXT,
+      title TEXT NOT NULL,
+      stage TEXT NOT NULL DEFAULT 'nuevo',
+      estimated_value REAL DEFAULT 0,
+      source TEXT,
+      next_action TEXT,
+      next_action_at TEXT,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (lead_id) REFERENCES leads(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS crm_activities (
+      id TEXT PRIMARY KEY,
+      client_id TEXT,
+      opportunity_id TEXT,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      related_type TEXT,
+      related_id TEXT,
+      occurred_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS crm_tasks (
+      id TEXT PRIMARY KEY,
+      client_id TEXT,
+      opportunity_id TEXT,
+      title TEXT NOT NULL,
+      due_at TEXT,
+      priority TEXT NOT NULL DEFAULT 'normal',
+      status TEXT NOT NULL DEFAULT 'pending',
+      notes TEXT,
+      completed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_opportunities_stage ON opportunities(stage);
+    CREATE INDEX IF NOT EXISTS idx_opportunities_client ON opportunities(client_id);
+    CREATE INDEX IF NOT EXISTS idx_opportunities_next_action ON opportunities(next_action_at);
+    CREATE INDEX IF NOT EXISTS idx_crm_activities_client ON crm_activities(client_id, occurred_at);
+    CREATE INDEX IF NOT EXISTS idx_crm_activities_opportunity ON crm_activities(opportunity_id, occurred_at);
+    CREATE INDEX IF NOT EXISTS idx_crm_tasks_due ON crm_tasks(status, due_at);
+    CREATE INDEX IF NOT EXISTS idx_crm_tasks_client ON crm_tasks(client_id);
+    CREATE INDEX IF NOT EXISTS idx_crm_tasks_opportunity ON crm_tasks(opportunity_id);
 
     CREATE TABLE IF NOT EXISTS partes_trabajo (
       id TEXT PRIMARY KEY,

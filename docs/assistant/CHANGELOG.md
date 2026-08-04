@@ -1,5 +1,16 @@
 # Changelog del Asistente S&H Eléctricas
 
+## 2026-07-31-v7 — CRM comercial y WhatsApp seguro
+
+- Nuevo CRM en `/crm` con ocho etapas, oportunidades, valor estimado y próxima acción.
+- Conversión de lead a cliente y oportunidad en una operación atómica.
+- Tareas, recordatorios e historial CRM integrados en la ficha de cliente.
+- Plantillas genéricas sin identidad ni datos bancarios hardcodeados.
+- Validación telefónica internacional y enlaces `wa.me` sin afirmar envío, entrega o lectura.
+- Comunicaciones registradas como preparadas, no enviadas.
+- DEMO_MODE aislado en almacenamiento temporal, bloqueado para escritura y marcado “DEMO / SIN VALIDEZ FISCAL”.
+- No se modificaron numeración, IVA, TicketBAI ni lógica fiscal.
+
 ## 2026-07-18-v6 — Colores en descripciones de trabajos (PR #51)
 
 - Cada línea de trabajo en partes puede tener un color de texto: normal, rojo, naranja, azul, verde o morado.

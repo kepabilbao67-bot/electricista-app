@@ -40,6 +40,16 @@ export function middleware(request: NextRequest) {
       const providedPassword = decoded.slice(separatorIndex + 1);
 
       if (providedUser === expectedUser && providedPassword === expectedPassword) {
+        if (
+          process.env.DEMO_MODE === "true" &&
+          request.nextUrl.pathname.startsWith("/api/") &&
+          !["GET", "HEAD", "OPTIONS"].includes(request.method)
+        ) {
+          return NextResponse.json(
+            { error: "DEMO / SIN VALIDEZ FISCAL: modo de solo lectura" },
+            { status: 403, headers: { "Cache-Control": "no-store" } }
+          );
+        }
         return NextResponse.next();
       }
     } catch {

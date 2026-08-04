@@ -8,6 +8,7 @@ import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/auto
 import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
+import { buildWhatsAppUrl } from "@/lib/phone";
 
 interface Client {
   id: string;
@@ -24,6 +25,7 @@ interface Communication {
   subject: string;
   message: string;
   created_at: string;
+  status: string;
 }
 
 export default function ComunicacionesPage() {
@@ -51,16 +53,6 @@ export default function ComunicacionesPage() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
-
-  const formatPhoneForWhatsApp = (phone: string) => {
-    let cleaned = phone.replace(/[\s\-\(\)]/g, "");
-    if (cleaned.startsWith("6") || cleaned.startsWith("7") || cleaned.startsWith("9")) {
-      cleaned = "34" + cleaned;
-    } else if (cleaned.startsWith("+")) {
-      cleaned = cleaned.substring(1);
-    }
-    return cleaned;
-  };
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -90,6 +82,7 @@ export default function ComunicacionesPage() {
         type: messageType,
         subject: subject || null,
         message,
+        status: "prepared",
         subject_color: subjectColor,
         message_color: messageColor,
       }),
@@ -124,9 +117,7 @@ export default function ComunicacionesPage() {
   const getWhatsAppLink = () => {
     const client = clients.find((c) => c.id === selectedClient);
     if (!client?.phone || !message) return null;
-    const phone = formatPhoneForWhatsApp(client.phone);
-    const text = encodeURIComponent(message);
-    return `https://wa.me/${phone}?text=${text}`;
+    return buildWhatsAppUrl(client.phone, message);
   };
 
   const typeIcon = (type: string) => {
@@ -142,7 +133,7 @@ export default function ComunicacionesPage() {
     ? communications.filter((c) => c.client_id === filterClient)
     : communications;
 
-  const waLink = getWhatsAppLink();
+  const waResult = getWhatsAppLink();
 
   if (loading) {
     return (
@@ -156,7 +147,7 @@ export default function ComunicacionesPage() {
     <div className="animate-fade-in">
       <div className="mb-6">
         <h1 className="page-title">Comunicaciones</h1>
-        <p className="page-subtitle">Envia mensajes a tus clientes</p>
+        <p className="page-subtitle">Prepara mensajes y registra el seguimiento manual</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -227,7 +218,7 @@ export default function ComunicacionesPage() {
             <div className="flex flex-wrap gap-2">
               <button type="submit" disabled={sending} className="btn-primary">
                 <Send className="h-4 w-4" />
-                {sending ? "Registrando..." : "Registrar envio"}
+                {sending ? "Registrando..." : "Registrar preparación"}
               </button>
 
               <button type="button" onClick={copyToClipboard} disabled={!message} className="btn-secondary">
@@ -235,13 +226,17 @@ export default function ComunicacionesPage() {
                 {copied ? "Copiado" : "Copiar"}
               </button>
 
-              {messageType === "whatsapp" && waLink && (
-                <a href={waLink} target="_blank" rel="noopener noreferrer" className="btn-success">
+              {messageType === "whatsapp" && waResult?.valid && waResult.url && (
+                <a href={waResult.url} target="_blank" rel="noopener noreferrer" className="btn-success">
                   <ExternalLink className="h-4 w-4" />
                   Abrir WhatsApp
                 </a>
               )}
             </div>
+            {messageType === "whatsapp" && waResult && !waResult.valid && (
+              <p className="text-xs text-amber-700">{waResult.error}</p>
+            )}
+            <p className="text-xs text-slate-500">Abrir WhatsApp no confirma que el mensaje se haya enviado, entregado o leído.</p>
           </form>
         </div>
 
@@ -265,6 +260,7 @@ export default function ComunicacionesPage() {
                 <div className="flex items-center gap-2 mb-1.5">
                   {typeIcon(comm.type)}
                   <span className="text-sm font-semibold text-slate-900">{comm.client_name}</span>
+                  <span className="badge bg-slate-100 text-slate-600">{comm.status === "prepared" ? "Preparado" : comm.status}</span>
                   <span className="text-xs text-slate-400 ml-auto">
                     {new Date(comm.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>

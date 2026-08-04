@@ -18,11 +18,13 @@ import {
   Download,
   BookOpen,
   Receipt,
+  BriefcaseBusiness,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/crm", label: "CRM", icon: BriefcaseBusiness },
   { href: "/leads", label: "Leads", icon: UserPlus },
   { href: "/facturas", label: "Facturas", icon: FileText },
   { href: "/presupuestos", label: "Presupuestos", icon: ClipboardList },

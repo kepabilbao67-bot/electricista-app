@@ -86,9 +86,14 @@ export function validatePartePayload(body: PartePayload): string | null {
       const precio = toNum(t.precio_unitario);
 
       if (cant < 0) return `Fila de trabajo ${i + 1}: la cantidad debe ser mayor o igual a 0`;
-      if (precio < 0) return `Fila de trabajo ${i + 1}: el precio debe ser mayor o igual a 0`;
+      // Precio unitario: entero >= 1 obligatorio en filas utilizadas
+      const precioRaw = String(t.precio_unitario ?? "").trim();
+      const precioNum = Number(precioRaw);
+      if (precioRaw === "" || !Number.isFinite(precioNum) || !Number.isInteger(precioNum) || precioNum < 1) {
+        return `Fila de trabajo ${i + 1}: el precio por unidad debe ser un número entero igual o superior a 1 €`;
+      }
 
-      subtotalTrabajos += cant * precio;
+      subtotalTrabajos += cant * precioNum;
     }
   }
 
@@ -104,14 +109,18 @@ export function validatePartePayload(body: PartePayload): string | null {
       if (!isValidNumber(m.precio_coste)) return `Fila de material ${i + 1}: precio de coste no válido`;
 
       const cant = toNum(m.cantidad);
-      const precioVenta = toNum(m.precio_unitario);
       const precioCoste = toNum(m.precio_coste);
 
       if (cant < 0) return `Fila de material ${i + 1}: la cantidad debe ser mayor o igual a 0`;
-      if (precioVenta < 0) return `Fila de material ${i + 1}: el precio de venta debe ser mayor o igual a 0`;
+      // Precio unitario de venta: entero >= 1 obligatorio en filas utilizadas
+      const precioVentaRaw = String(m.precio_unitario ?? "").trim();
+      const precioVentaNum = Number(precioVentaRaw);
+      if (precioVentaRaw === "" || !Number.isFinite(precioVentaNum) || !Number.isInteger(precioVentaNum) || precioVentaNum < 1) {
+        return `Fila de material ${i + 1}: el precio por unidad debe ser un número entero igual o superior a 1 €`;
+      }
       if (precioCoste < 0) return `Fila de material ${i + 1}: el precio de coste debe ser mayor o igual a 0`;
 
-      subtotalMateriales += cant * precioVenta;
+      subtotalMateriales += cant * precioVentaNum;
     }
   }
 

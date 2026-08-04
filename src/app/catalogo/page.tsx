@@ -166,11 +166,11 @@ export default function CatalogoPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Precio COMPRA (lo que te cuesta)</label>
-              <input type="number" min="0" step="0.01" value={form.cost_price || ""} onChange={(e) => setForm({ ...form, cost_price: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="input-field" />
+              <input type="number" min="0" step="1" value={form.cost_price || ""} onChange={(e) => setForm({ ...form, cost_price: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="input-field" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Precio VENTA (lo que cobras)</label>
-              <input type="number" min="0" step="0.01" required value={form.unit_price || ""} onChange={(e) => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="input-field" />
+              <input type="number" min="0" step="1" required value={form.unit_price || ""} onChange={(e) => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="input-field" />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1">
