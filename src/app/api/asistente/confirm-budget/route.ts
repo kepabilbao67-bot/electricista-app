@@ -53,12 +53,14 @@ export async function POST(request: NextRequest) {
     const taxRate = body.tax_rate ?? 21;
     const clientId = body.client_id || null;
 
-    // Calcular totales (misma lógica que POST /api/budgets)
-    const subtotal = body.items.reduce(
-      (acc: number, item: { quantity: number; unit_price: number }) =>
-        acc + item.quantity * item.unit_price,
-      0
-    );
+    // Calcular totales (misma lógica que POST /api/budgets, redondeo a 2 decimales)
+    const subtotal = Math.round(
+      body.items.reduce(
+        (acc: number, item: { quantity: number; unit_price: number }) =>
+          acc + item.quantity * item.unit_price,
+        0
+      ) * 100
+    ) / 100;
     const taxAmount = Math.round(subtotal * (taxRate / 100) * 100) / 100;
     const total = Math.round((subtotal + taxAmount) * 100) / 100;
 

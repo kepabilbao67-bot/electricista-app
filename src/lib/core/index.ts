@@ -19,3 +19,5 @@ export { loadCompanyProfile, COMPANY_PROFILE } from "./company";
 
 export type { ModuleDefinition } from "./modules";
 export { MODULE_REGISTRY, getActiveModules, isModuleActive } from "./modules";
+
+export { getVertical, loadVerticalConfig } from "./vertical-loader";
