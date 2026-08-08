@@ -79,13 +79,29 @@ function extractBudgetLines(text: string): BudgetLineField[] {
   }
 
   // Patrón: X euros de descripción (cantidad implícita = 1)
+  // Excluir matches que ya fueron capturados como precio unitario por el primer patrón
   const totalPattern = /(\d+(?:[.,]\d+)?)\s*(?:euros?|€|eur)\s+(?:de|en)\s+([a-záéíóúñ\s]+)/gi;
+  // Rangos ya capturados por el primer patrón (para evitar duplicados posicionales)
+  const capturedRanges: Array<[number, number]> = [];
+  quantityPricePattern.lastIndex = 0;
+  while ((m = quantityPricePattern.exec(text)) !== null) {
+    capturedRanges.push([m.index, m.index + m[0].length]);
+  }
+
   while ((m = totalPattern.exec(text)) !== null) {
+    const matchStart = m.index;
+    // Si este match empieza dentro de un rango ya capturado, ignorar
+    const isOverlap = capturedRanges.some(
+      ([start, end]) => matchStart >= start && matchStart < end
+    );
+    if (isOverlap) continue;
+
     const total = parseFloat(m[1].replace(",", "."));
     const description = m[2].trim();
-    // Evitar duplicados si ya se capturó en el patrón anterior
+    // También verificar duplicado por importe
     const isDuplicate = lines.some(
-      (l) => Math.abs(l.quantity * l.unitPrice - total) < 0.01
+      (l) => Math.abs(l.quantity * l.unitPrice - total) < 0.01 ||
+             Math.abs(l.unitPrice - total) < 0.01
     );
     if (!isDuplicate && description.length > 1) {
       lines.push({ description, quantity: 1, unitPrice: total });
