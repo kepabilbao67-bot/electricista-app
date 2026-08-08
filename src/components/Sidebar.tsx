@@ -19,10 +19,12 @@ import {
   BookOpen,
   Receipt,
   BriefcaseBusiness,
+  Bot,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/asistente", label: "Asistente 360", icon: Bot },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/crm", label: "CRM", icon: BriefcaseBusiness },
   { href: "/leads", label: "Leads", icon: UserPlus },
