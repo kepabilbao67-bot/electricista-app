@@ -3,56 +3,30 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { COMPANY_PROFILE } from "@/lib/company-profile";
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  FileText,
-  ClipboardList,
-  ClipboardCheck,
-  MessageSquare,
-  Calendar,
-  Zap,
-  Package,
-  Download,
-  BookOpen,
-  Receipt,
-  BriefcaseBusiness,
-  Bot,
-} from "lucide-react";
+import { resolveIcon, type NavItemData } from "@/components/nav-icons";
+import { Menu, X } from "lucide-react";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/asistente", label: "Asistente 360", icon: Bot },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/crm", label: "CRM", icon: BriefcaseBusiness },
-  { href: "/leads", label: "Leads", icon: UserPlus },
-  { href: "/facturas", label: "Facturas", icon: FileText },
-  { href: "/presupuestos", label: "Presupuestos", icon: ClipboardList },
-  { href: "/partes-trabajo", label: "Partes de trabajo", icon: ClipboardCheck },
-  { href: "/gastos", label: "Gastos", icon: Receipt },
-  { href: "/comunicaciones", label: "Comunicaciones", icon: MessageSquare },
-  { href: "/agenda", label: "Agenda", icon: Calendar },
-  { href: "/catalogo", label: "Servicios", icon: Package },
-  { href: "/normativa", label: "Normativa", icon: BookOpen },
-  { href: "/exportar", label: "Exportar", icon: Download },
-];
+export interface MobileNavProps {
+  navItems: NavItemData[];
+  brand: {
+    tradeName: string;
+    iconKey: string;
+  };
+}
 
-export function MobileNav() {
+export function MobileNav({ navItems, brand }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const BrandIcon = resolveIcon(brand.iconKey);
 
   return (
     <div className="md:hidden">
       <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 backdrop-blur-lg px-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-700 to-blue-900 shadow-sm">
-            <Zap className="h-4 w-4 text-amber-400" />
+            <BrandIcon className="h-4 w-4 text-amber-400" />
           </div>
-          <span className="text-sm font-bold text-slate-800 tracking-tight">{COMPANY_PROFILE.tradeName}</span>
+          <span className="text-sm font-bold text-slate-800 tracking-tight">{brand.tradeName}</span>
         </div>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -70,6 +44,7 @@ export function MobileNav() {
           <div className="absolute inset-x-0 top-14 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-lg shadow-xl rounded-b-2xl mx-2 animate-scale-in">
             <nav className="p-3 space-y-1">
               {navItems.map((item) => {
+                const Icon = resolveIcon(item.iconKey);
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/" && pathname.startsWith(item.href));
@@ -84,7 +59,7 @@ export function MobileNav() {
                         : "text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    <item.icon className={`h-5 w-5 ${isActive ? "text-blue-700" : "text-slate-400"}`} />
+                    <Icon className={`h-5 w-5 ${isActive ? "text-blue-700" : "text-slate-400"}`} />
                     {item.label}
                   </Link>
                 );

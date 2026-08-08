@@ -3,23 +3,48 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ToastContainer } from "@/components/Toast";
+import { loadVerticalConfig } from "@/lib/core/vertical-loader";
+import { getActiveModules } from "@/lib/core/modules";
+import { loadCompanyProfile } from "@/lib/core/company";
+
+const verticalConfig = loadVerticalConfig();
+const companyProfile = loadCompanyProfile();
+const activeModules = getActiveModules(verticalConfig.modules);
+
+const navItems = activeModules.map((m) => ({
+  href: m.href,
+  label: m.label,
+  iconKey: m.iconKey,
+}));
+
+const sidebarBrand = {
+  tradeName: verticalConfig.brand.tradeName,
+  iconKey: verticalConfig.brand.iconKey,
+  initials: verticalConfig.brand.initials,
+  ownerLabel: companyProfile.ownerName || verticalConfig.brand.tradeName,
+};
+
+const mobileNavBrand = {
+  tradeName: verticalConfig.brand.tradeName,
+  iconKey: verticalConfig.brand.iconKey,
+};
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1e293b",
+  themeColor: verticalConfig.brand.themeColor,
 };
 
 export const metadata: Metadata = {
-  title: "S&H Eléctricas — Gestión eléctrica profesional",
-  description: "Gestión profesional para trabajos eléctricos",
+  title: `${verticalConfig.brand.tradeName} — ${verticalConfig.brand.description}`,
+  description: verticalConfig.brand.description,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "S&H Eléctricas",
+    title: verticalConfig.brand.shortName,
   },
 };
 
@@ -112,9 +137,9 @@ export default function RootLayout({
       </head>
       <body className="bg-slate-50 text-slate-900 antialiased">
         <div className="app-shell flex h-[100dvh] overflow-hidden">
-          <Sidebar />
+          <Sidebar navItems={navItems} brand={sidebarBrand} />
           <div className="app-content flex flex-1 flex-col overflow-hidden min-w-0">
-            <MobileNav />
+            <MobileNav navItems={navItems} brand={mobileNavBrand} />
             <main className="app-main flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 lg:p-8">
               {children}
             </main>
