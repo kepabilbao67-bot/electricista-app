@@ -73,6 +73,24 @@ export async function POST(request: NextRequest) {
     const id = uuidv4();
     const number = await generateInvoiceNumber();
 
+    // Validar que el cliente existe (client_id es obligatorio para facturas)
+    if (!body.client_id) {
+      return NextResponse.json(
+        { error: "Se requiere client_id para crear una factura." },
+        { status: 400 }
+      );
+    }
+    const clientCheck = await db.execute({
+      sql: "SELECT id FROM clients WHERE id = ?",
+      args: [body.client_id],
+    });
+    if (clientCheck.rows.length === 0) {
+      return NextResponse.json(
+        { error: "Cliente no encontrado. Verifica el identificador." },
+        { status: 400 }
+      );
+    }
+
     const subtotal = body.items.reduce(
       (acc: number, item: { quantity: number; unit_price: number; discount?: number; discount_type?: string }) => {
         const gross = item.quantity * item.unit_price;

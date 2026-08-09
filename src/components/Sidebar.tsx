@@ -3,56 +3,38 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { KaosSignature } from "@/components/KaosSignature";
-import { COMPANY_PROFILE } from "@/lib/company-profile";
-import {
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  FileText,
-  ClipboardList,
-  ClipboardCheck,
-  MessageSquare,
-  Calendar,
-  Zap,
-  Package,
-  Download,
-  BookOpen,
-  Receipt,
-  BriefcaseBusiness,
-} from "lucide-react";
+import { resolveIcon, type NavItemData } from "@/components/nav-icons";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/crm", label: "CRM", icon: BriefcaseBusiness },
-  { href: "/leads", label: "Leads", icon: UserPlus },
-  { href: "/facturas", label: "Facturas", icon: FileText },
-  { href: "/presupuestos", label: "Presupuestos", icon: ClipboardList },
-  { href: "/partes-trabajo", label: "Partes de trabajo", icon: ClipboardCheck },
-  { href: "/gastos", label: "Gastos", icon: Receipt },
-  { href: "/comunicaciones", label: "Comunicaciones", icon: MessageSquare },
-  { href: "/agenda", label: "Agenda", icon: Calendar },
-  { href: "/catalogo", label: "Servicios", icon: Package },
-  { href: "/normativa", label: "Normativa", icon: BookOpen },
-  { href: "/exportar", label: "Exportar", icon: Download },
-];
+export type { NavItemData };
 
-export function Sidebar() {
+export interface SidebarProps {
+  navItems: NavItemData[];
+  brand: {
+    tradeName: string;
+    iconKey: string;
+    initials: string;
+    ownerLabel: string;
+  };
+}
+
+export function Sidebar({ navItems, brand }: SidebarProps) {
   const pathname = usePathname();
+  const BrandIcon = resolveIcon(brand.iconKey);
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 border-r border-slate-700/30">
       {/* Brand Logo */}
       <div className="flex h-16 items-center gap-3 px-5 border-b border-slate-700/40">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 shadow-lg shadow-blue-900/40 ring-1 ring-blue-500/20">
-          <Zap className="h-5 w-5 text-amber-400" />
+          <BrandIcon className="h-5 w-5 text-amber-400" />
         </div>
-        <span className="text-sm font-bold text-slate-200 tracking-tight">{COMPANY_PROFILE.tradeName}</span>
+        <span className="text-sm font-bold text-slate-200 tracking-tight">{brand.tradeName}</span>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
+          const Icon = resolveIcon(item.iconKey);
           const isActive =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
@@ -66,7 +48,7 @@ export function Sidebar() {
                   : "text-slate-400 hover:bg-slate-700/40 hover:text-slate-200"
               }`}
             >
-              <item.icon className={`h-[18px] w-[18px] transition-colors ${isActive ? "text-amber-400" : "text-slate-500 group-hover:text-slate-300"}`} />
+              <Icon className={`h-[18px] w-[18px] transition-colors ${isActive ? "text-amber-400" : "text-slate-500 group-hover:text-slate-300"}`} />
               {item.label}
               {isActive && (
                 <div className="ml-auto h-1.5 w-1.5 rounded-full bg-amber-400"></div>
@@ -80,11 +62,11 @@ export function Sidebar() {
       <div className="border-t border-slate-700/40 p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-700 to-blue-900 text-xs font-bold text-blue-200 ring-1 ring-blue-600/30">
-            SH
+            {brand.initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-300 truncate">{COMPANY_PROFILE.ownerName}</p>
-            <p className="text-[10px] text-slate-500">{COMPANY_PROFILE.tradeName}</p>
+            <p className="text-xs font-semibold text-slate-300 truncate">{brand.ownerLabel}</p>
+            <p className="text-[10px] text-slate-500">{brand.tradeName}</p>
           </div>
         </div>
       </div>
