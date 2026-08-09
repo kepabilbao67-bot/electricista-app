@@ -53,6 +53,20 @@ export async function POST(request: NextRequest) {
     const taxRate = body.tax_rate ?? 21;
     const clientId = body.client_id || null;
 
+    // Validar que el cliente existe si se proporciona
+    if (clientId) {
+      const clientCheck = await db.execute({
+        sql: "SELECT id FROM clients WHERE id = ?",
+        args: [clientId],
+      });
+      if (clientCheck.rows.length === 0) {
+        return NextResponse.json(
+          { error: "Cliente no encontrado. Verifica el identificador." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Calcular totales (misma lógica que POST /api/budgets, redondeo a 2 decimales)
     const subtotal = Math.round(
       body.items.reduce(
