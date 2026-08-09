@@ -130,11 +130,24 @@ export default function CrmPage() {
           <p className="page-subtitle">Del primer contacto al cobro, sin duplicar documentos</p>
         </div>
         <button className="btn-primary" onClick={() => setShowForm((value) => !value)}>
-          <Plus className="h-4 w-4" /> Nueva oportunidad
+          <Plus className="h-4 w-4" /> {showForm ? "Cancelar" : "Nueva oportunidad"}
         </button>
       </div>
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      {showForm && (
+        <form onSubmit={createOpportunity} className="card grid gap-4 p-5 md:grid-cols-2">
+          <div><label className="mb-1 block text-sm font-medium">Título *</label><input className="input-field" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+          <div><label className="mb-1 block text-sm font-medium">Cliente</label><select className="input-field" value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })}><option value="">Sin asignar</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></div>
+          <div><label className="mb-1 block text-sm font-medium">Valor estimado</label><input className="input-field" type="number" min="0" step="1" value={form.estimated_value} onChange={(e) => setForm({ ...form, estimated_value: e.target.value })} /></div>
+          <div><label className="mb-1 block text-sm font-medium">Origen</label><input className="input-field" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Web, referido, WhatsApp..." /></div>
+          <div><label className="mb-1 block text-sm font-medium">Próxima acción</label><input className="input-field" value={form.next_action} onChange={(e) => setForm({ ...form, next_action: e.target.value })} /></div>
+          <div><label className="mb-1 block text-sm font-medium">Fecha de próxima acción</label><input className="input-field" type="datetime-local" value={form.next_action_at} onChange={(e) => setForm({ ...form, next_action_at: e.target.value })} /></div>
+          <div className="md:col-span-2"><label className="mb-1 block text-sm font-medium">Notas</label><textarea className="input-field" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+          <div className="flex gap-2 md:col-span-2"><button className="btn-primary" disabled={saving}>{saving ? "Guardando..." : "Crear oportunidad"}</button><button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancelar</button></div>
+        </form>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="card p-4"><p className="text-xs font-semibold uppercase text-slate-500">Oportunidades</p><p className="mt-1 text-2xl font-bold">{filtered.length}</p></div>
@@ -148,19 +161,6 @@ export default function CrmPage() {
           <section className="card p-4"><h2 className="mb-3 font-semibold">Trabajos activos</h2><div className="space-y-2">{commercial.activePartes.slice(0, 5).map((item) => <Link key={item.id} href={`/partes-trabajo/${item.id}`} className="flex justify-between rounded-lg border border-slate-100 p-2 text-sm hover:bg-slate-50"><span>{item.numero} · {item.cliente}</span><span className="capitalize text-slate-500">{item.estado}</span></Link>)}{commercial.activePartes.length === 0 && <p className="text-sm text-slate-400">Sin trabajos activos</p>}</div></section>
           <section className="card p-4"><h2 className="mb-3 font-semibold">Cobros pendientes</h2><div className="space-y-2">{commercial.unpaidInvoices.slice(0, 5).map((item) => <Link key={item.id} href={`/facturas/${item.id}`} className="flex justify-between rounded-lg border border-slate-100 p-2 text-sm hover:bg-slate-50"><span>{item.number} · {item.client_name || "Sin cliente"}</span><strong>{Number(item.total).toFixed(2)} EUR</strong></Link>)}{commercial.unpaidInvoices.length === 0 && <p className="text-sm text-slate-400">Sin cobros pendientes</p>}</div></section>
         </div>
-      )}
-
-      {showForm && (
-        <form onSubmit={createOpportunity} className="card grid gap-4 p-5 md:grid-cols-2">
-          <div><label className="mb-1 block text-sm font-medium">Título *</label><input className="input-field" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-          <div><label className="mb-1 block text-sm font-medium">Cliente</label><select className="input-field" value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })}><option value="">Sin asignar</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></div>
-          <div><label className="mb-1 block text-sm font-medium">Valor estimado</label><input className="input-field" type="number" min="0" step="1" value={form.estimated_value} onChange={(e) => setForm({ ...form, estimated_value: e.target.value })} /></div>
-          <div><label className="mb-1 block text-sm font-medium">Origen</label><input className="input-field" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Web, referido, WhatsApp..." /></div>
-          <div><label className="mb-1 block text-sm font-medium">Próxima acción</label><input className="input-field" value={form.next_action} onChange={(e) => setForm({ ...form, next_action: e.target.value })} /></div>
-          <div><label className="mb-1 block text-sm font-medium">Fecha de próxima acción</label><input className="input-field" type="datetime-local" value={form.next_action_at} onChange={(e) => setForm({ ...form, next_action_at: e.target.value })} /></div>
-          <div className="md:col-span-2"><label className="mb-1 block text-sm font-medium">Notas</label><textarea className="input-field" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-          <div className="flex gap-2 md:col-span-2"><button className="btn-primary" disabled={saving}>{saving ? "Guardando..." : "Crear oportunidad"}</button><button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancelar</button></div>
-        </form>
       )}
 
       <div className="relative max-w-xl"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input className="input-field pl-10" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar cliente, trabajo, origen o próxima acción" /></div>
