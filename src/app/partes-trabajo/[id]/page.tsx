@@ -203,7 +203,7 @@ function ParteTrabajoDetail() {
   return (
     <div className="animate-fade-in">
       {/* Screen-only header */}
-      <div className="flex items-center justify-between mb-6 no-print">
+      <div className="flex items-center justify-between mb-6 no-print print:hidden">
         <div className="flex items-center gap-3">
           <Link href="/partes-trabajo" className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm hover:bg-slate-50 transition-all"><ArrowLeft className="h-4 w-4" /></Link>
           <div><h1 className="page-title">{parte.numero}</h1><p className="page-subtitle">Parte de trabajo — {parte.cliente}</p></div>
@@ -223,11 +223,11 @@ function ParteTrabajoDetail() {
           {parte.telefono && <WhatsAppButton phone={parte.telefono} label="Abrir WhatsApp" message={`Hola ${parte.cliente}, el parte de trabajo ${parte.numero} está preparado para tu revisión. Si detectas algún dato que deba corregirse, indícanoslo.`} />}
           <button onClick={handlePrint} className="btn-primary"><Printer className="h-4 w-4" /> Imprimir / PDF</button>
         </div>
-        <p className="text-[10px] text-slate-400 mt-2 text-right no-print">Consejo: al imprimir, desactiva &quot;Encabezado y pie de pagina&quot; y usa margenes minimos para evitar paginas extra.</p>
+        <p className="text-[10px] text-slate-400 mt-2 text-right no-print print:hidden">Consejo: al imprimir, desactiva &quot;Encabezado y pie de pagina&quot; y usa margenes minimos para evitar paginas extra.</p>
       </div>
 
       {/* Screen-only tabs */}
-      <div className="no-print mb-6">
+      <div className="no-print print:hidden mb-6">
         <div className="flex border-b border-slate-200 rounded-t-xl overflow-hidden bg-white shadow-sm">
           <button onClick={() => setActiveTab("trabajos")} className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${activeTab === "trabajos" ? "bg-blue-50 text-blue-700 border-b-2 border-blue-600" : "text-slate-600 hover:bg-slate-50"}`}>Mano de obra ({parte.trabajos.length})</button>
           <button onClick={() => setActiveTab("materiales")} className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${activeTab === "materiales" ? "bg-blue-50 text-blue-700 border-b-2 border-blue-600" : "text-slate-600 hover:bg-slate-50"}`}>Materiales ({parte.materiales.length})</button>
@@ -235,10 +235,10 @@ function ParteTrabajoDetail() {
       </div>
 
       {/* Printable document */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6 md:p-10 print:shadow-none print:border-none print:p-0 print:rounded-none max-w-4xl mx-auto print-parte">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-6 md:p-10 print:shadow-none print:border-none print:p-0 print:rounded-none max-w-4xl mx-auto print-parte print:w-full">
 
         {/* CABECERA — compact inline */}
-        <div className="flex justify-between items-start border-b-2 border-slate-800 pb-3 mb-3">
+        <div className="flex justify-between items-start border-b-2 border-slate-800 print:border-slate-900 pb-3 mb-3 print:break-inside-avoid break-inside-avoid">
           <div>
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">S&H ELÉCTRICAS</h2>
             <p className="text-xs text-slate-600 mt-0.5">Iván Martín Oyarzabal · Tel: 609 421 750</p>
@@ -250,7 +250,7 @@ function ParteTrabajoDetail() {
         </div>
 
         {/* DATOS GENERALES + CLIENTE — single compact row */}
-        <div className="grid grid-cols-6 gap-2 mb-3 text-xs border border-slate-200 rounded p-2">
+        <div className="grid grid-cols-6 gap-2 mb-3 text-xs border border-slate-200 print:border-slate-300 rounded p-2 print:break-inside-avoid break-inside-avoid">
           <div><span className="font-semibold text-slate-500 block">Fecha</span><span className="text-slate-900">{formatDate(parte.fecha)}</span></div>
           <div><span className="font-semibold text-slate-500 block">Operario</span><span className="text-slate-900">{parte.tecnico || "—"}</span></div>
           <div><span className="font-semibold text-slate-500 block">Inicio</span><span className="text-slate-900">{parte.hora_inicio || "—"}</span></div>
@@ -263,9 +263,9 @@ function ParteTrabajoDetail() {
         <div className={`mb-3 ${activeTab !== "trabajos" ? "hidden print-show" : ""}`}>
           <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Trabajos realizados</h4>
           {parte.trabajos.length > 0 && (
-            <table className="w-full text-xs border border-slate-200">
+            <table className="w-full text-xs border border-slate-200 print:border print:border-slate-300 print:border-collapse">
               <thead>
-                <tr className="bg-slate-100">
+                <tr className="bg-slate-100 print:bg-slate-100 print:border-b print:border-slate-300">
                   <th className="px-1 py-1 text-left w-6">#</th>
                   <th className="px-1 py-1 text-left">Descripción</th>
                   <th className="px-1 py-1 text-center w-10">Cant.</th>
@@ -279,7 +279,7 @@ function ParteTrabajoDetail() {
                   const importe = (t.cantidad || 0) * (t.precio_unitario || 0);
                   const colorClass = getTrabajoColorClass(t.color);
                   return (
-                    <tr key={t.id} className="border-t border-slate-100">
+                    <tr key={t.id} className="border-t border-slate-100 print:border-t print:border-slate-200 print:break-inside-avoid break-inside-avoid">
                       <td className="px-1 py-1 text-slate-400">{idx + 1}</td>
                       <td className={`px-1 py-1 ${colorClass}`}>
                         {t.nombre_trabajo && <span className="font-medium">{t.nombre_trabajo}: </span>}
@@ -301,9 +301,9 @@ function ParteTrabajoDetail() {
         {parte.materiales.length > 0 && (
           <div className={`mb-3 ${activeTab !== "materiales" ? "hidden print-show" : ""}`}>
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Materiales</h4>
-            <table className="w-full text-xs border border-slate-200">
+            <table className="w-full text-xs border border-slate-200 print:border print:border-slate-300 print:border-collapse">
               <thead>
-                <tr className="bg-slate-100">
+                <tr className="bg-slate-100 print:bg-slate-100 print:border-b print:border-slate-300">
                   <th className="px-1 py-1 text-left w-6">#</th>
                   <th className="px-1 py-1 text-left">Material</th>
                   <th className="px-1 py-1 text-center w-10">Cant.</th>
@@ -316,7 +316,7 @@ function ParteTrabajoDetail() {
                 {parte.materiales.map((m, idx) => {
                   const importe = (m.cantidad || 0) * (m.precio_unitario || 0);
                   return (
-                    <tr key={m.id} className="border-t border-slate-100">
+                    <tr key={m.id} className="border-t border-slate-100 print:border-t print:border-slate-200 print:break-inside-avoid break-inside-avoid">
                       <td className="px-1 py-1 text-slate-400">{idx + 1}</td>
                       <td className="px-1 py-1 text-slate-800">{m.nombre_material && <span className="font-medium">{m.nombre_material}: </span>}{m.descripcion}</td>
                       <td className="px-1 py-1 text-center text-slate-700">{m.cantidad || ""}</td>
@@ -332,42 +332,42 @@ function ParteTrabajoDetail() {
         )}
 
         {/* RESUMEN ECONÓMICO — single compact block */}
-        <div className="mb-3 border border-slate-200 rounded p-2 print-keep-together">
+        <div className="mb-3 border border-slate-200 print:border-slate-300 rounded p-2 print-keep-together print:break-inside-avoid break-inside-avoid">
           <div className="max-w-xs ml-auto space-y-0.5 text-xs">
             <div className="flex justify-between"><span className="text-slate-600">Subtotal mano de obra</span><span>{subtotalTrabajos.toFixed(2)} €</span></div>
             {totalHoras > 0 && <div className="flex justify-between font-semibold"><span className="text-slate-700">Total horas</span><span>{totalHorasLabel} h</span></div>}
             {subtotalMateriales > 0 && <div className="flex justify-between"><span className="text-slate-600">Subtotal materiales</span><span>{subtotalMateriales.toFixed(2)} €</span></div>}
             {descuentoNum > 0 && <div className="flex justify-between"><span className="text-slate-600">Descuento</span><span>-{descuentoNum.toFixed(2)} €</span></div>}
-            <div className="flex justify-between border-t border-slate-200 pt-0.5"><span className="font-medium text-slate-700">Base imponible</span><span className="font-semibold">{baseImponible.toFixed(2)} €</span></div>
+            <div className="flex justify-between border-t border-slate-200 print:border-slate-300 pt-0.5"><span className="font-medium text-slate-700">Base imponible</span><span className="font-semibold">{baseImponible.toFixed(2)} €</span></div>
             <div className="flex justify-between"><span className="text-slate-600">IVA ({ivaRate}%)</span><span>{ivaAmount.toFixed(2)} €</span></div>
-            <div className="flex justify-between border-t-2 border-slate-800 pt-1"><span className="font-bold text-slate-900">TOTAL</span><span className="text-sm font-bold text-slate-900">{totalParte.toFixed(2)} €</span></div>
+            <div className="flex justify-between border-t-2 border-slate-800 print:border-slate-900 pt-1"><span className="font-bold text-slate-900">TOTAL</span><span className="text-sm font-bold text-slate-900">{totalParte.toFixed(2)} €</span></div>
           </div>
         </div>
 
         {/* OBSERVACIONES — only if present */}
         {parte.observaciones && (
-          <div className="mb-3 p-2 border border-slate-200 rounded bg-amber-50/50 print:bg-transparent">
+          <div className="mb-3 p-2 border border-slate-200 print:border-slate-300 rounded bg-amber-50/50 print:bg-transparent print:break-inside-avoid break-inside-avoid">
             <h4 className="text-xs font-bold text-slate-500 uppercase mb-0.5">Observaciones</h4>
             <p className={`text-xs whitespace-pre-line ${getTrabajoColorClass(parte.observaciones_color)}`}>{parte.observaciones}</p>
           </div>
         )}
 
         {/* FIRMAS — compact */}
-        <div className="grid grid-cols-2 gap-4 mt-4 print-keep-together">
+        <div className="grid grid-cols-2 gap-4 mt-4 print-keep-together print:break-inside-avoid break-inside-avoid">
           <div className="text-center">
-            <div className="border-b-2 border-slate-300 h-14 mb-1"></div>
+            <div className="border-b-2 border-slate-300 print:border-slate-400 h-14 mb-1"></div>
             <p className="text-[9px] font-semibold text-slate-600 uppercase">Firma del operario</p>
             <p className="text-[9px] text-slate-500">{parte.tecnico || "—"}</p>
           </div>
           <div className="text-center">
-            <div className="border-b-2 border-slate-300 h-14 mb-1"></div>
+            <div className="border-b-2 border-slate-300 print:border-slate-400 h-14 mb-1"></div>
             <p className="text-[9px] font-semibold text-slate-600 uppercase">Conformidad del cliente</p>
             <p className="text-[9px] text-slate-500">{parte.cliente}</p>
           </div>
         </div>
 
         {/* TEXTO LEGAL */}
-        <div className="border-t border-slate-200 pt-2 mt-2">
+        <div className="border-t border-slate-200 print:border-slate-300 pt-2 mt-2 print:break-inside-avoid break-inside-avoid">
           <p className="text-[8px] text-slate-400 leading-tight">Conforme con los trabajos realizados. Protección de datos: los datos serán tratados para gestionar la relación contractual.</p>
         </div>
       </div>

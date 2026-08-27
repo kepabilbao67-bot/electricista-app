@@ -120,6 +120,7 @@ export const APP_MODULES: AppModule[] = [
       "Numeración automática (DFB_XXXX)",
       "Integración con catálogo de materiales",
       "TicketBAI/Batuz (sistema de los territorios históricos de Euskadi, verificar aplicación)",
+      "Optimización de impresión con clases print: de Tailwind (evita cortes de página)",
     ],
     limitations: [
       "TicketBAI es un sistema fiscal implantado en los territorios históricos de Euskadi. Su aplicación, calendario y requisitos dependen del territorio, la actividad y la situación fiscal. Debe verificarse con la Hacienda Foral correspondiente o con un asesor.",
@@ -142,6 +143,7 @@ export const APP_MODULES: AppModule[] = [
       "Botón Imprimir / Guardar PDF",
       "Plantilla en blanco imprimible con datos de empresa (/partes-trabajo/plantilla)",
       "Detección de estado offline y reintentos seguros",
+      "Optimización de impresión con clases print: de Tailwind (evita cortes de página)",
     ],
     limitations: [],
     usage: "Ve a /partes-trabajo. Crea un nuevo parte con 'Nuevo parte'. Añade trabajos y materiales con precios. Guarda, edita y elimina partes. Los datos se guardan en base de datos y persisten. Para imprimir: abre el detalle y pulsa 'Imprimir / PDF'. Plantilla en blanco disponible para copias manuales.",

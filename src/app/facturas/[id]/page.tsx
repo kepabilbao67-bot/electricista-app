@@ -191,10 +191,12 @@ export default function FacturaDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto animate-fade-in">
-      <Breadcrumbs items={[{ label: "Facturas", href: "/facturas" }, { label: invoice.number }]} />
+      <div className="no-print print:hidden">
+        <Breadcrumbs items={[{ label: "Facturas", href: "/facturas" }, { label: invoice.number }]} />
+      </div>
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6 no-print">
+      <div className="flex items-center gap-4 mb-6 no-print print:hidden">
         <button onClick={() => router.back()} className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -234,7 +236,7 @@ export default function FacturaDetailPage() {
       </div>
 
       {/* FLUJO BATUZ */}
-      <div className="card-static mb-6 border-blue-200 bg-gradient-to-br from-blue-50/50 to-white no-print">
+      <div className="card-static mb-6 border-blue-200 bg-gradient-to-br from-blue-50/50 to-white no-print print:hidden">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
@@ -330,7 +332,7 @@ export default function FacturaDetailPage() {
 
       {/* Modal confirmar Batuz */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 no-print">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 no-print print:hidden">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-scale-in">
             <h3 className="text-lg font-bold text-slate-900 mb-4">Confirmar datos de Batuz</h3>
             <p className="text-sm text-slate-500 mb-4">Pega aqui los datos que te ha dado Batuz al procesar la factura.</p>
@@ -358,7 +360,7 @@ export default function FacturaDetailPage() {
 
       {/* XML Preview */}
       {tbaiResult && (
-        <div className="card-static mb-6 border-slate-200 no-print">
+        <div className="card-static mb-6 border-slate-200 no-print print:hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
             <h3 className="font-semibold text-slate-900">XML TicketBAI generado</h3>
             <button onClick={() => setTbaiResult(null)} className="text-sm text-slate-400 hover:text-slate-600">Cerrar</button>
@@ -368,14 +370,14 @@ export default function FacturaDetailPage() {
       )}
 
       {/* Factura imprimible */}
-      <div className="card-static p-8 print:shadow-none print:border-none relative overflow-hidden">
+      <div className="card-static p-8 print:p-0 print:shadow-none print:border-none print:w-full relative overflow-hidden">
         {/* Watermark for print */}
         {watermarkText && (
           <div className="print-watermark text-slate-400">{watermarkText}</div>
         )}
 
         {/* Header */}
-        <div className="flex justify-between mb-8 pb-6 border-b border-slate-100">
+        <div className="flex justify-between mb-8 pb-6 border-b border-slate-100 print:border-slate-300 print:break-inside-avoid">
           <div>
             <h2 className="text-xl font-bold text-slate-900">MARTIN OYARZABAL, IVAN</h2>
             <p className="text-sm text-slate-500 mt-1">NIF: 16063731W</p>
@@ -384,7 +386,7 @@ export default function FacturaDetailPage() {
             <p className="text-sm text-slate-500 mt-2 font-medium">Tel: 688 867 530</p>
           </div>
           <div className="text-right">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-100 mb-2">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-100 print:border-slate-300 mb-2">
               <span className="text-lg font-bold text-blue-800">
                 {invoice.status === "draft" || invoice.status === "pending_batuz" ? "BORRADOR" : "FACTURA"}
               </span>
@@ -398,7 +400,7 @@ export default function FacturaDetailPage() {
         </div>
 
         {/* Client */}
-        <div className="mb-8 p-4 bg-slate-50 rounded-lg border border-slate-100">
+        <div className="mb-8 p-4 bg-slate-50 rounded-lg border border-slate-100 print:border-slate-300 print:break-inside-avoid">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Destinatario</p>
           <p className="font-semibold text-slate-900">{invoice.client_name}</p>
           {invoice.client_nif && <p className="text-sm text-slate-600">NIF: {invoice.client_nif}</p>}
@@ -410,7 +412,7 @@ export default function FacturaDetailPage() {
 
         {/* Notes */}
         {invoice.notes && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 print:border-slate-300 print:break-inside-avoid">
             <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">Descripcion</p>
             <p className="text-sm text-blue-800">{invoice.notes}</p>
           </div>
@@ -439,23 +441,23 @@ export default function FacturaDetailPage() {
             return (
               <div className="space-y-8 mb-6">
                 {zoneGroups.map((group) => (
-                  <div key={group.name}>
+                  <div key={group.name} className="print:break-inside-avoid break-inside-avoid">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-base font-bold text-indigo-800 uppercase tracking-wide">{group.name}</h3>
                       <span className="text-base font-bold text-indigo-600">{group.subtotal.toFixed(2)} EUR</span>
                     </div>
-                    <table className="w-full text-sm">
+                    <table className="w-full text-sm print:border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-200">
+                        <tr className="border-b border-slate-200 print:border-slate-300">
                           <th className="pb-2 text-left text-xs font-medium text-slate-500">Descripcion</th>
                           <th className="pb-2 text-right text-xs font-medium text-slate-500 w-16">Cant.</th>
                           <th className="pb-2 text-right text-xs font-medium text-slate-500 w-24">Precio</th>
                           <th className="pb-2 text-right text-xs font-medium text-slate-500 w-28">Importe</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50">
+                      <tbody className="divide-y divide-slate-50 print:divide-slate-200">
                         {group.items.map((item) => (
-                          <tr key={item.id}>
+                          <tr key={item.id} className="print:break-inside-avoid break-inside-avoid">
                             <td className="py-2 text-slate-700">{item.description}</td>
                             <td className="py-2 text-right text-slate-600">{item.quantity}</td>
                             <td className="py-2 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
@@ -472,10 +474,10 @@ export default function FacturaDetailPage() {
 
           // No zones - flat table
           return (
-            <div className="overflow-hidden rounded-lg border border-slate-200 mb-6">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
+            <div className="overflow-hidden rounded-lg border border-slate-200 print:border print:border-slate-300 mb-6">
+              <table className="w-full text-sm print:border-collapse">
+                <thead className="bg-slate-50 border-b border-slate-200 print:border-b print:border-slate-300">
+                  <tr className="print:break-inside-avoid break-inside-avoid">
                     <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Detalle</th>
                     <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-16">Cant.</th>
                     <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-24">Precio</th>
@@ -483,13 +485,13 @@ export default function FacturaDetailPage() {
                     <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 print:divide-slate-200">
                   {invoice.items.map((item) => {
                     const discountDisplay = item.discount && item.discount > 0
                       ? (item.discount_type === "percent" ? `${item.discount}%` : `${item.discount.toFixed(2)} EUR`)
                       : "-";
                     return (
-                      <tr key={item.id}>
+                      <tr key={item.id} className="print:break-inside-avoid break-inside-avoid">
                         <td className="px-4 py-3 text-slate-700">{item.description}</td>
                         <td className="px-4 py-3 text-right text-slate-600">{item.quantity.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
@@ -505,18 +507,18 @@ export default function FacturaDetailPage() {
         })()}
 
         {/* Totals */}
-        <div className="flex justify-end">
+        <div className="flex justify-end print:break-inside-avoid break-inside-avoid">
           <div className="w-72">
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="border border-slate-200 print:border print:border-slate-300 rounded-lg overflow-hidden">
               <div className="flex justify-between px-4 py-2 text-sm bg-slate-50">
                 <span className="text-slate-500">Base imponible</span>
                 <span className="font-medium text-slate-700">{invoice.subtotal.toFixed(2)} EUR</span>
               </div>
-              <div className="flex justify-between px-4 py-2 text-sm border-t border-slate-100">
+              <div className="flex justify-between px-4 py-2 text-sm border-t border-slate-100 print:border-slate-200">
                 <span className="text-slate-500">IVA {invoice.tax_rate.toFixed(0)}%</span>
                 <span className="font-medium text-slate-700">{invoice.tax_amount.toFixed(2)} EUR</span>
               </div>
-              <div className="flex justify-between px-4 py-3 text-lg font-bold border-t-2 border-slate-300 bg-slate-50">
+              <div className="flex justify-between px-4 py-3 text-lg font-bold border-t-2 border-slate-300 bg-slate-50 print:border-t-2 print:border-slate-800">
                 <span className="text-slate-900">TOTAL</span>
                 <span className="text-slate-900">{invoice.total.toFixed(2)} EUR</span>
               </div>
@@ -526,7 +528,7 @@ export default function FacturaDetailPage() {
 
         {/* TBAI footer */}
         {invoice.ticketbai_id && invoice.status === "sent" && (
-          <div className="mt-8 pt-4 border-t border-slate-200">
+          <div className="mt-8 pt-4 border-t border-slate-200 print:border-slate-300 print:break-inside-avoid break-inside-avoid">
             <p className="text-xs font-mono text-slate-500">{invoice.ticketbai_id}</p>
             {invoice.ticketbai_qr && (
               <p className="text-xs font-mono text-slate-400 mt-1">{invoice.ticketbai_qr}</p>
@@ -535,7 +537,7 @@ export default function FacturaDetailPage() {
         )}
 
         {/* Footer - solo cuenta bancaria */}
-        <div className="mt-6 pt-4 border-t border-slate-100">
+        <div className="mt-6 pt-4 border-t border-slate-100 print:border-slate-200 print:break-inside-avoid break-inside-avoid">
           <p className="text-xs text-slate-400">BBVA: ES66 0182 0450 1102 0150 3156</p>
         </div>
       </div>

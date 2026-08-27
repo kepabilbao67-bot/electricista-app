@@ -1,5 +1,12 @@
 # Changelog del Asistente S&H Eléctricas
 
+## 2026-08-27-v10 — Optimización de impresión y PDF (Sprint 4)
+
+- Implementación de clases Tailwind `print:` en las vistas de detalle de Facturas y Partes de trabajo.
+- Aplicado `print:break-inside-avoid` en filas de tablas, bloques de totales, observaciones y firmas para evitar cortes entre páginas.
+- Ocultación garantizada de botones de acción y cabeceras de navegación en impresión (`print:hidden`).
+- Bordes visibles reforzados para impresión en tablas y bloques (`print:border-slate-300`).
+
 ## 2026-08-27-v9 — Robustez offline y control de errores en conversiones
 
 - Detección de conectividad (`navigator.onLine`) antes de iniciar conversiones en Presupuestos y Partes de trabajo.
