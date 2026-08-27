@@ -6,9 +6,9 @@
 | Clientes | /clientes | REAL | CRUD, WhatsApp directo, tipos particular/empresa |
 | CRM comercial | /crm | REAL | Pipeline, oportunidades, valor estimado, próxima acción, tareas e historial |
 | Leads | /leads | REAL | Captación y conversión atómica a cliente + oportunidad |
-| Presupuestos | /presupuestos | REAL | Generador por zonas, conversión a factura |
+| Presupuestos | /presupuestos | REAL | Generador por zonas, crear parte de trabajo, conversión a factura, robustez offline |
 | Facturas | /facturas | REAL | Creación, TicketBAI (ver nota territorial), descuentos, estados. Solo borradores sin TicketBAI se pueden eliminar. |
-| Partes de trabajo | /partes-trabajo | REAL | Formulario, vista imprimible, colores por línea de trabajo, persistencia en DB. Plantilla en blanco en /partes-trabajo/plantilla |
+| Partes de trabajo | /partes-trabajo | REAL | Formulario, vista imprimible, generar factura, colores por línea, persistencia, robustez offline. Plantilla /partes-trabajo/plantilla |
 | Gastos | /gastos | REAL | Categorías de electricista, descuentos, NIF proveedor |
 | Agenda | /agenda | REAL | Vista semanal, estados, Google Maps |
 | Catálogo | /catalogo | REAL | Materiales coste/venta, calculadora de márgenes |

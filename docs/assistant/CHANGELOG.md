@@ -1,5 +1,17 @@
 # Changelog del Asistente S&H Eléctricas
 
+## 2026-08-27-v9 — Robustez offline y control de errores en conversiones
+
+- Detección de conectividad (`navigator.onLine`) antes de iniciar conversiones en Presupuestos y Partes de trabajo.
+- Control de feedback inmediato y reseteo de estados de carga para evitar bloqueos de interfaz si no hay conexión.
+- Mejora en la gestión de errores de red (distinción de `TypeError` vs respuestas controladas del servidor).
+
+## 2026-08-27-v8 — UX flujo Presupuesto→Parte→Factura
+
+- Añadido botón "Crear parte de trabajo" en el listado de presupuestos.
+- Añadido botón "Generar factura" en el listado de partes de trabajo.
+- Consolidación del flujo Presupuesto → Parte de Trabajo → Factura.
+
 ## 2026-07-31-v7 — CRM comercial y WhatsApp seguro
 
 - Nuevo CRM en `/crm` con ocho etapas, oportunidades, valor estimado y próxima acción.

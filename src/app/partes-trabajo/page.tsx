@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, ClipboardCheck, Eye, Search, FileText, Trash2, Loader2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
@@ -21,10 +22,12 @@ const ESTADO_COLORS: Record<string, string> = {
 };
 
 export default function PartesTrabajoPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [partes, setPartes] = useState<ParteTrabajo[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [convertingToInvoice, setConvertingToInvoice] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPartes();
@@ -81,6 +84,42 @@ export default function PartesTrabajoPage() {
       showToast("error", "Error de conexión al eliminar");
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleConvertToInvoice = async (parteId: string) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      showToast("error", "Sin conexión a internet. Verifica tu red e inténtalo de nuevo.");
+      setConvertingToInvoice(null);
+      return;
+    }
+    if (!window.confirm("¿Generar factura a partir de este parte de trabajo?")) return;
+    setConvertingToInvoice(parteId);
+    try {
+      const res = await fetch(`/api/partes-trabajo/${parteId}/convert`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("success", `Factura creada: ${data.number}`);
+        router.push(`/facturas/${data.id}`);
+      } else {
+        showToast("error", data.error || "Error al generar factura");
+        // Si ya existía una factura para este parte, navega a ella
+        if (data.invoiceId) {
+          router.push(`/facturas/${data.invoiceId}`);
+        }
+      }
+    } catch (err) {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        showToast("error", "Sin conexión a internet. Verifica tu red e inténtalo de nuevo.");
+      } else if (err instanceof TypeError) {
+        showToast("error", "Error de conexión con el servidor. Verifica tu red.");
+      } else {
+        showToast("error", "Error de conexión al generar factura");
+      }
+    } finally {
+      setConvertingToInvoice(null);
     }
   };
 
@@ -170,6 +209,18 @@ export default function PartesTrabajoPage() {
                           <Eye className="h-3.5 w-3.5" />
                           Ver
                         </Link>
+                        {parte.estado !== "cerrado" && (
+                          <button
+                            onClick={() => handleConvertToInvoice(parte.id)}
+                            disabled={convertingToInvoice === parte.id}
+                            className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                            title="Generar factura"
+                          >
+                            {convertingToInvoice === parte.id
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <FileText className="h-3.5 w-3.5" />}
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(parte.id)}
                           disabled={deleting === parte.id}
