@@ -125,6 +125,8 @@ export default function GastosPage() {
       showToast("success", "Factura de compra registrada");
       setShowForm(false);
       resetForm();
+    } else {
+      showToast("error", "Error al registrar el gasto");
     }
     setSubmitting(false);
   };

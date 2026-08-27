@@ -68,20 +68,24 @@ export default function ClientesPage() {
     const url = editingClient ? `/api/clients/${editingClient.id}` : "/api/clients";
     const method = editingClient ? "PUT" : "POST";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    if (res.ok) {
-      showToast("success", editingClient ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
-      setShowForm(false);
-      setEditingClient(null);
-      setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
-      fetchClients();
-    } else {
-      showToast("error", "Error al guardar el cliente");
+      if (res.ok) {
+        showToast("success", editingClient ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
+        setShowForm(false);
+        setEditingClient(null);
+        setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
+        fetchClients();
+      } else {
+        showToast("error", "Error al guardar el cliente");
+      }
+    } catch {
+      showToast("error", "Error de conexión. Comprueba tu red e inténtalo de nuevo.");
     }
   };
 

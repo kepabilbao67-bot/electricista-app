@@ -98,33 +98,37 @@ export default function AgendaPage() {
     const url = editingVisit ? `/api/visits/${editingVisit.id}` : "/api/visits";
     const method = editingVisit ? "PUT" : "POST";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
-      showToast("success", editingVisit ? "Visita actualizada" : "Visita creada correctamente");
-      setShowForm(false);
-      setEditingVisit(null);
-      setForm({
-        client_id: "",
-        title: "",
-        description: "",
-        date: new Date().toISOString().split("T")[0],
-        time: "09:00",
-        duration: 60,
-        status: "scheduled",
-        address: "",
-        notes: "",
-        title_color: "default",
-        description_color: "default",
-        address_color: "default",
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
-      fetchVisits();
-    } else {
-      showToast("error", "Error al guardar la visita");
+
+      if (res.ok) {
+        showToast("success", editingVisit ? "Visita actualizada" : "Visita creada correctamente");
+        setShowForm(false);
+        setEditingVisit(null);
+        setForm({
+          client_id: "",
+          title: "",
+          description: "",
+          date: new Date().toISOString().split("T")[0],
+          time: "09:00",
+          duration: 60,
+          status: "scheduled",
+          address: "",
+          notes: "",
+          title_color: "default",
+          description_color: "default",
+          address_color: "default",
+        });
+        fetchVisits();
+      } else {
+        showToast("error", "Error al guardar la visita");
+      }
+    } catch {
+      showToast("error", "Error de conexión. Comprueba tu red e inténtalo de nuevo.");
     }
   };
 
@@ -149,25 +153,35 @@ export default function AgendaPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Seguro que desea eliminar esta visita?")) {
-      const res = await fetch(`/api/visits/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        showToast("success", "Visita eliminada");
-        fetchVisits();
-      } else {
-        showToast("error", "Error al eliminar la visita");
+      try {
+        const res = await fetch(`/api/visits/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          showToast("success", "Visita eliminada");
+          fetchVisits();
+        } else {
+          showToast("error", "Error al eliminar la visita");
+        }
+      } catch {
+        showToast("error", "Error de conexión al eliminar la visita");
       }
     }
   };
 
   const handleStatusChange = async (visit: Visit, newStatus: string) => {
-    const res = await fetch(`/api/visits/${visit.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...visit, client_id: visit.client_id, status: newStatus }),
-    });
-    if (res.ok) {
-      showToast("success", `Visita marcada como ${statusLabels[newStatus]?.label || newStatus}`);
-      fetchVisits();
+    try {
+      const res = await fetch(`/api/visits/${visit.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...visit, client_id: visit.client_id, status: newStatus }),
+      });
+      if (res.ok) {
+        showToast("success", `Visita marcada como ${statusLabels[newStatus]?.label || newStatus}`);
+        fetchVisits();
+      } else {
+        showToast("error", "Error al cambiar el estado de la visita");
+      }
+    } catch {
+      showToast("error", "Error de conexión al actualizar la visita");
     }
   };
 

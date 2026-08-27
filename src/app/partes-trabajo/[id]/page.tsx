@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { showToast } from "@/components/Toast";
-import { ArrowLeft, Printer, Trash2, Loader2, Pencil, X } from "lucide-react";
+import { ArrowLeft, Printer, Trash2, Loader2, Pencil, X, FileText } from "lucide-react";
 import ParteForm from "@/components/ParteForm";
 import { getTrabajoColorClass } from "@/components/ParteForm";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -76,6 +76,7 @@ function ParteTrabajoDetail() {
   const [notFound, setNotFound] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [convertingToInvoice, setConvertingToInvoice] = useState(false);
   const [activeTab, setActiveTab] = useState<"trabajos" | "materiales">("trabajos");
 
   const fetchParte = async () => {
@@ -156,6 +157,30 @@ function ParteTrabajoDetail() {
     } catch { showToast("error", "Error de conexión al eliminar"); setDeleting(false); }
   };
 
+  const handleConvertToInvoice = async () => {
+    if (!parte) return;
+    setConvertingToInvoice(true);
+    try {
+      const res = await fetch(`/api/partes-trabajo/${id}/convert`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("success", `Factura creada: ${data.number}`);
+        router.push(`/facturas/${data.id}`);
+      } else {
+        showToast("error", data.error || "Error al generar factura");
+        if (data.invoiceId) {
+          router.push(`/facturas/${data.invoiceId}`);
+        }
+      }
+    } catch {
+      showToast("error", "Error de conexión al generar factura");
+    } finally {
+      setConvertingToInvoice(false);
+    }
+  };
+
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -185,6 +210,15 @@ function ParteTrabajoDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setEditing(true)} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 transition-all"><Pencil className="h-4 w-4" /> Editar</button>
+          <button
+            onClick={handleConvertToInvoice}
+            disabled={convertingToInvoice}
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all disabled:opacity-50"
+            title="Generar factura a partir de este parte"
+          >
+            <FileText className="h-4 w-4" />
+            {convertingToInvoice ? "Generando factura..." : "Generar factura"}
+          </button>
           <button onClick={handleDelete} disabled={deleting} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 transition-all disabled:opacity-50"><Trash2 className="h-4 w-4" /> Borrar</button>
           {parte.telefono && <WhatsAppButton phone={parte.telefono} label="Abrir WhatsApp" message={`Hola ${parte.cliente}, el parte de trabajo ${parte.numero} está preparado para tu revisión. Si detectas algún dato que deba corregirse, indícanoslo.`} />}
           <button onClick={handlePrint} className="btn-primary"><Printer className="h-4 w-4" /> Imprimir / PDF</button>
