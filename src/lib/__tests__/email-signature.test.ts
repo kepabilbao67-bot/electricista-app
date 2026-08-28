@@ -201,8 +201,8 @@ describe("signature-service: createSignatureRequest", () => {
       consentText: "Confirmo la ejecución.",
     });
     // No hay campo que indique validez jurídica cualificada
-    assert.equal((request as Record<string, unknown>).qualified, undefined);
-    assert.equal((request as Record<string, unknown>).legalValidity, undefined);
+    assert.equal((request as unknown as Record<string, unknown>).qualified, undefined);
+    assert.equal((request as unknown as Record<string, unknown>).legalValidity, undefined);
   });
 });
 

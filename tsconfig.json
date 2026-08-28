@@ -36,6 +36,12 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".next",
+    "**/*-KEPA*",
+    "**/*-KEPA.ts",
+    "**/*-KEPA.tsx",
+    "tmp.ts",
+    "*.txt"
   ]
 }

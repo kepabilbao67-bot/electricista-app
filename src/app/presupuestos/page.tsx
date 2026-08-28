@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Eye, Copy, FileText, AlertTriangle, Trash2 } from "lucide-react";
+import { Plus, Eye, Copy, ClipboardCheck, AlertTriangle, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
 interface Budget {
@@ -37,7 +37,7 @@ export default function PresupuestosPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
   const [duplicating, setDuplicating] = useState<string | null>(null);
-  const [converting, setConverting] = useState<string | null>(null);
+  const [creatingParte, setCreatingParte] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/budgets")
@@ -111,28 +111,40 @@ export default function PresupuestosPage() {
     }
   };
 
-  const handleConvert = async (budgetId: string) => {
-    if (!confirm("Convertir este presupuesto a factura?")) return;
-    setConverting(budgetId);
-    try {
-      const res = await fetch("/api/budgets/convert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ budget_id: budgetId }),
-      });
-
-      if (res.ok) {
-        const invoice = await res.json();
-        showToast("success", `Factura creada: ${invoice.number}`);
-        router.push(`/facturas/${invoice.id}`);
-      } else {
-        const err = await res.json();
-        showToast("error", err.error || "Error al convertir");
-      }
-    } catch {
-      showToast("error", "Error al convertir el presupuesto");
+  const handleCreateParte = async (budgetId: string) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      showToast("error", "Sin conexión a internet. Verifica tu red e inténtalo de nuevo.");
+      setCreatingParte(null);
+      return;
     }
-    setConverting(null);
+    if (!confirm("¿Crear un Parte de Trabajo a partir de este presupuesto?")) return;
+    setCreatingParte(budgetId);
+    try {
+      const res = await fetch(`/api/budgets/${budgetId}/create-parte`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("success", `Parte de trabajo creado: ${data.numero}`);
+        router.push(`/partes-trabajo/${data.id}`);
+      } else {
+        showToast("error", data.error || "Error al crear parte de trabajo");
+        // Si ya existía un parte para este presupuesto, navega a él
+        if (data.parteId) {
+          router.push(`/partes-trabajo/${data.parteId}`);
+        }
+      }
+    } catch (err) {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        showToast("error", "Sin conexión a internet. Verifica tu red e inténtalo de nuevo.");
+      } else if (err instanceof TypeError) {
+        showToast("error", "Error de conexión con el servidor. Verifica tu red.");
+      } else {
+        showToast("error", "Error de conexión al crear parte de trabajo");
+      }
+    } finally {
+      setCreatingParte(null);
+    }
   };
 
   if (loading) {
@@ -213,23 +225,23 @@ export default function PresupuestosPage() {
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
-                        {!budget.converted_invoice_id && budget.status !== "rejected" && (
+                        {budget.status !== "rejected" && (
                           budget.client_id ? (
                             <button
-                              onClick={() => handleConvert(budget.id)}
-                              disabled={converting === budget.id}
+                              onClick={() => handleCreateParte(budget.id)}
+                              disabled={creatingParte === budget.id}
                               className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                              title="Convertir a factura"
+                              title="Crear Parte de Trabajo"
                             >
-                              <FileText className="h-3.5 w-3.5" />
+                              <ClipboardCheck className="h-3.5 w-3.5" />
                             </button>
                           ) : (
                             <button
-                              onClick={() => showToast("error", "Asigna un cliente antes de convertir este presupuesto en factura.")}
+                              onClick={() => showToast("error", "Asigna un cliente antes de crear el parte de trabajo.")}
                               className="rounded-lg p-1.5 text-slate-300 cursor-not-allowed"
-                              title="Asigna un cliente antes de convertir"
+                              title="Asigna un cliente antes de crear el parte"
                             >
-                              <FileText className="h-3.5 w-3.5" />
+                              <ClipboardCheck className="h-3.5 w-3.5" />
                             </button>
                           )
                         )}
