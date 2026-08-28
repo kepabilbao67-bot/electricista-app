@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   FileText,
   ClipboardList,
+  ClipboardCheck,
   Calendar,
   Euro,
   Clock,
@@ -19,10 +20,11 @@ import {
   Bell,
   BriefcaseBusiness,
   Sparkles,
-  Zap,
+  Plus,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { OnboardingBanner } from "@/components/ui/OnboardingBanner";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 
@@ -100,7 +102,7 @@ function formatDate(dateStr: string): string {
   return dateStr;
 }
 
-const statusBadgeColors: Record<string, "gray" | "blue" | "green" | "red"> = {
+const statusBadgeVariants: Record<string, "gray" | "blue" | "green" | "red"> = {
   draft: "gray",
   sent: "blue",
   paid: "green",
@@ -162,119 +164,14 @@ export default function Dashboard() {
     day: "numeric",
   });
 
-  const kpis = [
-    {
-      label: "Facturación total",
-      value: `${(data?.totalFacturacion ?? 0).toFixed(2)} EUR`,
-      icon: Euro,
-      gradient: "from-emerald-500 to-teal-600",
-      shadow: "shadow-emerald-500/10",
-      href: "/facturas",
-    },
-    {
-      label: "Pendiente de cobro",
-      value: `${(data?.pendienteCobro ?? 0).toFixed(2)} EUR`,
-      icon: Clock,
-      gradient: "from-rose-500 to-red-600",
-      shadow: "shadow-rose-500/10",
-      href: "/facturas",
-    },
-    {
-      label: "Facturas este mes",
-      value: data?.facturasEsteMes ?? 0,
-      icon: FileText,
-      gradient: "from-blue-600 to-indigo-600",
-      shadow: "shadow-blue-500/10",
-      href: "/facturas",
-    },
-    {
-      label: "Presupuestos pendientes",
-      value: data?.presupuestosPendientes ?? 0,
-      icon: ClipboardList,
-      gradient: "from-amber-500 to-orange-500",
-      shadow: "shadow-amber-500/10",
-      href: "/presupuestos",
-    },
-    {
-      label: "Próximas tareas",
-      value: data?.proximasVisitas ?? 0,
-      icon: Calendar,
-      gradient: "from-purple-500 to-indigo-600",
-      shadow: "shadow-purple-500/10",
-      href: "/agenda",
-    },
-    {
-      label: "Clientes activos",
-      value: data?.clientesActivos ?? 0,
-      icon: Users,
-      gradient: "from-blue-700 to-slate-900",
-      shadow: "shadow-slate-500/10",
-      href: "/clientes",
-    },
-    {
-      label: "Oportunidades activas",
-      value: data?.oportunidadesActivas ?? 0,
-      icon: BriefcaseBusiness,
-      gradient: "from-cyan-600 to-blue-600",
-      shadow: "shadow-cyan-500/10",
-      href: "/crm",
-    },
-    {
-      label: "Acciones CRM",
-      value: data?.tareasPendientes ?? 0,
-      icon: Bell,
-      gradient: "from-fuchsia-600 to-pink-600",
-      shadow: "shadow-fuchsia-500/10",
-      href: "/crm",
-    },
-  ];
-
-  const monthlyBilling = data?.monthlyBilling ?? [];
-  const maxBilling = Math.max(...monthlyBilling.map((m) => m.total), 1);
-  const topClients = data?.topClients ?? [];
   const thisMonth = data?.thisMonthTotal ?? 0;
   const lastMonth = data?.lastMonthTotal ?? 0;
   const monthDiff =
     lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
 
-  const quickActions = [
-    {
-      label: "Nueva factura",
-      href: "/facturas/nueva",
-      icon: FileText,
-      color: "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white",
-    },
-    {
-      label: "Nuevo presupuesto",
-      href: "/presupuestos/nuevo",
-      icon: ClipboardList,
-      color: "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white",
-    },
-    {
-      label: "Nueva tarea",
-      href: "/agenda",
-      icon: Calendar,
-      color: "bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white",
-    },
-    {
-      label: "Nuevo cliente",
-      href: "/clientes",
-      icon: Users,
-      color: "bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white",
-    },
-    {
-      label: "Abrir CRM",
-      href: "/crm",
-      icon: BriefcaseBusiness,
-      color: "bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 text-white",
-    },
-    {
-      label: "Enviar mensaje",
-      href: "/comunicaciones",
-      icon: MessageSquare,
-      color: "bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white",
-    },
-  ];
+  const monthlyBilling = data?.monthlyBilling ?? [];
+  const maxBilling = Math.max(...monthlyBilling.map((m) => m.total), 1);
+  const topClients = data?.topClients ?? [];
 
   const isDemo = data?.demoMode === true;
   const hasClients = (data?.clientesActivos ?? 0) > 0;
@@ -296,18 +193,18 @@ export default function Dashboard() {
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
               Panel de control
             </h1>
-            <Badge color="blue" size="md" dot>
+            <Badge variant="blue" size="md" dot>
               360° Activo
             </Badge>
             {isDemo && (
-              <Badge color="amber" size="md">
+              <Badge variant="amber" size="md">
                 DEMO / SIN VALIDEZ FISCAL
               </Badge>
             )}
           </div>
           <p className="text-sm text-slate-500 mt-1 capitalize flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-amber-500" />
-            Resumen de facturación, clientes y actividad · {today}
+            Resumen diario de facturación, clientes y actividad · {today}
           </p>
           {isDemo && (
             <p className="text-xs text-slate-500 mt-1">
@@ -317,22 +214,47 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Action Chips */}
+      {/* Acciones Rápidas con Botones Reutilizables */}
       <div>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-          Acciones rápidas
+          Acciones Rápidas
         </h2>
-        <div className="flex flex-wrap gap-2.5">
-          {quickActions.map((action) => (
-            <Link
-              key={action.label}
-              href={action.href}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${action.color}`}
-            >
-              <action.icon className="h-4 w-4" />
-              {action.label}
-            </Link>
-          ))}
+        <div className="flex flex-wrap gap-3">
+          <Link href="/facturas/nueva">
+            <Button variant="primary" size="md" icon={Plus}>
+              Nueva Factura
+            </Button>
+          </Link>
+          <Link href="/presupuestos/nuevo">
+            <Button variant="success" size="md" icon={ClipboardList}>
+              Nuevo Presupuesto
+            </Button>
+          </Link>
+          <Link href="/partes-trabajo/nuevo">
+            <Button variant="secondary" size="md" icon={ClipboardCheck}>
+              Nuevo Parte
+            </Button>
+          </Link>
+          <Link href="/agenda">
+            <Button variant="secondary" size="md" icon={Calendar}>
+              Nueva Tarea
+            </Button>
+          </Link>
+          <Link href="/clientes">
+            <Button variant="secondary" size="md" icon={Users}>
+              Nuevo Cliente
+            </Button>
+          </Link>
+          <Link href="/crm">
+            <Button variant="secondary" size="md" icon={BriefcaseBusiness}>
+              Abrir CRM
+            </Button>
+          </Link>
+          <Link href="/comunicaciones">
+            <Button variant="ghost" size="md" icon={MessageSquare}>
+              Enviar Mensaje
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -345,7 +267,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-blue-600" />
               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                Alertas prioritarias
+                Alertas Prioritarias
               </h2>
             </div>
 
@@ -354,7 +276,7 @@ export default function Dashboard() {
                 <div className="rounded-2xl border border-red-200 bg-red-50/70 p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2 text-red-800 font-bold text-xs uppercase tracking-wide">
                     <AlertCircle className="h-4 w-4 text-red-600" />
-                    Facturas vencidas
+                    Facturas Vencidas
                   </div>
                   <div className="space-y-1.5">
                     {data.alerts.overdueInvoices.map((inv) => (
@@ -377,7 +299,7 @@ export default function Dashboard() {
                 <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2 text-amber-800 font-bold text-xs uppercase tracking-wide">
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
-                    Presupuestos por caducar
+                    Presupuestos por Caducar
                   </div>
                   <div className="space-y-1.5">
                     {data.alerts.expiringBudgets.map((budget) => (
@@ -400,7 +322,7 @@ export default function Dashboard() {
                 <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2 text-blue-800 font-bold text-xs uppercase tracking-wide">
                     <Calendar className="h-4 w-4 text-blue-600" />
-                    Visitas / Tareas de hoy
+                    Visitas de Hoy
                   </div>
                   <div className="space-y-1.5">
                     {data.alerts.todayVisits.map((visit) => (
@@ -422,29 +344,94 @@ export default function Dashboard() {
           </div>
         )}
 
-      {/* KPI Cards Grid */}
+      {/* KPIs Superiores con Componentes UI Card */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi) => (
-          <Link
-            key={kpi.label}
-            href={kpi.href}
-            className={`group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-300 hover:-translate-y-0.5 cursor-pointer relative overflow-hidden flex items-center justify-between ${kpi.shadow}`}
+        {/* Card 1: Ingresos del Mes */}
+        <Link href="/facturas">
+          <Card
+            title="Ingresos del Mes"
+            icon={TrendingUp}
+            variant="success"
+            className="cursor-pointer hover:border-emerald-300"
           >
-            <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                {kpi.label}
-              </p>
-              <p className="text-2xl font-extrabold text-slate-900 mt-1.5 tracking-tight">
-                {kpi.value}
-              </p>
+            <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              {thisMonth.toFixed(2)} €
+            </p>
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Facturado este mes</span>
+              {lastMonth > 0 && (
+                <span
+                  className={`font-bold flex items-center gap-0.5 ${
+                    monthDiff >= 0 ? "text-emerald-700" : "text-rose-700"
+                  }`}
+                >
+                  {monthDiff >= 0 ? "+" : ""}
+                  {monthDiff.toFixed(0)}%
+                </span>
+              )}
             </div>
-            <div
-              className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${kpi.gradient} text-white shadow-md transition-transform duration-300 group-hover:scale-110`}
-            >
-              <kpi.icon className="h-6 w-6" />
+          </Card>
+        </Link>
+
+        {/* Card 2: Facturas Pendientes */}
+        <Link href="/facturas">
+          <Card
+            title="Facturas Pendientes"
+            icon={Clock}
+            variant="warning"
+            className="cursor-pointer hover:border-amber-300"
+          >
+            <p className="text-3xl font-extrabold text-amber-700 tracking-tight">
+              {(data?.pendienteCobro ?? 0).toFixed(2)} €
+            </p>
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Pendiente de cobro</span>
+              <span className="font-bold text-slate-700">
+                {data?.facturasPendientes ?? 0} facturas
+              </span>
             </div>
-          </Link>
-        ))}
+          </Card>
+        </Link>
+
+        {/* Card 3: Presupuestos Activos */}
+        <Link href="/presupuestos">
+          <Card
+            title="Presupuestos Activos"
+            icon={FileText}
+            variant="default"
+            className="cursor-pointer hover:border-blue-300"
+          >
+            <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              {data?.presupuestosPendientes ?? 0}
+            </p>
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">En curso / Pendientes</span>
+              <span className="font-bold text-blue-600 flex items-center gap-1">
+                Ver lista <ArrowRight className="h-3 w-3" />
+              </span>
+            </div>
+          </Card>
+        </Link>
+
+        {/* Card 4: Partes de Trabajo */}
+        <Link href="/partes-trabajo">
+          <Card
+            title="Partes de Trabajo"
+            icon={ClipboardCheck}
+            variant="gradient"
+            className="cursor-pointer hover:border-blue-400"
+          >
+            <p className="text-3xl font-extrabold text-blue-900 tracking-tight">
+              {data?.proximasVisitas ?? 0}
+            </p>
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">Próximos trabajos</span>
+              <span className="font-bold text-blue-700 flex items-center gap-1">
+                Ir a partes <ArrowRight className="h-3 w-3" />
+              </span>
+            </div>
+          </Card>
+        </Link>
       </div>
 
       {/* Analytics & Top Clients */}
@@ -452,50 +439,29 @@ export default function Dashboard() {
         <Card variant="gradient" className="p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Comparativa mensual
+              Facturación Histórica Total
             </span>
-            <Zap className="h-4 w-4 text-amber-500" />
+            <Euro className="h-4 w-4 text-emerald-600" />
           </div>
-          <div className="flex items-baseline gap-3">
-            <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {thisMonth.toFixed(0)} €
-            </p>
-            {lastMonth > 0 && (
-              <span
-                className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${
-                  monthDiff >= 0
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-rose-100 text-rose-800"
-                }`}
-              >
-                {monthDiff >= 0 ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : (
-                  <TrendingDown className="h-3 w-3" />
-                )}
-                {monthDiff >= 0 ? "+" : ""}
-                {monthDiff.toFixed(0)}%
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Facturado el mes anterior:{" "}
-            <span className="font-semibold text-slate-700">
-              {lastMonth.toFixed(0)} €
-            </span>
+          <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            {(data?.totalFacturacion ?? 0).toFixed(2)} €
           </p>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>Clientes activos: <strong className="text-slate-800">{data?.clientesActivos ?? 0}</strong></span>
+            <span>Oportunidades: <strong className="text-slate-800">{data?.oportunidadesActivas ?? 0}</strong></span>
+          </div>
         </Card>
 
         <Card className="p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-              Top clientes por actividad
+              Top Clientes por Actividad
             </h3>
             <Link
               href="/clientes"
               className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
             >
-              Ver clientes <ArrowRight className="h-3 w-3" />
+              Ver todos <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
           {topClients.length === 0 ? (
@@ -525,7 +491,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Monthly Chart Bar */}
+      {/* Gráfico Mensual */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2.5">
@@ -534,7 +500,7 @@ export default function Dashboard() {
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Evolución de facturación
+                Evolución de Facturación
               </h2>
               <p className="text-xs text-slate-500">Histórico de ingresos mensuales</p>
             </div>
@@ -571,7 +537,7 @@ export default function Dashboard() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-slate-900">
-              Últimos documentos emitidos
+              Últimos Documentos Emitidos
             </h2>
             <Link
               href="/facturas"
@@ -598,7 +564,7 @@ export default function Dashboard() {
                         {factura.number}
                       </span>
                       <Badge
-                        color={statusBadgeColors[factura.status] || "gray"}
+                        variant={statusBadgeVariants[factura.status] || "gray"}
                         size="sm"
                       >
                         {statusLabels[factura.status] || factura.status}
@@ -625,7 +591,7 @@ export default function Dashboard() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-slate-900">
-              Próximas tareas programadas
+              Próximas Tareas Programadas
             </h2>
             <Link
               href="/agenda"
