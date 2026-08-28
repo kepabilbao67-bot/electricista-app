@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Edit2, Trash2, Phone, Mail, FileText, Users, Eye, Upload } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Phone, Mail, FileText, Users, Eye, Upload, MapPin } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import TextAssistantButton from "@/components/TextAssistantButton";
@@ -109,7 +113,7 @@ export default function ClientesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Seguro que desea eliminar este cliente? Esta accion no se puede deshacer.")) {
+    if (confirm("¿Seguro que desea eliminar este cliente? Esta acción no se puede deshacer.")) {
       try {
         const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
         if (res.ok) {
@@ -134,200 +138,261 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="animate-fade-in space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
-          <h1 className="page-title">Clientes</h1>
-          <p className="page-subtitle">{clients.length} clientes registrados</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Clientes</h1>
+          <p className="text-sm text-slate-500 mt-1">{clients.length} clientes registrados en tu cartera</p>
         </div>
-        <div className="flex gap-2">
-          <button
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="secondary"
+            size="md"
+            icon={Upload}
             onClick={() => router.push("/clientes/importar")}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition-all"
           >
-            <Upload className="h-4 w-4" />
             Importar
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            icon={Plus}
             onClick={() => {
               setEditingClient(null);
               setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
               setShowForm(true);
             }}
-            className="btn-primary"
           >
-            <Plus className="h-4 w-4" />
-            Nuevo cliente
-          </button>
+            Nuevo Cliente
+          </Button>
         </div>
       </div>
 
-      <div className="relative mb-6">
+      {/* Search Input */}
+      <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <input
           type="text"
-          placeholder="Buscar por nombre, NIF, email o telefono..."
+          placeholder="Buscar por nombre, NIF, email o teléfono..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="input-field pl-10"
         />
       </div>
 
+      {/* Form Card */}
       {showForm && (
-        <div className="mb-6 card-static animate-scale-in">
-          <h2 className="text-base font-semibold text-slate-900 mb-4">
-            {editingClient ? "Editar cliente" : "Nuevo cliente"}
+        <Card variant="gradient" className="border border-blue-200 shadow-md">
+          <h2 className="text-lg font-bold text-slate-900 mb-4 pb-2 border-b border-slate-200/60">
+            {editingClient ? "Editar Cliente" : "Nuevo Cliente"}
           </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Nombre *</label>
-              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Nombre completo *</label>
+              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" placeholder="Nombre o Razón Social" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Tipo de cliente</label>
               <select value={form.client_type} onChange={(e) => setForm({ ...form, client_type: e.target.value })} className="input-field">
                 <option value="particular">Particular</option>
                 <option value="empresa">Empresa</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">NIF</label>
-              <input type="text" value={form.nif} onChange={(e) => setForm({ ...form, nif: e.target.value })} className="input-field" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">NIF / CIF / NIE</label>
+              <input type="text" value={form.nif} onChange={(e) => setForm({ ...form, nif: e.target.value })} className="input-field" placeholder="12345678Z" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Correo Electrónico</label>
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" placeholder="cliente@ejemplo.com" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Telefono</label>
-              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Teléfono móvil / fijo</label>
+              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" placeholder="+34 600 000 000" />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">Direccion</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Dirección de trabajo / fiscal</label>
                 <ColorSelect value={form.address_color} onChange={(v) => setForm({ ...form, address_color: v })} />
               </div>
-              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, address: c })); }} className={`input-field ${getTextColorClass(form.address_color)}`} />
+              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, address: c })); }} className={`input-field ${getTextColorClass(form.address_color)}`} placeholder="Calle, número, piso" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Ciudad</label>
-              <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-field" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Población / Ciudad</label>
+              <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-field" placeholder="Bilbao" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Codigo postal</label>
-              <input type="text" value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} className="input-field" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Código Postal</label>
+              <input type="text" value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} className="input-field" placeholder="48001" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Provincia</label>
-              <input type="text" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} className="input-field" />
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Provincia</label>
+              <input type="text" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} className="input-field" placeholder="Bizkaia" />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">Notas rapidas</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Notas de servicio</label>
                 <ColorSelect value={form.notes_color} onChange={(v) => setForm({ ...form, notes_color: v })} />
               </div>
-              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, notes: c })); }} rows={2} className={`input-field ${getTextColorClass(form.notes_color)}`} placeholder="Ej: llaves del portal en porteria" />
+              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, notes: c })); }} rows={2} className={`input-field ${getTextColorClass(form.notes_color)}`} placeholder="Ej: Llaves del portal en conserjería" />
               <div className="mt-1"><TextAssistantButton value={form.notes} onAccept={(t) => setForm({ ...form, notes: t })} /></div>
             </div>
-            <div className="md:col-span-2 flex gap-3">
-              <button type="submit" className="btn-primary">
-                {editingClient ? "Guardar cambios" : "Crear cliente"}
-              </button>
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancelar</button>
+            <div className="md:col-span-2 flex items-center gap-3 pt-2">
+              <Button type="submit" variant="primary" size="md">
+                {editingClient ? "Guardar Cambios" : "Crear Cliente"}
+              </Button>
+              <Button type="button" variant="secondary" size="md" onClick={() => setShowForm(false)}>
+                Cancelar
+              </Button>
             </div>
           </form>
-        </div>
+        </Card>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="table-header">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Nombre</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">Tipo</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden sm:table-cell">Telefono</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden lg:table-cell">Email</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">Facturas</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((client) => (
-                <tr key={client.id} className="table-row">
-                  <td className="px-4 py-3.5">
-                    <div>
-                      <Link href={`/clientes/${client.id}`} className="font-semibold text-slate-900 hover:text-blue-800 transition-colors">
-                        {client.name}
-                      </Link>
-                      {client.city && <p className="text-xs text-slate-400">{client.city}</p>}
+      {/* Empty State */}
+      {clients.length === 0 ? (
+        <EmptyState
+          title="Aún no tienes clientes"
+          description="Añade tu primer cliente o importa tu lista para empezar a gestionar presupuestos, partes de trabajo y facturación."
+          actionLabel="Crear Primer Cliente"
+          onAction={() => {
+            setEditingClient(null);
+            setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
+            setShowForm(true);
+          }}
+        />
+      ) : (
+        /* Vista de Clientes con Cards / Tabla Estilizada */
+        <div className="space-y-4">
+          {/* Mobile Cards (Visible en pantallas pequeñas) */}
+          <div className="grid grid-cols-1 md:hidden gap-3">
+            {clients.map((client) => (
+              <Card key={client.id} variant="default" className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <Link href={`/clientes/${client.id}`} className="text-base font-bold text-slate-900 hover:text-blue-600 transition-colors">
+                      {client.name}
+                    </Link>
+                    {client.nif && <p className="text-xs text-slate-400 mt-0.5">{client.nif}</p>}
+                  </div>
+                  <Badge variant={client.client_type === "empresa" ? "green" : "blue"} size="sm">
+                    {client.client_type === "empresa" ? "Empresa" : "Particular"}
+                  </Badge>
+                </div>
+
+                <div className="space-y-1 text-xs text-slate-600">
+                  {client.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 text-slate-400" />
+                      <a href={`tel:${client.phone}`} className="hover:text-blue-600">{client.phone}</a>
                     </div>
-                  </td>
-                  <td className="px-4 py-3.5 hidden md:table-cell">
-                    <span className={`badge text-[10px] ${client.client_type === "empresa" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`}>
-                      {client.client_type === "empresa" ? "Empresa" : "Particular"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 hidden sm:table-cell">
-                    {client.phone ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-600">{client.phone}</span>
-                        <a href={`tel:${client.phone}`} className="rounded-md p-1 text-blue-500 hover:bg-blue-50 transition-colors" title="Llamar">
-                          <Phone className="h-3.5 w-3.5" />
-                        </a>
-                        <WhatsAppButton compact phone={client.phone} />
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-300">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5 hidden lg:table-cell">
-                    {client.email ? (
-                      <a href={`mailto:${client.email}`} className="text-xs text-blue-700 hover:underline">{client.email}</a>
-                    ) : (
-                      <span className="text-xs text-slate-300">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5 text-center hidden md:table-cell">
-                    {client.invoice_count !== undefined && client.invoice_count > 0 ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 border border-blue-100">
-                        <FileText className="h-3 w-3" />
-                        {client.invoice_count}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-300">0</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link href={`/clientes/${client.id}`} className="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700 transition-colors" title="Ver detalle">
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                      <button onClick={() => handleEdit(client)} className="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-700 transition-colors" title="Editar">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => handleDelete(client.id)} className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Eliminar">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                  )}
+                  {client.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 text-slate-400" />
+                      <a href={`mailto:${client.email}`} className="truncate hover:text-blue-600">{client.email}</a>
                     </div>
-                  </td>
-                </tr>
-              ))}
-              {clients.length === 0 && (
+                  )}
+                  {client.city && (
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{client.city}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-1 pt-2 border-t border-slate-100">
+                  {client.phone && <WhatsAppButton compact phone={client.phone} />}
+                  <Link href={`/clientes/${client.id}`}>
+                    <Button variant="ghost" size="sm" icon={Eye}>Ver</Button>
+                  </Link>
+                  <Button variant="ghost" size="sm" icon={Edit2} onClick={() => handleEdit(client)}>Editar</Button>
+                  <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(client.id)} className="text-red-600 hover:text-red-700">Borrar</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <table className="w-full text-sm">
+              <thead className="table-header">
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center">
-                    <div className="empty-state">
-                      <Users className="empty-state-icon" />
-                      <p className="empty-state-title">Sin clientes</p>
-                      <p className="empty-state-text">Agrega tu primer cliente para empezar</p>
-                    </div>
-                  </td>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Cliente</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Tipo</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Contacto</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Ubicación</th>
+                  <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Facturas</th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Acciones</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {clients.map((client) => (
+                  <tr key={client.id} className="hover:bg-blue-50/20 transition-colors">
+                    <td className="px-5 py-4">
+                      <div>
+                        <Link href={`/clientes/${client.id}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors text-sm">
+                          {client.name}
+                        </Link>
+                        {client.nif && <p className="text-xs text-slate-400">{client.nif}</p>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <Badge variant={client.client_type === "empresa" ? "green" : "blue"} size="sm">
+                        {client.client_type === "empresa" ? "Empresa" : "Particular"}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="space-y-1">
+                        {client.phone ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-700 font-medium">{client.phone}</span>
+                            <WhatsAppButton compact phone={client.phone} />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-300">-</span>
+                        )}
+                        {client.email && (
+                          <a href={`mailto:${client.email}`} className="text-xs text-blue-600 hover:underline block truncate max-w-[180px]">
+                            {client.email}
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-xs text-slate-600">
+                      {client.city || client.province ? (
+                        <span>{client.city} {client.province ? `(${client.province})` : ""}</span>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      {client.invoice_count !== undefined && client.invoice_count > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
+                          <FileText className="h-3 w-3" />
+                          {client.invoice_count}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-300">0</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link href={`/clientes/${client.id}`}>
+                          <Button variant="ghost" size="sm" icon={Eye}>Ver</Button>
+                        </Link>
+                        <Button variant="ghost" size="sm" icon={Edit2} onClick={() => handleEdit(client)}>Editar</Button>
+                        <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(client.id)} className="text-red-600 hover:text-red-700">Borrar</Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

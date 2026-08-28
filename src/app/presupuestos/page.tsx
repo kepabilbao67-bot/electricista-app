@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Eye, Copy, ClipboardCheck, AlertTriangle, Trash2 } from "lucide-react";
+import { Plus, Eye, Copy, ClipboardCheck, AlertTriangle, Trash2, Calendar, FileText, User } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { showToast } from "@/components/Toast";
 
 interface Budget {
@@ -25,11 +29,18 @@ function formatDate(dateStr: string): string {
   return dateStr;
 }
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  draft: { label: "Borrador", color: "bg-slate-100 text-slate-600" },
-  sent: { label: "Enviado", color: "bg-blue-50 text-blue-700 border border-blue-100" },
-  accepted: { label: "Aceptado", color: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
-  rejected: { label: "Rechazado", color: "bg-red-50 text-red-700 border border-red-100" },
+const statusBadgeVariants: Record<string, "gray" | "blue" | "green" | "red"> = {
+  draft: "gray",
+  sent: "blue",
+  accepted: "green",
+  rejected: "red",
+};
+
+const statusLabels: Record<string, string> = {
+  draft: "Borrador",
+  sent: "Enviado",
+  accepted: "Aceptado",
+  rejected: "Rechazado",
 };
 
 export default function PresupuestosPage() {
@@ -58,11 +69,9 @@ export default function PresupuestosPage() {
   const handleDuplicate = async (budget: Budget) => {
     setDuplicating(budget.id);
     try {
-      // Get full budget details with items
       const detailRes = await fetch(`/api/budgets/${budget.id}`);
       const detail = await detailRes.json();
 
-      // Create new budget with same items
       const res = await fetch("/api/budgets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,7 +138,6 @@ export default function PresupuestosPage() {
         router.push(`/partes-trabajo/${data.id}`);
       } else {
         showToast("error", data.error || "Error al crear parte de trabajo");
-        // Si ya existía un parte para este presupuesto, navega a él
         if (data.parteId) {
           router.push(`/partes-trabajo/${data.parteId}`);
         }
@@ -150,124 +158,217 @@ export default function PresupuestosPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-600 border-t-transparent"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-800 border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="animate-fade-in space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
-          <h1 className="page-title">Presupuestos</h1>
-          <p className="page-subtitle">{budgets.length} presupuestos registrados</p>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Presupuestos</h1>
+          <p className="text-sm text-slate-500 mt-1">{budgets.length} presupuestos registrados</p>
         </div>
-        <Link href="/presupuestos/nuevo" className="btn-primary">
-          <Plus className="h-4 w-4" />
-          Nuevo presupuesto
+        <Link href="/presupuestos/nuevo">
+          <Button variant="primary" size="md" icon={Plus}>
+            Nuevo Presupuesto
+          </Button>
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="table-header">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Numero</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Cliente</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden sm:table-cell">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hidden md:table-cell">Validez</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Total</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Estado</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {budgets.map((budget) => {
-                const status = statusLabels[budget.status] || statusLabels.draft;
-                const expired = isExpired(budget.valid_until) && budget.status !== "accepted" && budget.status !== "rejected";
-                return (
-                  <tr key={budget.id} className="table-row">
-                    <td className="px-4 py-3.5"><span className="text-base font-bold text-blue-800">{budget.number}</span></td>
-                    <td className="px-4 py-3.5 text-slate-600">{budget.client_name || <span className="text-slate-400 italic">Sin cliente</span>}</td>
-                    <td className="px-4 py-3.5 hidden sm:table-cell text-slate-500">{formatDate(budget.date)}</td>
-                    <td className="px-4 py-3.5 hidden md:table-cell">
-                      {budget.valid_until ? (
-                        <span className={`inline-flex items-center gap-1 text-xs ${expired ? "text-red-600 font-semibold" : "text-slate-500"}`}>
-                          {expired && <AlertTriangle className="h-3 w-3" />}
-                          {formatDate(budget.valid_until)}
-                          {expired && <span className="text-[10px] bg-red-50 rounded px-1 border border-red-200">Caducado</span>}
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-right font-semibold text-slate-900">{budget.total.toFixed(2)} EUR</td>
-                    <td className="px-4 py-3.5 text-center">
-                      <span className={`badge ${status.color}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          href={`/presupuestos/${budget.id}`}
-                          className="rounded-lg p-1.5 text-indigo-600 hover:bg-indigo-50 transition-colors"
-                          title="Ver detalle"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Link>
-                        <button
-                          onClick={() => handleDuplicate(budget)}
-                          disabled={duplicating === budget.id}
-                          className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors disabled:opacity-50"
-                          title="Duplicar presupuesto"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                        {budget.status !== "rejected" && (
-                          budget.client_id ? (
-                            <button
-                              onClick={() => handleCreateParte(budget.id)}
-                              disabled={creatingParte === budget.id}
-                              className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                              title="Crear Parte de Trabajo"
-                            >
-                              <ClipboardCheck className="h-3.5 w-3.5" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => showToast("error", "Asigna un cliente antes de crear el parte de trabajo.")}
-                              className="rounded-lg p-1.5 text-slate-300 cursor-not-allowed"
-                              title="Asigna un cliente antes de crear el parte"
-                            >
-                              <ClipboardCheck className="h-3.5 w-3.5" />
-                            </button>
-                          )
-                        )}
-                        <button
-                          onClick={() => handleDelete(budget)}
-                          className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
-                          title="Eliminar presupuesto"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {budgets.length === 0 && (
+      {/* Empty State */}
+      {budgets.length === 0 ? (
+        <EmptyState
+          title="Aún no tienes presupuestos"
+          description="Crea tu primer presupuesto para clientes con cálculo de IVA, REBT y desglose de materiales y mano de obra."
+          actionLabel="Crear Primer Presupuesto"
+          actionHref="/presupuestos/nuevo"
+        />
+      ) : (
+        <div className="space-y-4">
+          {/* Mobile Cards (Visualización móvil) */}
+          <div className="grid grid-cols-1 md:hidden gap-3">
+            {budgets.map((budget) => {
+              const statusVariant = statusBadgeVariants[budget.status] || "gray";
+              const expired = isExpired(budget.valid_until) && budget.status !== "accepted" && budget.status !== "rejected";
+              return (
+                <Card key={budget.id} variant="default" className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-base font-extrabold text-blue-900">{budget.number}</span>
+                      <p className="text-xs text-slate-600 font-medium mt-0.5">{budget.client_name || "Sin cliente"}</p>
+                    </div>
+                    <Badge variant={statusVariant} size="sm">
+                      {statusLabels[budget.status] || budget.status}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{formatDate(budget.date)}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-extrabold text-slate-900">{budget.total.toFixed(2)} €</span>
+                    </div>
+                  </div>
+
+                  {expired && (
+                    <div className="flex items-center gap-1 text-xs text-rose-700 bg-rose-50 px-2 py-1 rounded-lg border border-rose-200">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      <span>Caducado ({formatDate(budget.valid_until)})</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-1 pt-2 border-t border-slate-100">
+                    <Link href={`/presupuestos/${budget.id}`}>
+                      <Button variant="ghost" size="sm" icon={Eye}>Ver</Button>
+                    </Link>
+                    {budget.status !== "rejected" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={ClipboardCheck}
+                        onClick={() => handleCreateParte(budget.id)}
+                        disabled={creatingParte === budget.id}
+                        className="text-emerald-700 hover:text-emerald-800"
+                      >
+                        Parte
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Copy}
+                      onClick={() => handleDuplicate(budget)}
+                      disabled={duplicating === budget.id}
+                    >
+                      Duplicar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={() => handleDelete(budget)}
+                      className="text-rose-600 hover:text-rose-700"
+                    >
+                      Borrar
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+            <table className="w-full text-sm">
+              <thead className="table-header">
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
-                    No hay presupuestos registrados
-                  </td>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Número</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Cliente</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 hidden sm:table-cell">Fecha</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 hidden md:table-cell">Validez</th>
+                  <th className="px-4 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Total</th>
+                  <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Estado</th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Acciones</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {budgets.map((budget) => {
+                  const statusVariant = statusBadgeVariants[budget.status] || "gray";
+                  const expired = isExpired(budget.valid_until) && budget.status !== "accepted" && budget.status !== "rejected";
+                  return (
+                    <tr key={budget.id} className="hover:bg-blue-50/20 transition-colors">
+                      <td className="px-5 py-4">
+                        <Link href={`/presupuestos/${budget.id}`} className="font-extrabold text-blue-900 hover:text-blue-600 transition-colors text-sm">
+                          {budget.number}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-4 text-slate-700 font-medium">
+                        {budget.client_name || <span className="text-slate-400 italic">Sin cliente</span>}
+                      </td>
+                      <td className="px-4 py-4 hidden sm:table-cell text-xs text-slate-500 font-medium">
+                        {formatDate(budget.date)}
+                      </td>
+                      <td className="px-4 py-4 hidden md:table-cell">
+                        {budget.valid_until ? (
+                          <span className={`inline-flex items-center gap-1 text-xs ${expired ? "text-rose-600 font-bold" : "text-slate-500"}`}>
+                            {expired && <AlertTriangle className="h-3.5 w-3.5" />}
+                            {formatDate(budget.valid_until)}
+                            {expired && <span className="text-[10px] bg-rose-50 rounded px-1.5 py-0.5 border border-rose-200">Caducado</span>}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-right font-extrabold text-slate-900 text-sm">
+                        {budget.total.toFixed(2)} €
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <Badge variant={statusVariant} size="sm">
+                          {statusLabels[budget.status] || budget.status}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link href={`/presupuestos/${budget.id}`}>
+                            <Button variant="ghost" size="sm" icon={Eye}>Ver</Button>
+                          </Link>
+                          {budget.status !== "rejected" && (
+                            budget.client_id ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={ClipboardCheck}
+                                onClick={() => handleCreateParte(budget.id)}
+                                disabled={creatingParte === budget.id}
+                                className="text-emerald-700 hover:text-emerald-800"
+                              >
+                                Parte
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={ClipboardCheck}
+                                onClick={() => showToast("error", "Asigna un cliente antes de crear el parte de trabajo.")}
+                                className="text-slate-300 cursor-not-allowed"
+                              >
+                                Parte
+                              </Button>
+                            )
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Copy}
+                            onClick={() => handleDuplicate(budget)}
+                            disabled={duplicating === budget.id}
+                          >
+                            Duplicar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleDelete(budget)}
+                            className="text-rose-600 hover:text-rose-700"
+                          >
+                            Borrar
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
