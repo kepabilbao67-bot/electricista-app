@@ -1,5 +1,11 @@
 # Changelog del Asistente S&H Eléctricas
 
+## 2026-08-27-v11 — Validación estricta con Zod (Sprint 6)
+
+- Implementación de validación de esquemas con Zod en `src/lib/validations/client-schema.ts`.
+- Validación de NIF/CIF español (DNI, NIE, CIF), emails y nombres en el endpoint `POST /api/clients`.
+- Respuesta descriptiva con código HTTP 400 en caso de datos inválidos.
+
 ## 2026-08-27-v10 — Optimización de impresión y PDF (Sprint 4)
 
 - Implementación de clases Tailwind `print:` en las vistas de detalle de Facturas y Partes de trabajo.

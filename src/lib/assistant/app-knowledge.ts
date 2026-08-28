@@ -52,6 +52,7 @@ export const APP_MODULES: AppModule[] = [
       "Botón WhatsApp, teléfono y email directo",
       "Importación CSV o pegado de datos",
       "Vista detalle con historial de facturas, comunicaciones y visitas",
+      "Validación estricta de datos de entrada con Zod (NIF, email, nombres)",
     ],
     limitations: [],
     usage: "Ve a /clientes. Haz clic en 'Nuevo cliente' para crear uno. Haz clic en un nombre para ver su ficha.",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { clientSchema } from "@/lib/validations/client-schema";
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,9 +42,24 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rawBody = await request.json();
+    const validationResult = clientSchema.safeParse(rawBody);
+
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join(", ");
+      return NextResponse.json(
+        {
+          error: "Datos de cliente inválidos",
+          details: errorMessages,
+          issues: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = validationResult.data;
     await initializeDatabase();
     const db = getDbClient();
-    const body = await request.json();
     const id = uuidv4();
 
     await db.execute({
@@ -51,18 +67,18 @@ export async function POST(request: NextRequest) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
-        body.name,
-        body.nif || null,
-        body.email || null,
-        body.phone || null,
-        body.address || null,
-        body.city || null,
-        body.postal_code || null,
-        body.province || null,
-        body.notes || null,
-        body.client_type || "particular",
-        body.address_color || null,
-        body.notes_color || null,
+        data.name,
+        data.nif || null,
+        data.email || null,
+        data.phone || null,
+        data.address || null,
+        data.city || null,
+        data.postal_code || null,
+        data.province || null,
+        data.notes || null,
+        data.client_type || "particular",
+        data.address_color || null,
+        data.notes_color || null,
       ],
     });
 
