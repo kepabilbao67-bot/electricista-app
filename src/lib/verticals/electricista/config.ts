@@ -64,6 +64,7 @@ const ELECTRICISTA_MODULES: ModuleId[] = [
   "catalog",
   "normativa",
   "export",
+  "settings",
 ];
 
 // --- Config ---
@@ -71,14 +72,13 @@ const ELECTRICISTA_MODULES: ModuleId[] = [
 export const electricistaConfig: VerticalConfig = {
   id: "electricista",
   brand: {
-    tradeName: "S&H Eléctricas",
-    shortName: "S&H Eléctricas",
-    description: "Gestión profesional para trabajos eléctricos",
+    tradeName: process.env.NEXT_PUBLIC_COMPANY_TRADE_NAME || process.env.COMPANY_TRADE_NAME || "Electricista 360",
+    shortName: process.env.NEXT_PUBLIC_APP_SHORT_NAME || process.env.APP_SHORT_NAME || "Electricista 360",
+    description: "Gestión profesional para servicios e instalaciones eléctricas",
     themeColor: "#1e293b",
     iconKey: "zap",
-    initials: "SH",
+    initials: "360",
   },
   modules: ELECTRICISTA_MODULES,
   catalog: electricistaCatalog,
-  // knowledge: se conectará cuando se migre ai-knowledge.ts
 };

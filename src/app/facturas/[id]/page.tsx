@@ -6,6 +6,8 @@ import { ArrowLeft, Printer, Send, CheckCircle, Shield, Download, ExternalLink, 
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { showToast } from "@/components/Toast";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { COMPANY_PROFILE } from "@/lib/company-profile";
+import { APP_CONFIG } from "@/config/app-config";
 
 interface InvoiceDetail {
   id: string;
@@ -140,9 +142,9 @@ export default function FacturaDetailPage() {
 
   const sendByEmail = () => {
     if (!invoice) return;
-    const subject = encodeURIComponent(`Factura ${invoice.number} - Ivan Martin Oyarzabal`);
+    const subject = encodeURIComponent(`Factura ${invoice.number} - ${COMPANY_PROFILE.tradeName}`);
     const body = encodeURIComponent(
-      `Estimado/a ${invoice.client_name},\n\nAdjunto le remito la factura ${invoice.number} por importe de ${invoice.total.toFixed(2)} EUR.\n\nDatos de pago:\nBBVA: ES66 0182 0450 1102 0150 3156\nTitular: MARTIN OYARZABAL IVAN\n\nQuedo a su disposicion.\n\nUn saludo,\nIvan Martin Oyarzabal\nTfno: 688 867 530`
+      `Estimado/a ${invoice.client_name},\n\nAdjunto le remito la factura ${invoice.number} por importe de ${invoice.total.toFixed(2)} EUR.\n\nDatos de pago:\n${APP_CONFIG.company.bankName}: ${APP_CONFIG.company.iban}\nTitular: ${COMPANY_PROFILE.legalName}\n\nQuedo a su disposicion.\n\nUn saludo,\n${COMPANY_PROFILE.ownerName}\nTfno: ${COMPANY_PROFILE.phone}`
     );
     const email = invoice.client_email || "";
     window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_self");
@@ -339,7 +341,7 @@ export default function FacturaDetailPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Codigo TBAI</label>
-                <input type="text" value={confirmData.ticketbai_id} onChange={(e) => setConfirmData({ ...confirmData, ticketbai_id: e.target.value })} placeholder={invoice.ticketbai_id || "TBAI-16063731W-..."} className="input-field font-mono text-sm" />
+                <input type="text" value={confirmData.ticketbai_id} onChange={(e) => setConfirmData({ ...confirmData, ticketbai_id: e.target.value })} placeholder={invoice.ticketbai_id || `TBAI-${COMPANY_PROFILE.nif}-...`} className="input-field font-mono text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Firma digital</label>
@@ -379,11 +381,11 @@ export default function FacturaDetailPage() {
         {/* Header */}
         <div className="flex justify-between mb-8 pb-6 border-b border-slate-100 print:border-slate-300 print:break-inside-avoid">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">MARTIN OYARZABAL, IVAN</h2>
-            <p className="text-sm text-slate-500 mt-1">NIF: 16063731W</p>
-            <p className="text-sm text-slate-500">Lehendakari Aguirre 7b 2 derecha</p>
-            <p className="text-sm text-slate-500">48640 Berango, Bizkaia</p>
-            <p className="text-sm text-slate-500 mt-2 font-medium">Tel: 688 867 530</p>
+            <h2 className="text-xl font-bold text-slate-900">{COMPANY_PROFILE.legalName}</h2>
+            <p className="text-sm text-slate-500 mt-1">NIF: {COMPANY_PROFILE.nif}</p>
+            {COMPANY_PROFILE.addressLine1 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine1}</p>}
+            {COMPANY_PROFILE.addressLine2 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine2}</p>}
+            <p className="text-sm text-slate-500 mt-2 font-medium">Tel: {COMPANY_PROFILE.phone}</p>
           </div>
           <div className="text-right">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-100 print:border-slate-300 mb-2">
@@ -538,7 +540,7 @@ export default function FacturaDetailPage() {
 
         {/* Footer - solo cuenta bancaria */}
         <div className="mt-6 pt-4 border-t border-slate-100 print:border-slate-200 print:break-inside-avoid break-inside-avoid">
-          <p className="text-xs text-slate-400">BBVA: ES66 0182 0450 1102 0150 3156</p>
+          <p className="text-xs text-slate-400">{APP_CONFIG.company.bankName}: {APP_CONFIG.company.iban}</p>
         </div>
       </div>
     </div>

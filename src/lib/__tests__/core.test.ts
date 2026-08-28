@@ -7,11 +7,12 @@ import type { ModuleId, VerticalConfig, CatalogProvider } from "../core/types";
 // --- Company Profile ---
 
 describe("core/company: loadCompanyProfile", () => {
-  test("sin env vars retorna perfil S&H Eléctricas (backward compat)", () => {
+  test("sin env vars retorna perfil White-Label genérico", () => {
     delete process.env.COMPANY_TRADE_NAME;
+    delete process.env.NEXT_PUBLIC_COMPANY_TRADE_NAME;
     const profile = loadCompanyProfile();
-    assert.equal(profile.tradeName, "S&H Eléctricas");
-    assert.equal(profile.nif, "16063731W");
+    assert.equal(profile.tradeName, "Mi Empresa");
+    assert.equal(profile.nif, "B00000000");
     assert.ok(profile.phone.length > 0);
   });
 
@@ -31,10 +32,10 @@ describe("core/company: loadCompanyProfile", () => {
     delete process.env.COMPANY_EMAIL;
   });
 
-  test("COMPANY_TRADE_NAME vacío usa fallback", () => {
+  test("COMPANY_TRADE_NAME vacío usa fallback genérico", () => {
     process.env.COMPANY_TRADE_NAME = "   ";
     const profile = loadCompanyProfile();
-    assert.equal(profile.tradeName, "S&H Eléctricas");
+    assert.equal(profile.tradeName, "Mi Empresa");
     delete process.env.COMPANY_TRADE_NAME;
   });
 });

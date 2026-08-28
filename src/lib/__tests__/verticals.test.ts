@@ -39,10 +39,11 @@ describe("core/vertical-loader: loadVerticalConfig", () => {
     const { loadVerticalConfig } = await import("../core/vertical-loader");
     const config = loadVerticalConfig();
     assert.equal(config.id, "electricista");
-    assert.equal(config.brand.tradeName, "S&H Eléctricas");
+    assert.ok(config.brand.tradeName.length > 0);
     assert.ok(config.modules.includes("dashboard"));
     assert.ok(config.modules.includes("work_orders"));
     assert.ok(config.modules.includes("normativa"));
+    assert.ok(config.modules.includes("settings"));
   });
 
   test("tecnologia no incluye work_orders ni normativa", async () => {
@@ -62,7 +63,7 @@ describe("verticals/electricista: config", () => {
   test("tiene brand completo", async () => {
     const { electricistaConfig } = await import("../verticals/electricista/config");
     assert.equal(electricistaConfig.brand.iconKey, "zap");
-    assert.equal(electricistaConfig.brand.initials, "SH");
+    assert.ok(electricistaConfig.brand.initials.length > 0);
     assert.ok(electricistaConfig.brand.themeColor.startsWith("#"));
   });
 

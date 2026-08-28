@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Printer, FileText, Send, Pencil, Mail, ClipboardCheck } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { COMPANY_PROFILE } from "@/lib/company-profile";
 
 interface BudgetItem {
   id: string;
@@ -170,9 +171,9 @@ export default function PresupuestoDetailPage() {
               ? "Rechazado"
               : budget.status;
 
-    const subject = `Presupuesto ${budget.number} - S&H Eléctricas`;
+    const subject = `Presupuesto ${budget.number} - ${COMPANY_PROFILE.tradeName}`;
     const validUntilLine = budget.valid_until ? `\nVálido hasta: ${budget.valid_until}` : "";
-    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nAdjunto el presupuesto en PDF para que puedas revisarlo con todos los conceptos, importes e IVA desglosados.\n\nResumen:\nPresupuesto: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}${validUntilLine}\n\nPuedes responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\nKepa`;
+    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nAdjunto el presupuesto en PDF para que puedas revisarlo con todos los conceptos, importes e IVA desglosados.\n\nResumen:\nPresupuesto: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}${validUntilLine}\n\nPuedes responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\n${COMPANY_PROFILE.ownerName}`;
 
     const gmailParams = new URLSearchParams({
       view: "cm",
@@ -277,25 +278,20 @@ export default function PresupuestoDetailPage() {
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">MARTIN OYARZABAL, IVAN</h2>
-              <p className="text-sm text-gray-500">NIF: 16063731W</p>
-              <p className="text-sm text-gray-500">Lehendakari Aguirre 7b 2 derecha</p>
-              <p className="text-sm text-gray-500">48640 Berango, Bizkaia</p>
-              <p className="text-sm text-gray-500">Teléfono: 609421750</p>
-              <p className="text-sm text-gray-500">Email: sh.electricas@gmail.com</p>
+              <h2 className="text-xl font-bold text-gray-900">{COMPANY_PROFILE.legalName}</h2>
+              <p className="text-sm text-gray-500">NIF: {COMPANY_PROFILE.nif}</p>
+              {COMPANY_PROFILE.addressLine1 && <p className="text-sm text-gray-500">{COMPANY_PROFILE.addressLine1}</p>}
+              {COMPANY_PROFILE.addressLine2 && <p className="text-sm text-gray-500">{COMPANY_PROFILE.addressLine2}</p>}
+              <p className="text-sm text-gray-500">Teléfono: {COMPANY_PROFILE.phone}</p>
+              <p className="text-sm text-gray-500">Email: {COMPANY_PROFILE.email}</p>
             </div>
 
-            {/* Logo S&H inline */}
+            {/* Logo de empresa */}
             <div className="flex flex-col items-center mx-4">
-              <div className="flex items-center justify-center rounded-full border-4 border-gray-900" style={{ width: "120px", height: "120px", position: "relative" }}>
-                <div className="flex items-center justify-center rounded-full border-2 border-red-600" style={{ width: "100px", height: "100px", backgroundColor: "#1a1a1a" }}>
-                  <div className="flex flex-col items-center">
-                    <span className="text-white font-bold" style={{ fontSize: "28px", lineHeight: "1" }}>S&H</span>
-                    <span className="text-red-600 font-bold" style={{ fontSize: "16px", lineHeight: "1.2" }}>⚡</span>
-                  </div>
-                </div>
+              <div className="flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-800 shadow-md ring-1 ring-white/10" style={{ width: "90px", height: "90px" }}>
+                <span className="text-white font-bold text-2xl tracking-wider">{COMPANY_PROFILE.tradeName.slice(0, 3).toUpperCase()}</span>
               </div>
-              <span className="text-xs font-bold text-gray-800 mt-1 tracking-wider">S&H ELÉCTRICAS</span>
+              <span className="text-xs font-bold text-gray-800 mt-2 tracking-wider uppercase">{COMPANY_PROFILE.tradeName}</span>
             </div>
 
             <div className="text-right">

@@ -215,6 +215,25 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "precio_coste", def: "REAL DEFAULT 0" },
   ]);
 
+  await ensureColumns(db, "company_settings", [
+    { name: "trade_name", def: "TEXT" },
+    { name: "legal_name", def: "TEXT" },
+    { name: "owner_name", def: "TEXT" },
+    { name: "nif", def: "TEXT" },
+    { name: "address_line1", def: "TEXT" },
+    { name: "address_line2", def: "TEXT" },
+    { name: "phone", def: "TEXT" },
+    { name: "email", def: "TEXT" },
+    { name: "iban", def: "TEXT" },
+    { name: "bank_name", def: "TEXT" },
+    { name: "invoice_series_prefix", def: "TEXT DEFAULT 'FAC-'" },
+    { name: "budget_series_prefix", def: "TEXT DEFAULT 'PRES-'" },
+    { name: "work_order_series_prefix", def: "TEXT DEFAULT 'PT-'" },
+    { name: "default_tax_rate", def: "REAL DEFAULT 21" },
+    { name: "theme_color", def: "TEXT DEFAULT '#2563eb'" },
+    { name: "updated_at", def: "TEXT" },
+  ]);
+
   // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
   // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
@@ -476,6 +495,26 @@ export async function initializeDatabase(): Promise<void> {
       precio_unitario REAL DEFAULT 0,
       sort_order INTEGER DEFAULT 0,
       FOREIGN KEY (parte_id) REFERENCES partes_trabajo(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS company_settings (
+      id TEXT PRIMARY KEY,
+      trade_name TEXT,
+      legal_name TEXT,
+      owner_name TEXT,
+      nif TEXT,
+      address_line1 TEXT,
+      address_line2 TEXT,
+      phone TEXT,
+      email TEXT,
+      iban TEXT,
+      bank_name TEXT,
+      invoice_series_prefix TEXT DEFAULT 'FAC-',
+      budget_series_prefix TEXT DEFAULT 'PRES-',
+      work_order_series_prefix TEXT DEFAULT 'PT-',
+      default_tax_rate REAL DEFAULT 21,
+      theme_color TEXT DEFAULT '#2563eb',
+      updated_at TEXT DEFAULT (datetime('now'))
     );
   `);
 

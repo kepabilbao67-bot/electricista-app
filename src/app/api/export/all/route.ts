@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { checkExportSecret } from "@/lib/export-guard";
+import { COMPANY_PROFILE } from "@/lib/company-profile";
+import { APP_CONFIG } from "@/config/app-config";
 
 // Export all data as JSON (for backup or import to Airtable/Notion/Sheets)
 export async function GET(request: NextRequest) {
@@ -26,13 +28,19 @@ export async function GET(request: NextRequest) {
     const visits = await db.execute("SELECT * FROM visits ORDER BY date DESC");
     const communications = await db.execute("SELECT * FROM communications ORDER BY created_at DESC");
 
+    const fullAddress = [COMPANY_PROFILE.addressLine1, COMPANY_PROFILE.addressLine2]
+      .filter(Boolean)
+      .join(", ");
+
     const data = {
       exportDate: new Date().toISOString(),
       emisor: {
-        nombre: "MARTIN OYARZABAL, IVAN",
-        nif: "16063731W",
-        direccion: "Lehendakari Aguirre 7b 2 derecha, 48640 Berango, Bizkaia",
-        iban: "ES66.0182.0450.1102.0150.3156",
+        nombre: COMPANY_PROFILE.legalName,
+        nif: COMPANY_PROFILE.nif,
+        direccion: fullAddress,
+        iban: APP_CONFIG.company.iban,
+        telefono: COMPANY_PROFILE.phone,
+        email: COMPANY_PROFILE.email,
       },
       clients: clients.rows,
       invoices: invoices.rows,
@@ -47,7 +55,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(JSON.stringify(data, null, 2), {
       headers: {
         "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="electricista_backup_${new Date().toISOString().split("T")[0]}.json"`,
+        "Content-Disposition": `attachment; filename="backup_${new Date().toISOString().split("T")[0]}.json"`,
       },
     });
   } catch {

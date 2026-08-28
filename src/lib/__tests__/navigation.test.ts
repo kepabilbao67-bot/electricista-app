@@ -24,6 +24,7 @@ const ORIGINAL_NAV_ELECTRICISTA = [
   { href: "/catalogo", label: "Servicios" },
   { href: "/normativa", label: "Normativa" },
   { href: "/exportar", label: "Exportar" },
+  { href: "/configuracion", label: "Configuración" },
 ];
 
 describe("navigation: electricista (backward compat)", () => {

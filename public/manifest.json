@@ -1,7 +1,7 @@
 {
-  "name": "Autónomo 360",
-  "short_name": "Autónomo360",
-  "description": "Plataforma de gestión integral para electricistas y profesionales autónomos",
+  "name": "Gestión Profesional 360",
+  "short_name": "Gestión 360",
+  "description": "Software de gestión integral para autónomos, profesionales y empresas",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -10,7 +10,7 @@
   "categories": ["business", "finance", "productivity"],
   "icons": [
     {
-      "src": "/images/logo.svg",
+      "src": "/logo-generic.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

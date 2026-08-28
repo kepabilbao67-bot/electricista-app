@@ -25,6 +25,7 @@ import {
   Paintbrush,
   Building2,
   Wrench,
+  Settings,
 } from "lucide-react";
 
 /**
@@ -56,6 +57,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "paintbrush": Paintbrush,
   "building-2": Building2,
   "wrench": Wrench,
+  "settings": Settings,
 };
 
 /**

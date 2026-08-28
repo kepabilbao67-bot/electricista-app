@@ -40,7 +40,7 @@ export default function PlantillaParteTrabajoPage() {
         <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3 mb-4">
           <div>
             <h2 className="text-base font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
-            <p className="text-[10px] text-slate-700 mt-0.5">{COMPANY_PROFILE.ownerName} — Electricista profesional</p>
+            <p className="text-[10px] text-slate-700 mt-0.5">{COMPANY_PROFILE.ownerName} — Servicios Profesionales</p>
             <p className="text-[10px] text-slate-700">Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
           </div>
           <div className="text-right">

@@ -8,6 +8,7 @@ import { ArrowLeft, Printer, Trash2, Loader2, Pencil, X, FileText } from "lucide
 import ParteForm from "@/components/ParteForm";
 import { getTrabajoColorClass } from "@/components/ParteForm";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { COMPANY_PROFILE } from "@/lib/company-profile";
 import type { ParteFormData, TrabajoLine, MaterialLine } from "@/components/ParteForm";
 
 interface TrabajoDB {
@@ -240,8 +241,8 @@ function ParteTrabajoDetail() {
         {/* CABECERA — compact inline */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 print:border-slate-900 pb-3 mb-3 print:break-inside-avoid break-inside-avoid">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">S&H ELÉCTRICAS</h2>
-            <p className="text-xs text-slate-600 mt-0.5">Iván Martín Oyarzabal · Tel: 609 421 750</p>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
+            <p className="text-xs text-slate-600 mt-0.5">{COMPANY_PROFILE.ownerName} · Tel: {COMPANY_PROFILE.phone}</p>
           </div>
           <div className="text-right">
             <h3 className="text-base font-bold text-slate-900 uppercase tracking-wide">Parte de Trabajo</h3>

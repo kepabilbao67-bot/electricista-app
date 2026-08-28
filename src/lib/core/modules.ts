@@ -36,6 +36,7 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
   { id: "catalog", href: "/catalogo", label: "Servicios", iconKey: "package" },
   { id: "normativa", href: "/normativa", label: "Normativa", iconKey: "book-open" },
   { id: "export", href: "/exportar", label: "Exportar", iconKey: "download" },
+  { id: "settings", href: "/configuracion", label: "Configuración", iconKey: "settings" },
 ] as const;
 
 /**

@@ -76,7 +76,8 @@ export type ModuleId =
   | "assistant"
   | "measurements"
   | "signatures"
-  | "email";
+  | "email"
+  | "settings";
 
 // --- Catalog ---
 

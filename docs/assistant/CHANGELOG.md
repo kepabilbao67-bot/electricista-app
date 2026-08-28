@@ -1,4 +1,13 @@
-# Changelog del Asistente S&H Eléctricas
+# Changelog del Asistente
+
+## 2026-08-27-v14 — Transformación SaaS White-Label y Módulo Configuración
+
+- Sanitización total de datos hardcodeados en el código base (IBANs, NIFs, teléfonos, nombres personales).
+- Creación de `src/config/app-config.ts` y `.env.example` con soporte para variables de entorno de marca e identidad (`NEXT_PUBLIC_*`).
+- Nuevo panel de ajustes en `/configuracion` con formulario para datos de empresa, NIF, dirección, contacto, IBAN bancario y series de facturación.
+- Persistencia en base de datos mediante tabla `company_settings` e integración en el Sidebar de navegación.
+- Asset de marca genérico `public/logo-generic.svg` y actualización de `public/manifest.json`.
+- Guías de usuario y comercial `README-CLIENTE.md` y `docs/GUIA-CONFIGURACION.md`.
 
 ## 2026-08-27-v13 — Sistema de Diseño, UX, Ilustraciones y PWA
 
