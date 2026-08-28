@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Printer } from "lucide-react";
 import { COMPANY_PROFILE } from "@/lib/company-profile";
+import { APP_CONFIG } from "@/config/app-config";
 
 const ROWS_TRABAJOS = 22;
 const ROWS_MATERIALES = 22;
@@ -38,10 +39,15 @@ export default function PlantillaParteTrabajoPage() {
 
         {/* CABECERA */}
         <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3 mb-4">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
-            <p className="text-[10px] text-slate-700 mt-0.5">{COMPANY_PROFILE.ownerName} — Servicios Profesionales</p>
-            <p className="text-[10px] text-slate-700">Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white shrink-0 print:border print:border-slate-300">
+              <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-8 w-8 object-contain" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
+              <p className="text-[10px] text-slate-700 mt-0.5">{COMPANY_PROFILE.ownerName || COMPANY_PROFILE.legalName} — Servicios Profesionales</p>
+              <p className="text-[10px] text-slate-700">Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
+            </div>
           </div>
           <div className="text-right">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Parte de Trabajo</h3>

@@ -6,6 +6,7 @@ import { ArrowLeft, Printer, FileText, Send, Pencil, Mail, ClipboardCheck } from
 import { showToast } from "@/components/Toast";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { COMPANY_PROFILE } from "@/lib/company-profile";
+import { APP_CONFIG } from "@/config/app-config";
 
 interface BudgetItem {
   id: string;
@@ -288,10 +289,10 @@ export default function PresupuestoDetailPage() {
 
             {/* Logo de empresa */}
             <div className="flex flex-col items-center mx-4">
-              <div className="flex items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-800 shadow-md ring-1 ring-white/10" style={{ width: "90px", height: "90px" }}>
-                <span className="text-white font-bold text-2xl tracking-wider">{COMPANY_PROFILE.tradeName.slice(0, 3).toUpperCase()}</span>
+              <div className="flex items-center justify-center rounded-2xl bg-slate-900 shadow-md ring-1 ring-slate-200 p-2" style={{ width: "80px", height: "80px" }}>
+                <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-14 w-14 object-contain" />
               </div>
-              <span className="text-xs font-bold text-gray-800 mt-2 tracking-wider uppercase">{COMPANY_PROFILE.tradeName}</span>
+              <span className="text-[11px] font-bold text-gray-800 mt-1.5 tracking-wider uppercase">{COMPANY_PROFILE.tradeName}</span>
             </div>
 
             <div className="text-right">

@@ -380,12 +380,17 @@ export default function FacturaDetailPage() {
 
         {/* Header */}
         <div className="flex justify-between mb-8 pb-6 border-b border-slate-100 print:border-slate-300 print:break-inside-avoid">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">{COMPANY_PROFILE.legalName}</h2>
-            <p className="text-sm text-slate-500 mt-1">NIF: {COMPANY_PROFILE.nif}</p>
-            {COMPANY_PROFILE.addressLine1 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine1}</p>}
-            {COMPANY_PROFILE.addressLine2 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine2}</p>}
-            <p className="text-sm text-slate-500 mt-2 font-medium">Tel: {COMPANY_PROFILE.phone}</p>
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white shrink-0 print:border print:border-slate-300">
+              <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-9 w-9 object-contain" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{COMPANY_PROFILE.legalName}</h2>
+              <p className="text-sm text-slate-500 mt-0.5">NIF: {COMPANY_PROFILE.nif}</p>
+              {COMPANY_PROFILE.addressLine1 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine1}</p>}
+              {COMPANY_PROFILE.addressLine2 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine2}</p>}
+              <p className="text-sm text-slate-500 mt-1 font-medium">Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
+            </div>
           </div>
           <div className="text-right">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-100 print:border-slate-300 mb-2">

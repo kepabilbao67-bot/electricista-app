@@ -9,6 +9,7 @@ import ParteForm from "@/components/ParteForm";
 import { getTrabajoColorClass } from "@/components/ParteForm";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { COMPANY_PROFILE } from "@/lib/company-profile";
+import { APP_CONFIG } from "@/config/app-config";
 import type { ParteFormData, TrabajoLine, MaterialLine } from "@/components/ParteForm";
 
 interface TrabajoDB {
@@ -240,9 +241,14 @@ function ParteTrabajoDetail() {
 
         {/* CABECERA — compact inline */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 print:border-slate-900 pb-3 mb-3 print:break-inside-avoid break-inside-avoid">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
-            <p className="text-xs text-slate-600 mt-0.5">{COMPANY_PROFILE.ownerName} · Tel: {COMPANY_PROFILE.phone}</p>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white shrink-0 print:border print:border-slate-300">
+              <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-8 w-8 object-contain" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
+              <p className="text-xs text-slate-600 mt-0.5">{COMPANY_PROFILE.ownerName || COMPANY_PROFILE.legalName} · Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
+            </div>
           </div>
           <div className="text-right">
             <h3 className="text-base font-bold text-slate-900 uppercase tracking-wide">Parte de Trabajo</h3>
