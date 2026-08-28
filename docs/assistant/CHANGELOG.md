@@ -1,6 +1,12 @@
 # Changelog del Asistente
 
-## 2026-08-27-v14 — Transformación SaaS White-Label y Módulo Configuración
+## 2026-08-28-v15 — Endpoint Seguro de API para Prospector B2B
+
+- Creación de `src/app/api/prospector/route.ts` que expone la lógica verificada de prospección B2B.
+- Autenticación inline mediante Basic Auth o Bearer token (`PROSPECTOR_API_KEY`), sin modificar `middleware.ts`.
+- Validación estricta de parámetros (`sector`, `location`, `limit`) y control de errores sin exponer stack traces.
+- Cumplimiento de privacidad: aviso de consentimiento explícito y no almacenamiento de PII sin autorización.
+- Actualización de `src/lib/assistant/app-knowledge.ts`, `knowledge-version.ts` y `docs/assistant/MODULES.md`.
 
 - Sanitización total de datos hardcodeados en el código base (IBANs, NIFs, teléfonos, nombres personales).
 - Creación de `src/config/app-config.ts` y `.env.example` con soporte para variables de entorno de marca e identidad (`NEXT_PUBLIC_*`).

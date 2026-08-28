@@ -268,6 +268,25 @@ export const APP_MODULES: AppModule[] = [
     limitations: [],
     usage: "Ve a /configuracion. Modifica los campos deseados y pulsa 'Guardar cambios'.",
   },
+  {
+    name: "Prospector B2B",
+    route: "/api/prospector",
+    status: "PARCIAL",
+    description: "Motor de búsqueda, prospección e investigación B2B verificada para captación comercial.",
+    features: [
+      "Búsqueda geolocalizada por sector y ubicación mediante OpenStreetMap / Overpass",
+      "Investigación de presencia web, scoring de oportunidad y borradores de contacto personalizados",
+      "Integridad estricta: distinción entre datos verificados e inferidos, sin invención de PII ni URLs falsas",
+      "Autenticación inline protegida contra accesos no autorizados",
+    ],
+    limitations: [
+      "Endpoint de API backend; requiere credenciales de acceso y consentimiento del usuario final",
+    ],
+    usage: "Realiza una petición POST autenticada a /api/prospector con sector y location en el cuerpo JSON.",
+    warnings: [
+      "Requiere consentimiento explícito del usuario final. No almacena PII sin autorización.",
+    ],
+  },
 ];
 
 /**

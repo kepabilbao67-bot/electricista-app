@@ -15,6 +15,8 @@
 | Comunicaciones | /comunicaciones | PARCIAL | Plantillas seguras y wa.me; registra preparación, no confirma envío |
 | Asistente/Normativa | /normativa | REAL | Chat IA + fallback offline, REBT, negocio |
 | Exportar | /exportar | REAL | CSV + JSON backup |
+| Configuración | /configuracion | REAL | Personalización White-Label (datos empresa, series, IVA e IBAN) |
+| Prospector B2B | /api/prospector | PARCIAL | Endpoint de prospección e investigación B2B verificada |
 
 ## Estados
 
