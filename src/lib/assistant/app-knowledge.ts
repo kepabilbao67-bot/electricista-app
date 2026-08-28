@@ -103,6 +103,7 @@ export const APP_MODULES: AppModule[] = [
       "Fecha de validez con detección de caducidad",
       "Vista imprimible/PDF",
       "Detección de estado offline y reintentos seguros",
+      "Validación estricta de presupuestos con Zod (items, precios, impuestos)",
     ],
     limitations: [],
     usage: "Ve a /presupuestos. Haz clic en 'Nuevo presupuesto'. Usa el generador automático para calcular por estancias o añade líneas manuales.",

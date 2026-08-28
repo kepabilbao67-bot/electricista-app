@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase, generateBudgetNumber } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { budgetSchema } from "@/lib/validations/budget-schema";
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,18 +45,33 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rawBody = await request.json();
+    const validationResult = budgetSchema.safeParse(rawBody);
+
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join(", ");
+      return NextResponse.json(
+        {
+          error: "Datos de presupuesto inválidos",
+          details: errorMessages,
+          issues: validationResult.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = validationResult.data;
     await initializeDatabase();
     const db = getDbClient();
-    const body = await request.json();
     const id = uuidv4();
     const number = await generateBudgetNumber();
 
-    const subtotal = body.items.reduce(
+    const subtotal = data.items.reduce(
       (acc: number, item: { quantity: number; unit_price: number }) =>
         acc + item.quantity * item.unit_price,
       0
     );
-    const taxRate = body.tax_rate ?? 21;
+    const taxRate = data.tax_rate ?? 21;
     const taxAmount = subtotal * (taxRate / 100);
     const total = subtotal + taxAmount;
 
@@ -65,21 +81,21 @@ export async function POST(request: NextRequest) {
       args: [
         id,
         number,
-        body.client_id || null,
-        body.date || new Date().toISOString().split("T")[0],
-        body.valid_until || null,
-        body.status || "draft",
+        data.client_id,
+        data.date || new Date().toISOString().split("T")[0],
+        data.valid_until || null,
+        data.status || "draft",
         subtotal,
         taxRate,
         taxAmount,
         total,
-        body.notes || null,
-        body.notes_color || null,
+        data.notes || null,
+        data.notes_color || null,
       ],
     });
 
-    for (let i = 0; i < body.items.length; i++) {
-      const item = body.items[i];
+    for (let i = 0; i < data.items.length; i++) {
+      const item = data.items[i];
       await db.execute({
         sql: `INSERT INTO budget_items (id, budget_id, description, quantity, unit_price, total, sort_order)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,

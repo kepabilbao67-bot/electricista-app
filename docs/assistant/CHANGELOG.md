@@ -1,5 +1,11 @@
 # Changelog del Asistente S&H Eléctricas
 
+## 2026-08-27-v12 — Validación de presupuestos con Zod (Sprint 7)
+
+- Implementación de `src/lib/validations/budget-schema.ts` para validación estricta de presupuestos.
+- Validación de `client_id`, conceptos (mínimo 1, descripción >= 2 caracteres, cantidad > 0, precio >= 0) y tipo impositivo en `POST /api/budgets`.
+- Retorno HTTP 400 descriptivo en caso de payloads inválidos.
+
 ## 2026-08-27-v11 — Validación estricta con Zod (Sprint 6)
 
 - Implementación de validación de esquemas con Zod en `src/lib/validations/client-schema.ts`.
