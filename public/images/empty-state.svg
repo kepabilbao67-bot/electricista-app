@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="box-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EFF6FF" />
+      <stop offset="100%" stop-color="#DBEAFE" />
+    </linearGradient>
+    <linearGradient id="doc-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F8FAFC" />
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="80" fill="#F1F5F9"/>
+  <circle cx="100" cy="100" r="60" fill="url(#box-grad)"/>
+  
+  <!-- Folder/Document Shape -->
+  <rect x="60" y="65" width="80" height="75" rx="10" fill="url(#doc-grad)" stroke="#93C5FD" stroke-width="2"/>
+  <path d="M75 85H125M75 100H115M75 115H100" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+  
+  <!-- Floating Sparkles -->
+  <path d="M145 60L148 68L156 71L148 74L145 82L142 74L134 71L142 68Z" fill="#F59E0B"/>
+  <circle cx="50" cy="120" r="4" fill="#3B82F6"/>
+  <circle cx="150" cy="130" r="3" fill="#10B981"/>
+</svg>

@@ -1,5 +1,13 @@
 # Changelog del Asistente S&H Eléctricas
 
+## 2026-08-27-v13 — Sistema de Diseño, UX, Ilustraciones y PWA
+
+- Creación de `src/lib/design-system.ts` con paleta cromática, gradientes, sombras y radios estándar.
+- Nuevos componentes UI atómicos: `Card`, `Badge`, `Button`, `Skeleton`, `EmptyState` y `OnboardingBanner`.
+- Rediseño visual del Dashboard con KPI cards translúcidas, gráfico mensual mejorado, onboarding inicial y alertas estilizadas.
+- Assets vectoriales SVG en `public/images/` (`logo.svg`, `hero-bg.svg`, `empty-state.svg`, `success.svg`, `error.svg`).
+- PWA completa con `manifest.json` y `sw.js` (Service Worker) para soporte de app instalable y caché offline.
+
 ## 2026-08-27-v12 — Validación de presupuestos con Zod (Sprint 7)
 
 - Implementación de `src/lib/validations/budget-schema.ts` para validación estricta de presupuestos.
