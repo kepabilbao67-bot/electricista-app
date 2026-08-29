@@ -47,6 +47,18 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: verticalConfig.brand.shortName,
   },
+  openGraph: {
+    title: `${verticalConfig.brand.tradeName} — Software de Gestión Profesional`,
+    description: verticalConfig.brand.description,
+    type: "website",
+    locale: "es_ES",
+    siteName: verticalConfig.brand.tradeName,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: verticalConfig.brand.tradeName,
+    description: verticalConfig.brand.description,
+  },
 };
 
 export default function RootLayout({
