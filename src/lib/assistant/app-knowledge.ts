@@ -31,7 +31,7 @@ export const APP_MODULES: AppModule[] = [
       "Comparativa mes actual vs anterior",
       "Acciones rápidas: nueva factura, presupuesto, tarea, cliente, mensaje",
       "Últimas 5 facturas y próximas tareas",
-      "Sistema de diseño centralizado, onboarding guiado de 3 pasos, cards de KPIs con gradientes y PWA instalable con Service Worker",
+      "Sistema de diseño centralizado, onboarding guiado de 3 pasos, cards de KPIs con gradientes, modo oscuro nativo y PWA instalable con Service Worker",
     ],
     limitations: [
       "Si la base de datos está vacía, muestra ceros",

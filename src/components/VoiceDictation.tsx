@@ -101,7 +101,7 @@ export default function VoiceDictation({
   if (!isSupported) {
     return (
       <span
-        className={`inline-flex items-center text-xs text-slate-400 p-1.5 rounded-lg bg-slate-50 border border-slate-200 cursor-not-allowed ${className}`}
+        className={`inline-flex items-center text-xs text-slate-400 dark:text-slate-500 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-not-allowed ${className}`}
         title="El dictado por voz no es compatible con este navegador."
       >
         <MicOff className="h-4 w-4" />
@@ -122,17 +122,17 @@ export default function VoiceDictation({
         }
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${
           isListening
-            ? "bg-rose-50 border-rose-300 text-rose-700 animate-pulse ring-2 ring-rose-200"
-            : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900"
+            ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 animate-pulse ring-2 ring-rose-200 dark:ring-rose-900"
+            : "bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
         } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${className}`}
       >
-        <Mic className={`h-3.5 w-3.5 ${isListening ? "text-rose-600" : "text-slate-500"}`} />
+        <Mic className={`h-3.5 w-3.5 ${isListening ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`} />
         <span>{isListening ? "Escuchando..." : "Dictar"}</span>
       </button>
 
       {error && (
         <span
-          className="text-xs text-rose-500 flex items-center gap-0.5"
+          className="text-xs text-rose-500 dark:text-rose-400 flex items-center gap-0.5"
           title={error}
         >
           <AlertCircle className="h-3.5 w-3.5" />

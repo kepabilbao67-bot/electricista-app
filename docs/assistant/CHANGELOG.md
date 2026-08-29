@@ -1,5 +1,11 @@
 # Changelog del Asistente
 
+## 2026-08-30-v22 — Modo Oscuro Nativo y Accesibilidad Visual (Tailwind CSS)
+- Implementación de `src/lib/theme.ts` para persistencia en `localStorage` y detección automática de preferencia del sistema (`prefers-color-scheme`).
+- Creación de `src/components/ThemeToggle.tsx` con interruptor accesible claro/oscuro (iconos Sun/Moon).
+- Script anti-FOUC en `<head>` de `src/app/layout.tsx` para evitar parpadeos al cargar.
+- Variantes `dark:` integradas en `globals.css` (tarjetas, inputs, tablas y botones), `MobileNav`, `VoiceDictation` y vistas del CRM.
+
 ## 2026-08-30-v21 — Dictado por Voz Nativo en Leads (Web Speech API)
 - Creación de `src/components/VoiceDictation.tsx` utilizando la Web Speech API nativa del navegador para transcripción sin dependencias externas ni costes de API.
 - Integración del botón de dictado en el campo "Mensaje / Notas" del formulario de Leads (`/leads`) con concatenación reactiva.

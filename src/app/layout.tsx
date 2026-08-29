@@ -3,6 +3,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ToastContainer } from "@/components/Toast";
+import ThemeToggle from "@/components/ThemeToggle";
 import { loadVerticalConfig } from "@/lib/core/vertical-loader";
 import { getActiveModules } from "@/lib/core/modules";
 import { loadCompanyProfile } from "@/lib/core/company";
@@ -54,10 +55,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var stored = localStorage.getItem('autonomo360_theme');
+                  var isDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <style>{`
           @media print {
             @page {
@@ -135,10 +153,13 @@ export default function RootLayout({
           }
         `}</style>
       </head>
-      <body className="bg-slate-50 text-slate-900 antialiased">
+      <body className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 antialiased">
         <div className="app-shell flex h-[100dvh] overflow-hidden">
           <Sidebar navItems={navItems} brand={sidebarBrand} />
           <div className="app-content flex flex-1 flex-col overflow-hidden min-w-0">
+            <header className="hidden md:flex h-12 items-center justify-end px-6 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md">
+              <ThemeToggle />
+            </header>
             <MobileNav navItems={navItems} brand={mobileNavBrand} />
             <main className="app-main flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 lg:p-8">
               {children}

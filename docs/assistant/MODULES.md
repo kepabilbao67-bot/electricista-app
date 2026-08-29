@@ -2,7 +2,7 @@
 
 | Módulo | Ruta | Estado | Descripción |
 |--------|------|--------|-------------|
-| Dashboard | / | REAL | KPIs, gráfico mensual, alertas, acciones rápidas |
+| Dashboard | / | REAL | KPIs, gráfico mensual, alertas, modo oscuro nativo, acciones rápidas |
 | Clientes | /clientes | REAL | CRUD, WhatsApp directo, tipos particular/empresa |
 | CRM comercial | /crm | REAL | Pipeline, oportunidades, valor estimado, próxima acción, tareas e historial |
 | Leads | /leads | REAL | Captación con protección anti-spam, dictado por voz nativo y conversión atómica |
