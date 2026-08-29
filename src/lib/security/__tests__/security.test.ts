@@ -79,4 +79,39 @@ describe("Autónomo 360 - Capa de Seguridad Anti-Spam y Rate Limiting", () => {
     const reqDefault = new NextRequest("http://localhost/api/test");
     assert.equal(getClientIp(reqDefault), "127.0.0.1");
   });
+
+  // --- CASOS DE BORDE (EDGE CASES) ---
+
+  test("6. [Borde] validateHoneypot detecta inyecciones de scripts o payloads complejos en honeypot", () => {
+    const maliciousPayloads = [
+      "<script>alert(1)</script>",
+      "   spaces_with_text   ",
+      12345,
+      { malicious: true },
+      ["bot", "data"],
+    ];
+
+    for (const payload of maliciousPayloads) {
+      const res = validateHoneypot(payload as any);
+      assert.equal(res.isSpam, true, `Payload debe ser detectado como spam: ${JSON.stringify(payload)}`);
+    }
+  });
+
+  test("7. [Borde] validateHoneypot maneja timestamps futuros o inválidos con robustez", () => {
+    const futureTimestamp = Date.now() + 100000;
+    // Si el timestamp está en el futuro, no es un comportamiento humano válido
+    const futureResult = validateHoneypot("", futureTimestamp, 800);
+    assert.equal(futureResult.isSpam, true);
+
+    // Timestamps no numéricos o NaN no deben romper la ejecución
+    const nanResult = validateHoneypot("", "invalid-date" as any, 800);
+    assert.equal(nanResult.isSpam, false);
+  });
+
+  test("8. [Borde] checkRateLimit maneja IPs vacías o con espacios asignando fallback seguro", () => {
+    const emptyIp = "   ";
+    assert.equal(checkRateLimit(emptyIp, 2).allowed, true);
+    assert.equal(checkRateLimit(emptyIp, 2).allowed, true);
+    assert.equal(checkRateLimit(emptyIp, 2).allowed, false);
+  });
 });
