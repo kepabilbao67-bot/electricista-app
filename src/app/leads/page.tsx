@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, UserPlus, RefreshCw, Trash2, ArrowRightCircle } from "lucide-react";
+import Link from "next/link";
+import { Plus, UserPlus, RefreshCw, Trash2, ArrowRightCircle, FileText } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
@@ -381,6 +382,15 @@ export default function LeadsPage() {
                     <span className="text-xs text-slate-500">{formatDate(lead.created_at)}</span>
                   </td>
                   <td className="px-4 py-3.5 text-right">
+                    {lead.status === "convertido" && (
+                      <Link
+                        href={`/partes-trabajo/nuevo?cliente=${encodeURIComponent(lead.name)}`}
+                        className="rounded-lg p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-800 transition-colors inline-block"
+                        title="Crear Parte de Trabajo para este cliente"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                      </Link>
+                    )}
                     {lead.status !== "convertido" && lead.status !== "descartado" && (
                       <button
                         onClick={() => handleConvertLead(lead)}

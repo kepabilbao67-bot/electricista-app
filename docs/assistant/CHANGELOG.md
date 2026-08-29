@@ -1,5 +1,12 @@
 # Changelog del Asistente
 
+## 2026-08-30-v24 — Parte de Trabajo Imprimible A4 y Flujo Nativo
+- Creación de la ruta dinámica imprimible `/parte-trabajo/[id]` optimizada para formato A4 con reglas `@media print` nativas (`print:hidden`, `print:shadow-none`, `print:border-none`).
+- Botón de acción dual "Marcar como Completado e Imprimir" que actualiza el estado a `TRABAJO_COMPLETADO` vía `PATCH /api/parte-trabajo/[id]` y lanza `window.print()`.
+- Endpoints de API unificados `GET` y `PATCH` en `/api/parte-trabajo/[id]` con validación estricta de estados de trabajo.
+- Enlace directo "Ver / Crear Parte de Trabajo" integrado en las filas de leads convertidos en la tabla del CRM (`/leads`).
+- Suite de pruebas unitarias en `src/lib/__tests__/parte-trabajo.test.ts` (4 pruebas que cubren 404, validación 400 de estado, actualización atómica y consulta de líneas/materiales).
+
 ## 2026-08-30-v23 — Módulo Universal de Ayuda y Sugerencias
 - Creación de la ruta interactiva `/ayuda` con base de conocimiento (FAQs) desplegable y buzón directo de sugerencias y reporte de bugs.
 - Integración de `<VoiceDictation />` nativo en el campo de descripción/mensaje de feedback.

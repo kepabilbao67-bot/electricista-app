@@ -229,3 +229,66 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await initializeDatabase();
+    const db = getDbClient();
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+
+    const check = await db.execute({
+      sql: "SELECT id FROM partes_trabajo WHERE id = ?",
+      args: [id],
+    });
+
+    if (check.rows.length === 0) {
+      return NextResponse.json(
+        { error: "Parte de trabajo no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    const VALID_STATUSES = [
+      "borrador",
+      "pendiente",
+      "en_progreso",
+      "completado",
+      "TRABAJO_COMPLETADO",
+      "facturado",
+      "cancelado",
+    ];
+
+    const status = body?.estado || body?.status;
+    if (!status || !VALID_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: `Estado inválido. Debe ser uno de: ${VALID_STATUSES.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date().toISOString();
+    await db.execute({
+      sql: "UPDATE partes_trabajo SET estado = ?, updated_at = ? WHERE id = ?",
+      args: [status, now, id],
+    });
+
+    const updated = await db.execute({
+      sql: "SELECT * FROM partes_trabajo WHERE id = ?",
+      args: [id],
+    });
+
+    return NextResponse.json({
+      success: true,
+      parte: updated.rows[0],
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Error al actualizar el estado del parte de trabajo" },
+      { status: 500 }
+    );
+  }
+}
