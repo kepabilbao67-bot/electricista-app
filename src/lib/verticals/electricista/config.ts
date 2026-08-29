@@ -63,6 +63,7 @@ const ELECTRICISTA_MODULES: ModuleId[] = [
   "schedule",
   "catalog",
   "normativa",
+  "help",
   "export",
   "settings",
 ];

@@ -14,6 +14,7 @@
 | Catálogo | /catalogo | REAL | Materiales coste/venta, calculadora de márgenes |
 | Comunicaciones | /comunicaciones | PARCIAL | Plantillas seguras y wa.me; registra preparación, no confirma envío |
 | Asistente/Normativa | /normativa | REAL | Chat IA + fallback offline, REBT, negocio |
+| Ayuda y Sugerencias | /ayuda | REAL | FAQs interactivas, dictado por voz, reporte de bugs y buzon de sugerencias protegido con anti-spam |
 | Exportar | /exportar | REAL | CSV + JSON backup |
 | Configuración | /configuracion | REAL | Personalización White-Label (datos empresa, series, IVA e IBAN) |
 | Prospector B2B | /api/prospector | PARCIAL | Endpoint de prospección B2B verificada con Rate Limiting y Honeypot |

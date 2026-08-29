@@ -26,6 +26,7 @@ import {
   Building2,
   Wrench,
   Settings,
+  HelpCircle,
 } from "lucide-react";
 
 /**
@@ -58,6 +59,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "building-2": Building2,
   "wrench": Wrench,
   "settings": Settings,
+  "help-circle": HelpCircle,
 };
 
 /**

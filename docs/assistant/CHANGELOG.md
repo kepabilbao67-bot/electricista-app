@@ -1,5 +1,12 @@
 # Changelog del Asistente
 
+## 2026-08-30-v23 — Módulo Universal de Ayuda y Sugerencias
+- Creación de la ruta interactiva `/ayuda` con base de conocimiento (FAQs) desplegable y buzón directo de sugerencias y reporte de bugs.
+- Integración de `<VoiceDictation />` nativo en el campo de descripción/mensaje de feedback.
+- Protección anti-spam con `checkRateLimit` (15 req/min/IP) y validación de campo Honeypot (`_hp`).
+- Tabla de persistencia `feedback_submissions` en base de datos SQLite / Turso con migración idempotente.
+- Registro del módulo `"help"` en `MODULE_REGISTRY` y `nav-icons` (`help-circle`).
+
 ## 2026-08-30-v22 — Modo Oscuro Nativo y Accesibilidad Visual (Tailwind CSS)
 - Implementación de `src/lib/theme.ts` para persistencia en `localStorage` y detección automática de preferencia del sistema (`prefers-color-scheme`).
 - Creación de `src/components/ThemeToggle.tsx` con interruptor accesible claro/oscuro (iconos Sun/Moon).

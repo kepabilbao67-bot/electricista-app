@@ -240,6 +240,24 @@ export const APP_MODULES: AppModule[] = [
     usage: "Ve a /normativa. Escribe tu pregunta o usa las sugerencias rápidas. El asistente responde con información de normativa, precios del catálogo y consejos de negocio.",
   },
   {
+    name: "Ayuda y Sugerencias",
+    route: "/ayuda",
+    status: "REAL",
+    description: "Centro de ayuda con preguntas frecuentes, dictado por voz y buzón de sugerencias protegido con anti-spam.",
+    features: [
+      "Base de conocimiento interactiva con FAQs de Facturación, Partes, CRM y Seguridad",
+      "Formulario de envío de sugerencias, reportes de bugs y dudas",
+      "Dictado por voz nativo con Web Speech API en el campo de descripción",
+      "Protección anti-spam multicapa con Rate Limiting y Honeypot",
+      "Historial de aportaciones del usuario con badges de estado",
+      "Acceso directo a soporte por WhatsApp",
+    ],
+    limitations: [
+      "El soporte por WhatsApp abre la aplicación externa del usuario",
+    ],
+    usage: "Ve a /ayuda para consultar dudas comunes o enviar una propuesta de mejora con tu voz o teclado.",
+  },
+  {
     name: "Exportar",
     route: "/exportar",
     status: "REAL",

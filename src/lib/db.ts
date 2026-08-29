@@ -234,6 +234,15 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "updated_at", def: "TEXT" },
   ]);
 
+  await ensureColumns(db, "feedback_submissions", [
+    { name: "type", def: "TEXT NOT NULL DEFAULT 'sugerencia'" },
+    { name: "subject", def: "TEXT NOT NULL DEFAULT ''" },
+    { name: "message", def: "TEXT NOT NULL DEFAULT ''" },
+    { name: "email", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'recibido'" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+
   // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
   // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
@@ -515,6 +524,16 @@ export async function initializeDatabase(): Promise<void> {
       default_tax_rate REAL DEFAULT 21,
       theme_color TEXT DEFAULT '#2563eb',
       updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS feedback_submissions (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      message TEXT NOT NULL,
+      email TEXT,
+      status TEXT NOT NULL DEFAULT 'recibido',
+      created_at TEXT DEFAULT (datetime('now'))
     );
   `);
 
