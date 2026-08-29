@@ -80,6 +80,8 @@ export const APP_MODULES: AppModule[] = [
     description: "Pipeline de captación de clientes potenciales con estados de avance.",
     features: [
       "Crear leads con nombre, email, teléfono, origen, interés y mensaje",
+      "Dictado por voz nativo (Web Speech API) para redactar notas y mensajes con el micrófono",
+      "Protección anti-spam multicapa con Rate Limiting y Honeypot",
       "Estados: nuevo, contactado, cualificado, convertido, descartado",
       "Cambio de estado inline desde la tabla",
       "Persistencia en base de datos",

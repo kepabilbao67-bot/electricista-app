@@ -5,6 +5,7 @@ import { Plus, UserPlus, RefreshCw, Trash2, ArrowRightCircle } from "lucide-reac
 import { showToast } from "@/components/Toast";
 import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
 import ColorSelect from "@/components/ColorSelect";
+import VoiceDictation from "@/components/VoiceDictation";
 import { getTextColorClass } from "@/lib/text-colors";
 
 interface Lead {
@@ -294,7 +295,17 @@ export default function LeadsPage() {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">Mensaje</label>
+                <div className="flex items-center gap-2">
+                  <label className="block text-sm font-medium text-slate-700">Mensaje</label>
+                  <VoiceDictation
+                    onTranscriptComplete={(text) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        message: prev.message ? `${prev.message} ${text}` : text,
+                      }));
+                    }}
+                  />
+                </div>
                 <ColorSelect value={form.message_color} onChange={(v) => setForm({ ...form, message_color: v })} />
               </div>
               <textarea

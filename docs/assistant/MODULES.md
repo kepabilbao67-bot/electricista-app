@@ -5,7 +5,7 @@
 | Dashboard | / | REAL | KPIs, gráfico mensual, alertas, acciones rápidas |
 | Clientes | /clientes | REAL | CRUD, WhatsApp directo, tipos particular/empresa |
 | CRM comercial | /crm | REAL | Pipeline, oportunidades, valor estimado, próxima acción, tareas e historial |
-| Leads | /leads | REAL | Captación y conversión atómica a cliente + oportunidad |
+| Leads | /leads | REAL | Captación con protección anti-spam, dictado por voz nativo y conversión atómica |
 | Presupuestos | /presupuestos | REAL | Generador por zonas, crear parte de trabajo, conversión a factura, robustez offline |
 | Facturas | /facturas | REAL | Creación, TicketBAI (ver nota territorial), descuentos, estados, optimización de impresión. Solo borradores sin TicketBAI se pueden eliminar. |
 | Partes de trabajo | /partes-trabajo | REAL | Formulario, vista imprimible profesional optimizada (evita cortes de página), generar factura, colores por línea, persistencia, robustez offline. Plantilla /partes-trabajo/plantilla |
