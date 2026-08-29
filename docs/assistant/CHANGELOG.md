@@ -1,5 +1,12 @@
 # Changelog del Asistente
 
+## 2026-08-30-v25 — Dashboard de Analíticas y Métricas de Negocio (Recharts)
+- Creación de la ruta interactiva `/dashboard` con KPIs de negocio (leads totales, variación mensual, tasa de conversión, facturación cobrada y partes ejecutados).
+- Integración de gráficos interactivos y ligeros con `recharts` (evolución semanal en líneas, pipeline por estado en barras y desglose de servicios en donut).
+- Creación del endpoint `GET /api/analytics` con agregación de métricas de base de datos en tiempo real.
+- Tabla simplificada de últimos 5 leads con badges de estado y accesos rápidos.
+- Suite de pruebas unitarias en `src/lib/__tests__/analytics.test.ts` (4 pruebas que validan KPIs, cálculo de conversión, tendencia semanal y resiliencia ante datos vacíos).
+
 ## 2026-08-30-v24 — Parte de Trabajo Imprimible A4 y Flujo Nativo
 - Creación de la ruta dinámica imprimible `/parte-trabajo/[id]` optimizada para formato A4 con reglas `@media print` nativas (`print:hidden`, `print:shadow-none`, `print:border-none`).
 - Botón de acción dual "Marcar como Completado e Imprimir" que actualiza el estado a `TRABAJO_COMPLETADO` vía `PATCH /api/parte-trabajo/[id]` y lanza `window.print()`.

@@ -250,8 +250,15 @@ async function migrateSchema(db: Client): Promise<void> {
   // No se ejecuta automáticamente en arranque para evitar riesgos en producción.
 }
 
-export async function initializeDatabase(): Promise<void> {
-  const db = getDbClient();
+export async function initializeDatabase(client?: Client): Promise<void> {
+  const db = client || getDbClient();
+
+  try {
+    await db.execute("PRAGMA journal_mode = WAL;");
+    await db.execute("PRAGMA busy_timeout = 5000;");
+  } catch {
+    // Ignorar si el driver remoto no soporta PRAGMA
+  }
 
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS clients (

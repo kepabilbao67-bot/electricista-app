@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 
 describe("Autónomo 360 - Módulo de Parte de Trabajo Imprimible (v24)", () => {
   test("1. GET retorna 404 si el ID no existe", async () => {
-    const nonExistentId = "parte-inexistente-12345";
+    const nonExistentId = `parte-inexistente-${Date.now()}`;
     const req = new NextRequest(`http://localhost:3000/api/parte-trabajo/${nonExistentId}`);
     const res = await GET(req, { params: Promise.resolve({ id: nonExistentId }) });
 
@@ -19,12 +19,13 @@ describe("Autónomo 360 - Módulo de Parte de Trabajo Imprimible (v24)", () => {
   test("2. PATCH rechaza estados inválidos con 400", async () => {
     await initializeDatabase();
     const db = getDbClient();
-    const testId = `pt-test-${Date.now()}`;
+    const testId = `pt-test-${Date.now()}-${uuidv4().slice(0, 5)}`;
+    const testNum = `PT-${Date.now()}-1`;
 
     await db.execute({
       sql: `INSERT INTO partes_trabajo (id, numero, fecha, cliente, estado)
-            VALUES (?, 'PT-TEST-01', '2026-09-01', 'Cliente Prueba', 'borrador')`,
-      args: [testId],
+            VALUES (?, ?, '2026-09-01', 'Cliente Prueba', 'borrador')`,
+      args: [testId, testNum],
     });
 
     const req = new NextRequest(`http://localhost:3000/api/parte-trabajo/${testId}`, {
@@ -42,12 +43,13 @@ describe("Autónomo 360 - Módulo de Parte de Trabajo Imprimible (v24)", () => {
   test("3. PATCH actualiza el estado a TRABAJO_COMPLETADO correctamente", async () => {
     await initializeDatabase();
     const db = getDbClient();
-    const testId = `pt-test-${Date.now()}-2`;
+    const testId = `pt-test-${Date.now()}-${uuidv4().slice(0, 5)}`;
+    const testNum = `PT-${Date.now()}-2`;
 
     await db.execute({
       sql: `INSERT INTO partes_trabajo (id, numero, fecha, cliente, estado)
-            VALUES (?, 'PT-TEST-02', '2026-09-01', 'Cliente Prueba 2', 'pendiente')`,
-      args: [testId],
+            VALUES (?, ?, '2026-09-01', 'Cliente Prueba 2', 'pendiente')`,
+      args: [testId, testNum],
     });
 
     const req = new NextRequest(`http://localhost:3000/api/parte-trabajo/${testId}`, {
@@ -66,14 +68,15 @@ describe("Autónomo 360 - Módulo de Parte de Trabajo Imprimible (v24)", () => {
   test("4. GET retorna cabecera, líneas de trabajo y materiales asociados", async () => {
     await initializeDatabase();
     const db = getDbClient();
-    const testId = `pt-test-${Date.now()}-3`;
+    const testId = `pt-test-${Date.now()}-${uuidv4().slice(0, 5)}`;
+    const testNum = `PT-${Date.now()}-3`;
     const trabajoId = uuidv4();
     const materialId = uuidv4();
 
     await db.execute({
       sql: `INSERT INTO partes_trabajo (id, numero, fecha, cliente, estado)
-            VALUES (?, 'PT-TEST-03', '2026-09-01', 'Cliente Prueba 3', 'completado')`,
-      args: [testId],
+            VALUES (?, ?, '2026-09-01', 'Cliente Prueba 3', 'completado')`,
+      args: [testId, testNum],
     });
 
     await db.execute({
