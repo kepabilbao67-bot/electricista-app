@@ -219,6 +219,17 @@ export default function LeadsPage() {
         <div className="mb-6 card-static animate-scale-in">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Nuevo lead</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Honeypot anti-spam (invisible para usuarios reales) */}
+            <input
+              type="text"
+              name="_hp"
+              value={(form as any)._hp || ""}
+              onChange={(e) => setForm({ ...form, _hp: e.target.value } as any)}
+              style={{ display: "none" }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-sm font-medium text-slate-700">Nombre *</label>

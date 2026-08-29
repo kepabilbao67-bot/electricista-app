@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
+import { checkRateLimit, validateHoneypot, getClientIp } from "@/lib/security";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
@@ -21,12 +22,49 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // 1. Capa Anti-Spam: Rate Limiting
+  const clientIp = getClientIp(request);
+  const rateLimitResult = checkRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        error: "Demasiadas solicitudes. Límite de tasa excedido temporalmente.",
+        retryAfter: rateLimitResult.retryAfter,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimitResult.retryAfter || 60),
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  }
+
   try {
     await initializeDatabase();
     const db = getDbClient();
-    const body = await request.json();
+    let body: any;
 
-    if (!body.name || !body.name.trim()) {
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "El cuerpo de la solicitud debe ser un JSON válido." },
+        { status: 400 }
+      );
+    }
+
+    // 2. Capa Anti-Spam: Honeypot y Timestamp check
+    const honeypotResult = validateHoneypot(body?._hp, body?._ts);
+    if (honeypotResult.isSpam) {
+      return NextResponse.json(
+        { error: "Solicitud rechazada por filtros de seguridad automatizados." },
+        { status: 400 }
+      );
+    }
+
+    if (!body?.name || typeof body.name !== "string" || !body.name.trim()) {
       return NextResponse.json(
         { error: "El nombre es obligatorio" },
         { status: 400 }

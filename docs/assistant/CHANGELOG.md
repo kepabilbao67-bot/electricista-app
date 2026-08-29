@@ -1,5 +1,10 @@
 # Changelog del Asistente
 
+## 2026-08-29-v20.1 — Extensión de Protección Anti-Spam al CRM (Leads)
+- Aplicación de Rate Limiting en memoria y validación de Honeypot en `POST /api/leads`.
+- Inclusión del campo invisible de Honeypot (`_hp`) en el formulario de captación de leads de la interfaz `/leads`.
+- Suite de pruebas de seguridad para leads en `src/lib/__tests__/leads-security.test.ts` (3 tests añadidos).
+
 ## 2026-08-29-v20 — Capa Anti-Spam Nativa y Rate Limiting
 - Implementación de `src/lib/security/` con Rate Limiting en memoria (`rate-limiter.ts`), validación de Honeypot y control temporal de envíos (`honeypot.ts`), y extractor de IP (`client-ip.ts`).
 - Integración de Rate Limiting y Honeypot en `/api/prospector` para prevenir flooding y ataques automatizados sin dependencias externas.
