@@ -278,6 +278,7 @@ export const APP_MODULES: AppModule[] = [
       "Investigación de presencia web, scoring de oportunidad y borradores de contacto personalizados",
       "Integridad estricta: distinción entre datos verificados e inferidos, sin invención de PII ni URLs falsas",
       "Autenticación inline protegida contra accesos no autorizados",
+      "Protección anti-spam nativa multicapa con Rate Limiting en memoria y detección de Honeypot",
     ],
     limitations: [
       "Endpoint de API backend; requiere credenciales de acceso y consentimiento del usuario final",

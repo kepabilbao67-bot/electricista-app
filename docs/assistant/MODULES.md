@@ -16,7 +16,7 @@
 | Asistente/Normativa | /normativa | REAL | Chat IA + fallback offline, REBT, negocio |
 | Exportar | /exportar | REAL | CSV + JSON backup |
 | Configuración | /configuracion | REAL | Personalización White-Label (datos empresa, series, IVA e IBAN) |
-| Prospector B2B | /api/prospector | PARCIAL | Endpoint de prospección e investigación B2B verificada |
+| Prospector B2B | /api/prospector | PARCIAL | Endpoint de prospección B2B verificada con Rate Limiting y Honeypot |
 
 ## Estados
 

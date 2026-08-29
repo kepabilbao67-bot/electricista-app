@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { ProspectorEngine } from "@/server/prospector/engine";
+import { checkRateLimit, validateHoneypot, getClientIp } from "@/lib/security";
 import type { CompanySearchQuery } from "@/server/prospector/types";
 
 function checkAuthorization(request: NextRequest): boolean {
@@ -38,10 +39,30 @@ function checkAuthorization(request: NextRequest): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  // 1. Verificación de Autenticación
   if (!checkAuthorization(request)) {
     return NextResponse.json(
       { error: "No autorizado. Se requieren credenciales válidas." },
       { status: 401, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  // 2. Capa Anti-Spam: Rate Limiting
+  const clientIp = getClientIp(request);
+  const rateLimitResult = checkRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      {
+        error: "Demasiadas solicitudes. Límite de tasa excedido temporalmente.",
+        retryAfter: rateLimitResult.retryAfter,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimitResult.retryAfter || 60),
+          "Cache-Control": "no-store",
+        },
+      }
     );
   }
 
@@ -56,7 +77,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { sector, location, targetSize, product, limit } = body || {};
+    const { sector, location, targetSize, product, limit, _hp, _ts } = body || {};
+
+    // 3. Capa Anti-Spam: Honeypot y Timestamp check
+    const honeypotResult = validateHoneypot(_hp, _ts);
+    if (honeypotResult.isSpam) {
+      return NextResponse.json(
+        { error: "Solicitud rechazada por filtros de seguridad automatizados." },
+        { status: 400 }
+      );
+    }
 
     if (!sector || typeof sector !== "string" || !sector.trim()) {
       return NextResponse.json(

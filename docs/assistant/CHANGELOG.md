@@ -1,5 +1,10 @@
 # Changelog del Asistente
 
+## 2026-08-29-v20 — Capa Anti-Spam Nativa y Rate Limiting
+- Implementación de `src/lib/security/` con Rate Limiting en memoria (`rate-limiter.ts`), validación de Honeypot y control temporal de envíos (`honeypot.ts`), y extractor de IP (`client-ip.ts`).
+- Integración de Rate Limiting y Honeypot en `/api/prospector` para prevenir flooding y ataques automatizados sin dependencias externas.
+- Suite de pruebas unitarias en `src/lib/security/__tests__/security.test.ts`.
+
 ## 2026-08-28-v15 — Endpoint Seguro de API para Prospector B2B
 
 - Creación de `src/app/api/prospector/route.ts` que expone la lógica verificada de prospección B2B.
