@@ -10,8 +10,9 @@
 
 import type { Vertical, VerticalConfig } from "./types";
 import { electricistaConfig } from "../verticals/electricista/config";
+import { generalConfig } from "../verticals/general/config";
 
-const VALID_VERTICALS: ReadonlySet<string> = new Set(["electricista", "tecnologia"]);
+const VALID_VERTICALS: ReadonlySet<string> = new Set(["electricista", "general", "tecnologia"]);
 
 /**
  * Obtiene el identificador de vertical activa.
@@ -34,6 +35,8 @@ export function loadVerticalConfig(): VerticalConfig {
   const vertical = getVertical();
 
   switch (vertical) {
+    case "general":
+      return generalConfig;
     case "electricista":
       return electricistaConfig;
     case "tecnologia":

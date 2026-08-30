@@ -1,15 +1,36 @@
-import { test, describe, beforeEach } from "node:test";
+import { test, describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 
-beforeEach(() => {
-  delete process.env.APP_VERTICAL;
-});
+const originalAppVertical = process.env.APP_VERTICAL;
+
+function resetEnv() {
+  if (originalAppVertical === undefined) {
+    delete process.env.APP_VERTICAL;
+  } else {
+    process.env.APP_VERTICAL = originalAppVertical;
+  }
+}
+
+beforeEach(resetEnv);
+afterEach(resetEnv);
 
 // --- vertical-loader ---
 
 describe("core/vertical-loader: getVertical", () => {
-  test("sin APP_VERTICAL devuelve electricista", async () => {
+  test("sin APP_VERTICAL devuelve electricista (fallback)", async () => {
     delete process.env.APP_VERTICAL;
+    const { getVertical } = await import("../core/vertical-loader");
+    assert.equal(getVertical(), "electricista");
+  });
+
+  test("APP_VERTICAL='' (cadena vacía) devuelve electricista (fallback)", async () => {
+    process.env.APP_VERTICAL = "";
+    const { getVertical } = await import("../core/vertical-loader");
+    assert.equal(getVertical(), "electricista");
+  });
+
+  test("APP_VERTICAL='   ' (espacios en blanco) devuelve electricista (fallback)", async () => {
+    process.env.APP_VERTICAL = "   ";
     const { getVertical } = await import("../core/vertical-loader");
     assert.equal(getVertical(), "electricista");
   });
@@ -18,6 +39,12 @@ describe("core/vertical-loader: getVertical", () => {
     process.env.APP_VERTICAL = "electricista";
     const { getVertical } = await import("../core/vertical-loader");
     assert.equal(getVertical(), "electricista");
+  });
+
+  test("APP_VERTICAL=general devuelve general", async () => {
+    process.env.APP_VERTICAL = "general";
+    const { getVertical } = await import("../core/vertical-loader");
+    assert.equal(getVertical(), "general");
   });
 
   test("APP_VERTICAL=tecnologia devuelve tecnologia", async () => {
@@ -34,7 +61,7 @@ describe("core/vertical-loader: getVertical", () => {
 });
 
 describe("core/vertical-loader: loadVerticalConfig", () => {
-  test("sin APP_VERTICAL carga electricista config", async () => {
+  test("sin APP_VERTICAL carga electricista config por defecto", async () => {
     delete process.env.APP_VERTICAL;
     const { loadVerticalConfig } = await import("../core/vertical-loader");
     const config = loadVerticalConfig();
@@ -44,6 +71,24 @@ describe("core/vertical-loader: loadVerticalConfig", () => {
     assert.ok(config.modules.includes("work_orders"));
     assert.ok(config.modules.includes("normativa"));
     assert.ok(config.modules.includes("settings"));
+  });
+
+  test("APP_VERTICAL=general carga generalConfig con branding Autónomo360 y sin normativa ni measurements", async () => {
+    process.env.APP_VERTICAL = "general";
+    const { loadVerticalConfig } = await import("../core/vertical-loader");
+    const config = loadVerticalConfig();
+    assert.equal(config.id, "general");
+    assert.equal(config.brand.tradeName, "Autónomo360");
+    assert.equal(config.brand.shortName, "Autónomo360");
+    assert.equal(config.brand.iconKey, "briefcase");
+    assert.ok(config.modules.includes("dashboard"));
+    assert.ok(config.modules.includes("clients"));
+    assert.ok(config.modules.includes("invoices"));
+    assert.ok(config.modules.includes("budgets"));
+    assert.ok(config.modules.includes("jobs"));
+    assert.ok(config.modules.includes("work_orders"));
+    assert.equal(config.modules.includes("normativa" as import("../core/types").ModuleId), false);
+    assert.equal(config.modules.includes("measurements" as import("../core/types").ModuleId), false);
   });
 
   test("tecnologia no incluye work_orders ni normativa", async () => {
@@ -102,7 +147,6 @@ describe("verticals/electricista: config", () => {
   test("no contiene datos personales en config", async () => {
     const { electricistaConfig } = await import("../verticals/electricista/config");
     const json = JSON.stringify(electricistaConfig);
-    // Brand puede contener S&H Eléctricas como tradeName (público), pero no NIF/teléfono
     assert.ok(!json.includes("16063731W"), "No debe contener NIF");
     assert.ok(!json.includes("609 421 750"), "No debe contener teléfono");
     assert.ok(!json.includes("sh.electricas@gmail"), "No debe contener email");

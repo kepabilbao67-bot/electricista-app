@@ -17,7 +17,7 @@
 /**
  * Identificador de vertical. Extensible con string para verticales custom.
  */
-export type Vertical = "electricista" | "tecnologia" | (string & {});
+export type Vertical = "general" | "electricista" | "tecnologia" | (string & {});
 
 // --- Company ---
 
