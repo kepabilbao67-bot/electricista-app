@@ -1,4 +1,8 @@
-import { createClient, Client } from "@libsql/client";
+import { createClient, Client, InStatement, ResultSet } from "@libsql/client";
+
+export interface SqlExecutor {
+  execute(stmt: InStatement): Promise<ResultSet>;
+}
 import { tmpdir } from "os";
 import { join } from "path";
 import { MATERIALES_DEMO } from "./materiales-demo";
@@ -106,6 +110,7 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "total", def: "REAL DEFAULT 0" },
     { name: "notes", def: "TEXT" },
     { name: "payment_method", def: "TEXT DEFAULT 'transferencia'" },
+    { name: "source_part_id", def: "TEXT" },
     { name: "ticketbai_id", def: "TEXT" },
     { name: "ticketbai_signature", def: "TEXT" },
     { name: "ticketbai_qr", def: "TEXT" },
@@ -243,6 +248,10 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "created_at", def: "TEXT" },
   ]);
 
+  await db.execute(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_source_part_id_unique ON invoices(source_part_id) WHERE source_part_id IS NOT NULL;"
+  );
+
   // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
   // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
@@ -290,6 +299,7 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       total REAL DEFAULT 0,
       notes TEXT,
       payment_method TEXT DEFAULT 'transferencia',
+      source_part_id TEXT,
       ticketbai_id TEXT,
       ticketbai_signature TEXT,
       ticketbai_qr TEXT,
@@ -564,17 +574,21 @@ export async function initializeDatabase(client?: Client): Promise<void> {
   }
 }
 
-export async function generateInvoiceNumber(): Promise<string> {
-  const db = getDbClient();
-  const result = await db.execute(
-    "SELECT number FROM invoices ORDER BY created_at DESC LIMIT 1"
-  );
+export async function generateInvoiceNumber(executor?: SqlExecutor): Promise<string> {
+  const db = executor || getDbClient();
+  const result = await db.execute({
+    sql: "SELECT number FROM invoices WHERE number LIKE 'DFB_%' ORDER BY number DESC LIMIT 1",
+    args: [],
+  });
 
   if (result.rows.length === 0) {
     return "DFB_0001";
   }
 
-  const lastNum = parseInt((result.rows[0].number as string).replace("DFB_", ""), 10);
+  const lastNum = parseInt(String(result.rows[0].number || "").replace("DFB_", ""), 10);
+  if (isNaN(lastNum)) {
+    return "DFB_0001";
+  }
   return `DFB_${String(lastNum + 1).padStart(4, "0")}`;
 }
 

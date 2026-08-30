@@ -6,19 +6,36 @@ import { useRouter } from "next/navigation";
 import { Plus, ClipboardCheck, Eye, Search, FileText, Trash2, Loader2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 
+export type ParteTrabajoEstado =
+  | "borrador"
+  | "pendiente"
+  | "en_progreso"
+  | "completado"
+  | "TRABAJO_COMPLETADO"
+  | "facturado"
+  | "firmado"
+  | "cerrado"
+  | "cancelado";
+
 interface ParteTrabajo {
   id: string;
   numero: string;
   fecha: string;
   cliente: string;
   tecnico: string;
-  estado: "borrador" | "firmado" | "cerrado";
+  estado: ParteTrabajoEstado;
 }
 
-const ESTADO_COLORS: Record<string, string> = {
+const ESTADO_COLORS: Record<ParteTrabajoEstado, string> = {
   borrador: "bg-amber-50 text-amber-700 border-amber-100",
+  pendiente: "bg-amber-50 text-amber-700 border-amber-100",
+  en_progreso: "bg-blue-50 text-blue-700 border-blue-100",
+  completado: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  TRABAJO_COMPLETADO: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  facturado: "bg-purple-50 text-purple-700 border-purple-100",
   firmado: "bg-blue-50 text-blue-700 border-blue-100",
-  cerrado: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  cerrado: "bg-slate-50 text-slate-700 border-slate-100",
+  cancelado: "bg-red-50 text-red-700 border-red-100",
 };
 
 export default function PartesTrabajoPage() {
@@ -209,7 +226,7 @@ export default function PartesTrabajoPage() {
                           <Eye className="h-3.5 w-3.5" />
                           Ver
                         </Link>
-                        {parte.estado !== "cerrado" && (
+                        {(parte.estado === "completado" || parte.estado === "TRABAJO_COMPLETADO") && (
                           <button
                             onClick={() => handleConvertToInvoice(parte.id)}
                             disabled={convertingToInvoice === parte.id}

@@ -212,15 +212,17 @@ function ParteTrabajoDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setEditing(true)} className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2.5 text-sm font-medium text-blue-600 shadow-sm hover:bg-blue-50 transition-all"><Pencil className="h-4 w-4" /> Editar</button>
-          <button
-            onClick={handleConvertToInvoice}
-            disabled={convertingToInvoice}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all disabled:opacity-50"
-            title="Generar factura a partir de este parte"
-          >
-            <FileText className="h-4 w-4" />
-            {convertingToInvoice ? "Generando factura..." : "Generar factura"}
-          </button>
+          {(parte.estado === "completado" || parte.estado === "TRABAJO_COMPLETADO") && (
+            <button
+              onClick={handleConvertToInvoice}
+              disabled={convertingToInvoice}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 transition-all disabled:opacity-50"
+              title="Generar factura a partir de este parte"
+            >
+              <FileText className="h-4 w-4" />
+              {convertingToInvoice ? "Generando factura..." : "Generar factura"}
+            </button>
+          )}
           <button onClick={handleDelete} disabled={deleting} className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 transition-all disabled:opacity-50"><Trash2 className="h-4 w-4" /> Borrar</button>
           {parte.telefono && <WhatsAppButton phone={parte.telefono} label="Abrir WhatsApp" message={`Hola ${parte.cliente}, el parte de trabajo ${parte.numero} está preparado para tu revisión. Si detectas algún dato que deba corregirse, indícanoslo.`} />}
           <button onClick={handlePrint} className="btn-primary"><Printer className="h-4 w-4" /> Imprimir / PDF</button>
