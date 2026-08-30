@@ -30,6 +30,7 @@ export const MODULE_REGISTRY: readonly ModuleDefinition[] = [
   { id: "invoices", href: "/facturas", label: "Facturas", iconKey: "file-text" },
   { id: "budgets", href: "/presupuestos", label: "Presupuestos", iconKey: "clipboard-list" },
   { id: "work_orders", href: "/partes-trabajo", label: "Partes de trabajo", iconKey: "clipboard-check" },
+  { id: "jobs", href: "/trabajos", label: "Centro de Trabajos", iconKey: "briefcase" },
   { id: "expenses", href: "/gastos", label: "Gastos", iconKey: "receipt" },
   { id: "communications", href: "/comunicaciones", label: "Comunicaciones", iconKey: "message-square" },
   { id: "schedule", href: "/agenda", label: "Agenda", iconKey: "calendar" },

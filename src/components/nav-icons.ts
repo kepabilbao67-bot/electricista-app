@@ -24,9 +24,10 @@ import {
   Cpu,
   Paintbrush,
   Building2,
-  Wrench,
   Settings,
   HelpCircle,
+  Briefcase,
+  Wrench,
 } from "lucide-react";
 
 /**
@@ -52,6 +53,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "download": Download,
   "book-open": BookOpen,
   "receipt": Receipt,
+  "briefcase": Briefcase,
   "briefcase-business": BriefcaseBusiness,
   "bot": Bot,
   "cpu": Cpu,

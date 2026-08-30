@@ -67,6 +67,7 @@ export type ModuleId =
   | "invoices"
   | "budgets"
   | "work_orders"
+  | "jobs"
   | "expenses"
   | "schedule"
   | "catalog"
