@@ -17,7 +17,7 @@
 /**
  * Identificador de vertical. Extensible con string para verticales custom.
  */
-export type Vertical = "general" | "electricista" | "tecnologia" | (string & {});
+export type Vertical = "general" | "electricista" | "tecnologia" | "barymont" | (string & {});
 
 // --- Company ---
 
@@ -72,6 +72,7 @@ export type ModuleId =
   | "schedule"
   | "catalog"
   | "communications"
+  | "chats"
   | "normativa"
   | "export"
   | "assistant"

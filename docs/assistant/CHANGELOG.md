@@ -1,5 +1,10 @@
 # Changelog del Asistente
 
+## 2026-08-31-v26 — Chats Barymont (trabajo local, sin PR)
+- Ruta exclusiva `/comunicaciones/chats` y API `/api/communications/chats`. Persistencia, CRM, notas internas, asignación y auditoría locales; transporte DEMO con deduplicación y reintento limitado.
+- Autenticación existente intacta. Solo host local y base dedicada; sin proveedores externos. Producción NO VERIFICADA.
+
+
 ## 2026-08-30-v25 — Dashboard de Analíticas y Métricas de Negocio (Recharts)
 - Creación de la ruta interactiva `/dashboard` con KPIs de negocio (leads totales, variación mensual, tasa de conversión, facturación cobrada y partes ejecutados).
 - Integración de gráficos interactivos y ligeros con `recharts` (evolución semanal en líneas, pipeline por estado en barras y desglose de servicios en donut).

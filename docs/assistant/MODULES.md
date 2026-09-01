@@ -54,3 +54,11 @@ Variable de servidor `DEMO_MODE=true` que activa datos ficticios para demostraci
 - Agenda (solo GET con context=dashboard-demo): 4 visitas demo.
 
 Las páginas /facturas y /agenda NO muestran datos ficticios. Solo el Dashboard consume los datos demo.
+
+## Chats Barymont — Fase 1 local
+
+| Módulo | Ruta | Estado | Alcance |
+|---|---|---|---|
+| Chats Barymont | `/comunicaciones/chats` | DEMO | Persistencia SQLite real en base de pruebas; transporte simulado. Solo Barymont. |
+
+Conversaciones, filtros, búsqueda, asignación, etiquetas, no leídos, notas internas, contacto/lead del CRM y auditoría. Tres intentos como máximo; ninguna nota interna se envía. WhatsApp, email, llamadas e IA externa no conectados. Producción NO VERIFICADA. Configuración y límites en `docs/communications/CHATS.md`.

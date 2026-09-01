@@ -7,3 +7,5 @@
 
 export { getVertical, loadVerticalConfig } from "../core/vertical-loader";
 export { electricistaConfig } from "./electricista/config";
+export { generalConfig } from "./general/config";
+export { barymontConfig } from "./barymont/config";

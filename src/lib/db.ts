@@ -248,8 +248,57 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "created_at", def: "TEXT" },
   ]);
 
+  await ensureColumns(db, "chat_conversations", [
+    { name: "client_id", def: "TEXT" },
+    { name: "lead_id", def: "TEXT" },
+    { name: "channel", def: "TEXT NOT NULL DEFAULT 'mock'" },
+    { name: "external_id", def: "TEXT" },
+    { name: "contact_name", def: "TEXT NOT NULL DEFAULT 'Contacto'" },
+    { name: "contact_identifier", def: "TEXT NOT NULL DEFAULT ''" },
+    { name: "status", def: "TEXT NOT NULL DEFAULT 'open'" },
+    { name: "assigned_to", def: "TEXT DEFAULT 'Pedro Barymont'" },
+    { name: "unread_count", def: "INTEGER DEFAULT 0" },
+    { name: "tags", def: "TEXT DEFAULT '[]'" },
+    { name: "last_message_text", def: "TEXT" },
+    { name: "last_message_at", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "chat_messages", [
+    { name: "conversation_id", def: "TEXT NOT NULL" },
+    { name: "sender_type", def: "TEXT NOT NULL DEFAULT 'client'" },
+    { name: "sender_name", def: "TEXT NOT NULL DEFAULT 'Contacto'" },
+    { name: "content", def: "TEXT NOT NULL" },
+    { name: "channel", def: "TEXT NOT NULL DEFAULT 'mock'" },
+    { name: "external_message_id", def: "TEXT" },
+    { name: "status", def: "TEXT NOT NULL DEFAULT 'delivered'" },
+    { name: "is_internal_note", def: "INTEGER DEFAULT 0" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "chat_audit_logs", [
+    { name: "conversation_id", def: "TEXT NOT NULL" },
+    { name: "action", def: "TEXT NOT NULL" },
+    { name: "actor", def: "TEXT NOT NULL" },
+    { name: "details", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+
   await db.execute(
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_source_part_id_unique ON invoices(source_part_id) WHERE source_part_id IS NOT NULL;"
+  );
+  await db.execute(
+    "CREATE INDEX IF NOT EXISTS idx_chat_conv_status ON chat_conversations(status);"
+  );
+  await db.execute(
+    "CREATE INDEX IF NOT EXISTS idx_chat_conv_channel ON chat_conversations(channel);"
+  );
+  await db.execute(
+    "CREATE INDEX IF NOT EXISTS idx_chat_msg_conv ON chat_messages(conversation_id, created_at);"
+  );
+  await db.execute(
+    "CREATE INDEX IF NOT EXISTS idx_chat_msg_ext ON chat_messages(external_message_id);"
   );
 
   // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
@@ -551,6 +600,50 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       email TEXT,
       status TEXT NOT NULL DEFAULT 'recibido',
       created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+      id TEXT PRIMARY KEY,
+      client_id TEXT,
+      lead_id TEXT,
+      channel TEXT NOT NULL DEFAULT 'mock',
+      external_id TEXT,
+      contact_name TEXT NOT NULL,
+      contact_identifier TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open',
+      assigned_to TEXT DEFAULT 'Pedro Barymont',
+      unread_count INTEGER DEFAULT 0,
+      tags TEXT DEFAULT '[]',
+      last_message_text TEXT,
+      last_message_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (client_id) REFERENCES clients(id),
+      FOREIGN KEY (lead_id) REFERENCES leads(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      sender_type TEXT NOT NULL DEFAULT 'client',
+      sender_name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      channel TEXT NOT NULL DEFAULT 'mock',
+      external_message_id TEXT,
+      status TEXT NOT NULL DEFAULT 'delivered',
+      is_internal_note INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_audit_logs (
+      id TEXT PRIMARY KEY,
+      conversation_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      actor TEXT NOT NULL,
+      details TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
     );
   `);
 

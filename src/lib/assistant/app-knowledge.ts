@@ -17,7 +17,15 @@ export interface AppModule {
   warnings?: string[];
 }
 
+const CHAT_MODULE: AppModule = {
+  name: "Chats Barymont", route: "/comunicaciones/chats", status: "DEMO",
+  description: "Bandeja exclusiva de Barymont con persistencia SQLite local y adaptador DEMO; no realiza envíos externos.",
+  features: ["Conversaciones, buscador y filtros", "Asignación, estados, etiquetas y no leídos", "Notas internas nunca enviadas", "Contacto y lead desde CRM", "Auditoría, deduplicación y hasta tres intentos DEMO"],
+  limitations: ["Solo entorno local autenticado y base dedicada barymont-chats-demo.db", "Sin WhatsApp, email, llamadas ni IA externa", "Producción NO VERIFICADA"],
+  usage: "Abre Chats. Selecciona un contacto de prueba existente y recibe un mensaje DEMO. Las relaciones con leads se toman del CRM.",
+};
 export const APP_MODULES: AppModule[] = [
+  ...(process.env.APP_VERTICAL === "barymont" ? [CHAT_MODULE] : []),
   {
     name: "Dashboard",
     route: "/",
@@ -331,7 +339,7 @@ export function answerAboutApp(query: string): string | null {
   // Pregunta general sobre la app
   if (q.match(/como.*uso.*app|que.*hace.*app|ayuda.*app|modulos|funciones.*app|que.*puedo.*hacer/)) {
     const table = APP_MODULES.map((m) => `| ${m.name} | ${m.route} | ${m.status} | ${m.description.slice(0, 60)} |`).join("\n");
-    return `**Módulos de la aplicación:**\n\n| Módulo | Ruta | Estado | Descripción |\n|--------|------|--------|-------------|\n${table}\n\n**Estados:**\n- REAL: funciona y persiste datos.\n- DEMO: muestra la interfaz pero no guarda datos permanentemente.\n- PARCIAL: funciona con limitaciones (ver detalle de cada módulo).\n\nPregúntame sobre un módulo concreto para obtener instrucciones detalladas.`;
+    return `**Módulos de la aplicación:**\n\n| Módulo | Ruta | Estado | Descripción |\n|--------|------|--------|-------------|\n${table}\n\n**Estados:**\n- REAL: funciona y persiste datos.\n- DEMO: ${process.env.APP_VERTICAL === 'barymont' ? 'transporte simulado; Chats sí persiste en la base SQLite local dedicada.' : 'muestra la interfaz pero no guarda datos permanentemente.'}\n- PARCIAL: funciona con limitaciones (ver detalle de cada módulo).\n\nPregúntame sobre un módulo concreto para obtener instrucciones detalladas.`;
   }
 
   // Buscar módulo específico — buscar la mejor coincidencia
