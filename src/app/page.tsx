@@ -21,6 +21,11 @@ import {
   BriefcaseBusiness,
   Sparkles,
   Plus,
+  Receipt,
+  Scale,
+  Building2,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -28,15 +33,33 @@ import { Button } from "@/components/ui/Button";
 import { OnboardingBanner } from "@/components/ui/OnboardingBanner";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 
+interface MonthlyEvolutionItem {
+  month: string;
+  year: number;
+  ingresos: number;
+  gastos: number;
+  beneficio: number;
+}
+
 interface MonthlyBilling {
   month: string;
   year: number;
   total: number;
 }
+
 interface TopClient {
   name: string;
   total: number;
 }
+
+interface RecentClient {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+}
+
 interface AlertOverdueInvoice {
   id: string;
   number: string;
@@ -44,12 +67,14 @@ interface AlertOverdueInvoice {
   date: string;
   client_name: string;
 }
+
 interface AlertExpiringBudget {
   id: string;
   number: string;
   valid_until: string;
   client_name: string;
 }
+
 interface AlertTodayVisit {
   id: string;
   title: string;
@@ -60,7 +85,25 @@ interface AlertTodayVisit {
 interface DashboardData {
   demoMode: boolean;
   totalFacturacion: number;
+  thisMonthTotal: number;
+  thisMonthSubtotal?: number;
+  thisMonthTax?: number;
+  lastMonthTotal: number;
+  thisYearTotal: number;
+  thisYearSubtotal?: number;
+  thisYearTax?: number;
+  thisMonthExpenses: number;
+  thisMonthExpensesSubtotal?: number;
+  thisMonthExpensesTax?: number;
+  thisYearExpenses: number;
+  thisYearExpensesSubtotal?: number;
+  thisYearExpensesTax?: number;
+  thisMonthProfit: number;
+  thisYearProfit: number;
+  pendienteCobro: number;
   facturasPendientes: number;
+  facturasVencidasCount: number;
+  facturasVencidasTotal: number;
   presupuestosPendientes: number;
   proximasVisitas: number;
   facturasEsteMes: number;
@@ -68,10 +111,23 @@ interface DashboardData {
   oportunidadesActivas: number;
   tareasPendientes: number;
   monthlyBilling: MonthlyBilling[];
-  pendienteCobro: number;
+  monthlyEvolution?: MonthlyEvolutionItem[];
+  fiscal: {
+    mes: {
+      ivaRepercutido: number;
+      ivaSoportado: number;
+      ivaLiquidacion: number;
+    };
+    ano: {
+      ivaRepercutido: number;
+      ivaSoportado: number;
+      ivaLiquidacion: number;
+    };
+    irpfDisponible: boolean;
+    irpfNota: string;
+  };
   topClients: TopClient[];
-  thisMonthTotal: number;
-  lastMonthTotal: number;
+  recentClients?: RecentClient[];
   alerts: {
     overdueInvoices: AlertOverdueInvoice[];
     expiringBudgets: AlertExpiringBudget[];
@@ -97,7 +153,8 @@ interface DashboardData {
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
-  const parts = dateStr.split("-");
+  const clean = dateStr.split("T")[0];
+  const parts = clean.split("-");
   if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
   return dateStr;
 }
@@ -146,7 +203,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="h-20 rounded-2xl bg-slate-200/80 animate-shimmer" />
+        <div className="h-20 rounded-2xl bg-slate-200/80 dark:bg-slate-800/80 animate-shimmer" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <CardSkeleton />
           <CardSkeleton />
@@ -169,9 +226,31 @@ export default function Dashboard() {
   const monthDiff =
     lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
 
-  const monthlyBilling = data?.monthlyBilling ?? [];
-  const maxBilling = Math.max(...monthlyBilling.map((m) => m.total), 1);
+  const thisYearTotal = data?.thisYearTotal ?? 0;
+  const thisMonthExpenses = data?.thisMonthExpenses ?? 0;
+  const thisYearExpenses = data?.thisYearExpenses ?? 0;
+  const thisMonthProfit = data?.thisMonthProfit ?? (thisMonth - thisMonthExpenses);
+
+  const monthlyEvolution = data?.monthlyEvolution ?? (data?.monthlyBilling || []).map((m) => ({
+    month: m.month,
+    year: m.year,
+    ingresos: m.total,
+    gastos: 0,
+    beneficio: m.total,
+  }));
+
+  const maxEvolutionValue = Math.max(
+    ...monthlyEvolution.map((m) => Math.max(m.ingresos, m.gastos)),
+    1
+  );
+
   const topClients = data?.topClients ?? [];
+  const recentClients = data?.recentClients ?? [];
+  const fiscalMes = data?.fiscal?.mes ?? {
+    ivaRepercutido: data?.thisMonthTax ?? 0,
+    ivaSoportado: data?.thisMonthExpensesTax ?? 0,
+    ivaLiquidacion: (data?.thisMonthTax ?? 0) - (data?.thisMonthExpensesTax ?? 0),
+  };
 
   const isDemo = data?.demoMode === true;
   const hasClients = (data?.clientesActivos ?? 0) > 0;
@@ -204,7 +283,7 @@ export default function Dashboard() {
           </div>
           <p className="text-sm text-slate-500 mt-1 capitalize flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-amber-500" />
-            Resumen diario de facturación, clientes y actividad · {today}
+            Resumen operativo, financiero y fiscal · {today}
           </p>
           {isDemo && (
             <p className="text-xs text-slate-500 mt-1">
@@ -214,7 +293,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Acciones Rápidas con Botones Reutilizables */}
+      {/* Acciones Rápidas */}
       <div>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
           Acciones Rápidas
@@ -233,6 +312,11 @@ export default function Dashboard() {
           <Link href="/partes-trabajo/nuevo">
             <Button variant="secondary" size="md" icon={ClipboardCheck}>
               Nuevo Parte
+            </Button>
+          </Link>
+          <Link href="/gastos">
+            <Button variant="secondary" size="md" icon={Receipt}>
+              Registrar Gasto
             </Button>
           </Link>
           <Link href="/agenda">
@@ -274,9 +358,14 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {data.alerts.overdueInvoices.length > 0 && (
                 <div className="rounded-2xl border border-red-200 bg-red-50/70 p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2 text-red-800 font-bold text-xs uppercase tracking-wide">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    Facturas Vencidas
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-red-800 font-bold text-xs uppercase tracking-wide">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      Facturas Vencidas ({data.alerts.overdueInvoices.length})
+                    </div>
+                    <span className="text-xs font-extrabold text-red-700">
+                      {(data.facturasVencidasTotal ?? 0).toFixed(2)} €
+                    </span>
                   </div>
                   <div className="space-y-1.5">
                     {data.alerts.overdueInvoices.map((inv) => (
@@ -285,8 +374,11 @@ export default function Dashboard() {
                         href={isDemo ? "/facturas" : `/facturas/${inv.id}`}
                         className="flex items-center justify-between rounded-xl bg-white p-2.5 text-xs hover:shadow-sm transition-all"
                       >
-                        <span className="font-bold text-red-700">{inv.number}</span>
-                        <span className="font-bold text-slate-900">
+                        <div className="min-w-0 pr-2">
+                          <span className="font-bold text-red-700 block">{inv.number}</span>
+                          <span className="text-slate-500 text-[11px] truncate block">{inv.client_name}</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">
                           {inv.total.toFixed(2)} €
                         </span>
                       </Link>
@@ -308,8 +400,11 @@ export default function Dashboard() {
                         href={isDemo ? "/presupuestos" : `/presupuestos/${budget.id}`}
                         className="flex items-center justify-between rounded-xl bg-white p-2.5 text-xs hover:shadow-sm transition-all"
                       >
-                        <span className="font-bold text-amber-700">{budget.number}</span>
-                        <span className="text-slate-500">
+                        <div className="min-w-0 pr-2">
+                          <span className="font-bold text-amber-700 block">{budget.number}</span>
+                          <span className="text-slate-500 text-[11px] truncate block">{budget.client_name}</span>
+                        </div>
+                        <span className="text-slate-500 font-medium shrink-0">
                           {formatDate(budget.valid_until)}
                         </span>
                       </Link>
@@ -334,7 +429,7 @@ export default function Dashboard() {
                         <span className="font-semibold text-blue-900 truncate">
                           {visit.title}
                         </span>
-                        <span className="text-blue-700 font-bold">{visit.time}</span>
+                        <span className="text-blue-700 font-bold shrink-0 ml-2">{visit.time}</span>
                       </Link>
                     ))}
                   </div>
@@ -344,185 +439,274 @@ export default function Dashboard() {
           </div>
         )}
 
-      {/* KPIs Superiores con Componentes UI Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Ingresos del Mes */}
-        <Link href="/facturas">
-          <Card
-            title="Ingresos del Mes"
-            icon={TrendingUp}
-            variant="success"
-            className="cursor-pointer hover:border-emerald-300"
-          >
-            <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {thisMonth.toFixed(2)} €
-            </p>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Facturado este mes</span>
-              {lastMonth > 0 && (
-                <span
-                  className={`font-bold flex items-center gap-0.5 ${
-                    monthDiff >= 0 ? "text-emerald-700" : "text-rose-700"
-                  }`}
-                >
-                  {monthDiff >= 0 ? "+" : ""}
-                  {monthDiff.toFixed(0)}%
+      {/* BLOQUE 1: KPIs Financieros Principales */}
+      <div>
+        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+          Rendimiento Financiero
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Facturación del Mes */}
+          <Link href="/facturas">
+            <Card
+              title="Facturación del Mes"
+              icon={TrendingUp}
+              variant="success"
+              className="cursor-pointer hover:border-emerald-300 h-full"
+            >
+              <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                {thisMonth.toFixed(2)} €
+              </p>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">Facturado este mes</span>
+                {lastMonth > 0 && (
+                  <span
+                    className={`font-bold flex items-center gap-0.5 ${
+                      monthDiff >= 0 ? "text-emerald-700" : "text-rose-700"
+                    }`}
+                  >
+                    {monthDiff >= 0 ? "+" : ""}
+                    {monthDiff.toFixed(0)}% vs mes ant.
+                  </span>
+                )}
+              </div>
+            </Card>
+          </Link>
+
+          {/* Card 2: Facturación del Año */}
+          <Link href="/facturas">
+            <Card
+              title="Facturación Anual"
+              icon={Euro}
+              variant="default"
+              className="cursor-pointer hover:border-blue-300 h-full"
+            >
+              <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                {thisYearTotal.toFixed(2)} €
+              </p>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">Año en curso</span>
+                <span className="font-bold text-blue-700">
+                  {data?.facturasEsteMes ?? 0} fac. este mes
                 </span>
-              )}
-            </div>
-          </Card>
-        </Link>
+              </div>
+            </Card>
+          </Link>
 
-        {/* Card 2: Facturas Pendientes */}
-        <Link href="/facturas">
+          {/* Card 3: Gastos del Mes */}
+          <Link href="/gastos">
+            <Card
+              title="Gastos del Mes"
+              icon={Receipt}
+              variant="warning"
+              className="cursor-pointer hover:border-amber-300 h-full"
+            >
+              <p className="text-3xl font-extrabold text-amber-700 tracking-tight">
+                {thisMonthExpenses.toFixed(2)} €
+              </p>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">Total gastos mes</span>
+                <span className="font-bold text-slate-600">
+                  Anual: {thisYearExpenses.toFixed(0)} €
+                </span>
+              </div>
+            </Card>
+          </Link>
+
+          {/* Card 4: Beneficio Estimado */}
           <Card
-            title="Facturas Pendientes"
-            icon={Clock}
-            variant="warning"
-            className="cursor-pointer hover:border-amber-300"
+            title="Beneficio Estimado"
+            icon={thisMonthProfit >= 0 ? TrendingUp : TrendingDown}
+            variant={thisMonthProfit >= 0 ? "success" : "warning"}
+            className="h-full"
           >
-            <p className="text-3xl font-extrabold text-amber-700 tracking-tight">
-              {(data?.pendienteCobro ?? 0).toFixed(2)} €
+            <p
+              className={`text-3xl font-extrabold tracking-tight ${
+                thisMonthProfit >= 0 ? "text-emerald-700" : "text-rose-700"
+              }`}
+            >
+              {thisMonthProfit.toFixed(2)} €
             </p>
             <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Pendiente de cobro</span>
-              <span className="font-bold text-slate-700">
-                {data?.facturasPendientes ?? 0} facturas
+              <span className="text-slate-500 font-medium">Ingresos - Gastos (Mes)</span>
+              <span
+                className={`font-bold ${
+                  thisMonthProfit >= 0 ? "text-emerald-700" : "text-rose-700"
+                }`}
+              >
+                {thisMonth > 0
+                  ? `${((thisMonthProfit / thisMonth) * 100).toFixed(0)}% margen`
+                  : "0%"}
               </span>
             </div>
           </Card>
-        </Link>
-
-        {/* Card 3: Presupuestos Activos */}
-        <Link href="/presupuestos">
-          <Card
-            title="Presupuestos Activos"
-            icon={FileText}
-            variant="default"
-            className="cursor-pointer hover:border-blue-300"
-          >
-            <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              {data?.presupuestosPendientes ?? 0}
-            </p>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">En curso / Pendientes</span>
-              <span className="font-bold text-blue-600 flex items-center gap-1">
-                Ver lista <ArrowRight className="h-3 w-3" />
-              </span>
-            </div>
-          </Card>
-        </Link>
-
-        {/* Card 4: Partes de Trabajo */}
-        <Link href="/partes-trabajo">
-          <Card
-            title="Partes de Trabajo"
-            icon={ClipboardCheck}
-            variant="gradient"
-            className="cursor-pointer hover:border-blue-400"
-          >
-            <p className="text-3xl font-extrabold text-blue-900 tracking-tight">
-              {data?.proximasVisitas ?? 0}
-            </p>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              <span className="text-slate-500 font-medium">Próximos trabajos</span>
-              <span className="font-bold text-blue-700 flex items-center gap-1">
-                Ir a partes <ArrowRight className="h-3 w-3" />
-              </span>
-            </div>
-          </Card>
-        </Link>
+        </div>
       </div>
 
-      {/* Analytics & Top Clients */}
+      {/* BLOQUE 2: Estado de Cobros y Resumen Fiscal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card variant="gradient" className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Facturación Histórica Total
-            </span>
-            <Euro className="h-4 w-4 text-emerald-600" />
-          </div>
-          <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            {(data?.totalFacturacion ?? 0).toFixed(2)} €
-          </p>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Clientes activos: <strong className="text-slate-800">{data?.clientesActivos ?? 0}</strong></span>
-            <span>Oportunidades: <strong className="text-slate-800">{data?.oportunidadesActivas ?? 0}</strong></span>
-          </div>
-        </Card>
-
-        <Card className="p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-              Top Clientes por Actividad
-            </h3>
+        {/* Cobros y Pendientes */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-600" />
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Estado de Cobros
+              </h3>
+            </div>
             <Link
-              href="/clientes"
+              href="/facturas"
               className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
             >
-              Ver todos <ArrowRight className="h-3 w-3" />
+              Ver facturas <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          {topClients.length === 0 ? (
-            <p className="text-sm text-slate-400 py-2">Sin clientes registrados</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {topClients.slice(0, 3).map((client, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/80"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white shadow-xs">
-                      {idx + 1}
-                    </span>
-                    <span className="text-xs font-bold text-slate-800 truncate">
-                      {client.name}
-                    </span>
-                  </div>
-                  <span className="text-xs font-extrabold text-blue-700 ml-2">
-                    {client.total.toFixed(0)} €
-                  </span>
-                </div>
-              ))}
+
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-amber-900">Pendiente de Cobro</span>
+                <Badge variant="amber" size="sm">
+                  {data?.facturasPendientes ?? 0} facturas
+                </Badge>
+              </div>
+              <p className="text-2xl font-extrabold text-amber-800 mt-1">
+                {(data?.pendienteCobro ?? 0).toFixed(2)} €
+              </p>
             </div>
-          )}
+
+            <div className="p-3.5 rounded-xl bg-red-50/70 border border-red-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-red-900">Facturas Vencidas</span>
+                <Badge variant={data?.facturasVencidasCount ? "red" : "gray"} size="sm">
+                  {data?.facturasVencidasCount ?? 0} vencidas
+                </Badge>
+              </div>
+              <p className="text-2xl font-extrabold text-red-800 mt-1">
+                {(data?.facturasVencidasTotal ?? 0).toFixed(2)} €
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between text-xs text-slate-500">
+              <span>Presupuestos activos: <strong>{data?.presupuestosPendientes ?? 0}</strong></span>
+              <span>Trabajos próx.: <strong>{data?.proximasVisitas ?? 0}</strong></span>
+            </div>
+          </div>
+        </Card>
+
+        {/* Resumen Fiscal IVA Real */}
+        <Card className="p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Scale className="h-4 w-4 text-blue-600" />
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Métricas Fiscales · IVA Estimado del Mes
+              </h3>
+            </div>
+            <Badge variant="blue" size="sm">
+              Cálculo con datos reales
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/80">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                IVA Repercutido (Ventas)
+              </span>
+              <p className="text-xl font-extrabold text-slate-900 mt-1">
+                {fiscalMes.ivaRepercutido.toFixed(2)} €
+              </p>
+              <p className="text-[11px] text-slate-500 mt-1">Facturas emitidas del mes</p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/80">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                IVA Soportado (Compras)
+              </span>
+              <p className="text-xl font-extrabold text-amber-800 mt-1">
+                {fiscalMes.ivaSoportado.toFixed(2)} €
+              </p>
+              <p className="text-[11px] text-slate-500 mt-1">Gastos registrados del mes</p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/60">
+              <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider block">
+                Liquidación IVA Est.
+              </span>
+              <p className="text-xl font-extrabold text-blue-900 mt-1">
+                {fiscalMes.ivaLiquidacion.toFixed(2)} €
+              </p>
+              <p className="text-[11px] text-blue-700 mt-1">
+                {fiscalMes.ivaLiquidacion >= 0 ? "A ingresar a Hacienda" : "A compensar / devolver"}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-xs text-slate-500">
+            <Sparkles className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+            <p>
+              <strong>Nota fiscal:</strong> Los importes de IVA se calculan directamente a partir de las cuotas tributarias registradas en cada factura y gasto. El IRPF se gestiona a nivel de declaración trimestral.
+            </p>
+          </div>
         </Card>
       </div>
 
-      {/* Gráfico Mensual */}
+      {/* BLOQUE 3: Gráfica de Evolución Mensual (Ingresos vs Gastos) */}
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
               <BarChart3 className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Evolución de Facturación
+                Evolución de Ingresos y Gastos
               </h2>
-              <p className="text-xs text-slate-500">Histórico de ingresos mensuales</p>
+              <p className="text-xs text-slate-500">Histórico de los últimos 6 meses</p>
             </div>
           </div>
+
+          <div className="flex items-center gap-4 text-xs font-semibold">
+            <span className="flex items-center gap-1.5 text-slate-700">
+              <span className="h-3 w-3 rounded-sm bg-gradient-to-t from-blue-700 to-blue-500" />
+              Ingresos (€)
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-700">
+              <span className="h-3 w-3 rounded-sm bg-gradient-to-t from-amber-600 to-amber-400" />
+              Gastos (€)
+            </span>
+          </div>
         </div>
-        <div className="flex items-end justify-between gap-3 h-52 pt-6 px-2">
-          {monthlyBilling.map((month, idx) => {
-            const height = maxBilling > 0 ? (month.total / maxBilling) * 100 : 0;
+
+        <div className="flex items-end justify-between gap-3 h-56 pt-4 px-2">
+          {monthlyEvolution.map((month, idx) => {
+            const heightIngresos = maxEvolutionValue > 0 ? (month.ingresos / maxEvolutionValue) * 100 : 0;
+            const heightGastos = maxEvolutionValue > 0 ? (month.gastos / maxEvolutionValue) * 100 : 0;
+
             return (
               <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                <span className="text-[11px] font-bold text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {month.total > 0 ? `${month.total.toFixed(0)}€` : "0€"}
-                </span>
+                <div className="text-[10px] font-bold text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center">
+                  <span className="text-blue-700 font-extrabold">{month.ingresos.toFixed(0)}€</span>
+                  {month.gastos > 0 && <span className="text-amber-700">{month.gastos.toFixed(0)}€</span>}
+                </div>
+
                 <div
-                  className="w-full flex items-end justify-center rounded-t-xl bg-slate-100/80 p-1"
+                  className="w-full flex items-end justify-center gap-1.5 rounded-t-xl bg-slate-100/80 p-1"
                   style={{ height: "140px" }}
                 >
+                  {/* Barra Ingresos */}
                   <div
-                    className="w-full max-w-[48px] rounded-t-lg bg-gradient-to-t from-blue-700 via-blue-600 to-indigo-500 shadow-md shadow-blue-600/20 transition-all duration-500 min-h-[6px] group-hover:brightness-110"
-                    style={{ height: `${Math.max(height, 4)}%` }}
+                    className="w-1/2 max-w-[24px] rounded-t-md bg-gradient-to-t from-blue-700 via-blue-600 to-indigo-500 shadow-xs transition-all duration-500 min-h-[4px] group-hover:brightness-110"
+                    style={{ height: `${Math.max(heightIngresos, 4)}%` }}
+                    title={`Ingresos ${month.month}: ${month.ingresos.toFixed(2)}€`}
+                  />
+                  {/* Barra Gastos */}
+                  <div
+                    className="w-1/2 max-w-[24px] rounded-t-md bg-gradient-to-t from-amber-600 via-amber-500 to-yellow-400 shadow-xs transition-all duration-500 min-h-[4px] group-hover:brightness-110"
+                    style={{ height: `${Math.max(heightGastos, 4)}%` }}
+                    title={`Gastos ${month.month}: ${month.gastos.toFixed(2)}€`}
                   />
                 </div>
+
                 <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   {month.month}
                 </span>
@@ -532,13 +716,66 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* Detail Rows: Últimas Facturas y Tareas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* BLOQUE 4: Detalle Operativo - Clientes Recientes, Últimas Facturas y Tareas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Clientes Recientes */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-            <h2 className="text-base font-bold text-slate-900">
-              Últimos Documentos Emitidos
-            </h2>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-blue-600" />
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                Clientes Recientes
+              </h3>
+            </div>
+            <Link
+              href="/clientes"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              Ver todos <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+
+          <div className="space-y-2.5">
+            {recentClients.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-6">Sin clientes registrados</p>
+            ) : (
+              recentClients.slice(0, 5).map((client) => (
+                <Link
+                  key={client.id}
+                  href={`/clientes/${client.id}`}
+                  className="flex items-center justify-between p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-150"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{client.name}</p>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 truncate">
+                      {client.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" /> {client.phone}
+                        </span>
+                      )}
+                      {client.email && (
+                        <span className="flex items-center gap-1 truncate">
+                          <Mail className="h-3 w-3" /> {client.email}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-2" />
+                </Link>
+              ))
+            )}
+          </div>
+        </Card>
+
+        {/* Últimas Facturas Emitidas */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                Últimas Facturas
+              </h3>
+            </div>
             <Link
               href="/facturas"
               className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -546,6 +783,7 @@ export default function Dashboard() {
               Ver todas <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
+
           <div className="space-y-2.5">
             {(data?.ultimasFacturas ?? []).length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-6">
@@ -574,7 +812,7 @@ export default function Dashboard() {
                       {factura.client_name}
                     </p>
                   </div>
-                  <div className="text-right ml-3">
+                  <div className="text-right ml-3 shrink-0">
                     <p className="text-sm font-extrabold text-slate-900">
                       {factura.total.toFixed(2)} €
                     </p>
@@ -588,11 +826,15 @@ export default function Dashboard() {
           </div>
         </Card>
 
+        {/* Próximas Tareas y Visitas */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-            <h2 className="text-base font-bold text-slate-900">
-              Próximas Tareas Programadas
-            </h2>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-purple-600" />
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                Próximas Tareas
+              </h3>
+            </div>
             <Link
               href="/agenda"
               className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
@@ -600,6 +842,7 @@ export default function Dashboard() {
               Ver agenda <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
+
           <div className="space-y-2.5">
             {(data?.proximasVisitasList ?? []).length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-6">
@@ -612,8 +855,8 @@ export default function Dashboard() {
                   href="/agenda"
                   className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-150"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 border border-purple-100 text-purple-600 shadow-xs">
-                    <Calendar className="h-5 w-5" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 border border-purple-100 text-purple-600 shadow-xs shrink-0">
+                    <Calendar className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">
@@ -623,7 +866,7 @@ export default function Dashboard() {
                       {visita.client_name} {visita.address ? `· ${visita.address}` : ""}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <p className="text-xs font-bold text-slate-700">
                       {formatDate(visita.date)}
                     </p>
@@ -641,7 +884,7 @@ export default function Dashboard() {
       </div>
 
       <p className="text-center text-[11px] text-slate-400 mt-8 no-print">
-        Autónomo 360 · Plataforma de gestión profesional para electricistas y autónomos
+        Autónomo 360 · Centro de Control Operativo y Financiero para Autónomos
       </p>
     </div>
   );

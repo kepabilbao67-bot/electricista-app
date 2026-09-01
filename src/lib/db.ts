@@ -7,26 +7,53 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { MATERIALES_DEMO } from "./materiales-demo";
 
-let client: Client;
+let client: Client | undefined;
+
+export function getTestDatabaseUrl(): string {
+  const suffix = `${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  return `file:${join(tmpdir(), `autonomo360-test-${suffix}.db`)}`;
+}
+
+function isExplicitTestRun(): boolean {
+  const argv = process.argv.join(" ");
+  return (
+    process.env.NODE_ENV === "test" ||
+    process.env.npm_lifecycle_event === "test" ||
+    Boolean(process.env.JEST_WORKER_ID) ||
+    process.env.VITEST === "true" ||
+    process.env.TSX_TEST === "true" ||
+    argv.includes("tsx --test") ||
+    argv.includes("--test") ||
+    argv.includes("node:test")
+  );
+}
 
 /**
  * Resolves the database URL.
  *
- * - If TURSO_DATABASE_URL is configured, use it (persistent, recommended for
- *   production).
- * - Otherwise fall back to a local SQLite file. On serverless platforms such as
- *   Vercel the project directory is READ-ONLY, so writing to "file:electricista.db"
- *   throws and every API route fails with a 500 (the app appears "stuck"). In
- *   that case we write to a writable temp directory so the app keeps working.
+ * Priority (highest first):
+ * 1. TEST_DATABASE_URL — injected by test helpers; prevents any access to
+ *    electricista.db or remote Turso during automated test runs.
+ * 2. TURSO_DATABASE_URL — production/staging persistent database.
+ * 3. Local SQLite file only for local development.
  *
- *   NOTE: the temp file is ephemeral and is NOT shared between serverless
- *   instances or preserved across deployments. Configure TURSO_DATABASE_URL for
- *   durable storage.
+ * In serverless/production, a non-persistent local file is rejected so a
+ * misconfigured deployment fails loudly instead of silently losing data.
  */
 function resolveDatabaseUrl(): string {
+  const testUrl = process.env.TEST_DATABASE_URL?.trim();
+  if (testUrl) {
+    return testUrl;
+  }
+
+  if (isExplicitTestRun()) {
+    return getTestDatabaseUrl();
+  }
+
   if (process.env.DEMO_MODE === "true") {
     return `file:${join(tmpdir(), "autonomo360-demo.db")}`;
   }
+
   const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
   if (tursoUrl) {
     return tursoUrl;
@@ -40,7 +67,9 @@ function resolveDatabaseUrl(): string {
   );
 
   if (isServerless) {
-    return `file:${join(tmpdir(), "electricista.db")}`;
+    throw new Error(
+      "Database configuration missing for serverless/production: set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN. Falling back to a local SQLite file is disabled to avoid silent data loss."
+    );
   }
 
   return "file:electricista.db";
@@ -50,10 +79,37 @@ export function getDbClient(): Client {
   if (!client) {
     client = createClient({
       url: resolveDatabaseUrl(),
-      authToken: process.env.TURSO_AUTH_TOKEN,
+      authToken: process.env.TEST_DATABASE_URL ? undefined : process.env.TURSO_AUTH_TOKEN,
     });
   }
   return client;
+}
+
+/**
+ * Replaces the singleton client with a caller-supplied client.
+ * ONLY for use in test files — never call from production code.
+ * Pass an in-memory libsql client to ensure tests never touch electricista.db.
+ *
+ * @example
+ * import { createClient } from "@libsql/client";
+ * import { setDbClientForTesting, resetDbClient } from "@/lib/db";
+ * before(async () => {
+ *   const db = createClient({ url: "file::memory:" });
+ *   setDbClientForTesting(db);
+ *   await initializeDatabase(db);
+ * });
+ * after(() => resetDbClient());
+ */
+export function setDbClientForTesting(testClient: Client): void {
+  client = testClient;
+}
+
+/**
+ * Clears the singleton so the next getDbClient() call creates a fresh one.
+ * ONLY for use in test teardown.
+ */
+export function resetDbClient(): void {
+  client = undefined;
 }
 
 /**
@@ -260,15 +316,49 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "created_at", def: "TEXT" },
   ]);
 
+  await ensureColumns(db, "suppliers", [
+    { name: "nif", def: "TEXT" },
+    { name: "email", def: "TEXT" },
+    { name: "phone", def: "TEXT" },
+    { name: "address", def: "TEXT" },
+    { name: "city", def: "TEXT" },
+    { name: "province", def: "TEXT" },
+    { name: "notes", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "expenses", [
+    { name: "supplier_id", def: "TEXT" },
+    { name: "supplier_name", def: "TEXT" },
+    { name: "invoice_number", def: "TEXT" },
+    { name: "date", def: "TEXT" },
+    { name: "due_date", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'pending'" },
+    { name: "subtotal", def: "REAL DEFAULT 0" },
+    { name: "tax_rate", def: "REAL DEFAULT 21" },
+    { name: "tax_amount", def: "REAL DEFAULT 0" },
+    { name: "total", def: "REAL DEFAULT 0" },
+    { name: "notes", def: "TEXT" },
+    { name: "obra", def: "TEXT" },
+    { name: "albaran", def: "TEXT" },
+    { name: "created_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "expense_items", [
+    { name: "article_code", def: "TEXT" },
+    { name: "discount", def: "REAL DEFAULT 0" },
+    { name: "sort_order", def: "INTEGER DEFAULT 0" },
+  ]);
+
   await db.execute(
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_source_part_id_unique ON invoices(source_part_id) WHERE source_part_id IS NOT NULL;"
   );
 
-  // MigraciÃ³n de budgets.client_id NOT NULL â†’ nullable (BUD-SINCLIENTE-001):
+  // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
   // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
   //   npx tsx scripts/migrate-budgets-client-nullable.ts --url "file:electricista.db" --yes
-  // No se ejecuta automÃ¡ticamente en arranque para evitar riesgos en producciÃ³n.
+  // No se ejecuta automáticamente en arranque para evitar riesgos en producción.
 }
 
 export async function initializeDatabase(client?: Client): Promise<void> {
@@ -563,6 +653,51 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       email TEXT,
       status TEXT NOT NULL DEFAULT 'recibido',
       created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS suppliers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      nif TEXT,
+      email TEXT,
+      phone TEXT,
+      address TEXT,
+      city TEXT,
+      province TEXT,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS expenses (
+      id TEXT PRIMARY KEY,
+      supplier_id TEXT,
+      supplier_name TEXT,
+      invoice_number TEXT,
+      date TEXT NOT NULL,
+      due_date TEXT,
+      status TEXT DEFAULT 'pending',
+      subtotal REAL DEFAULT 0,
+      tax_rate REAL DEFAULT 21,
+      tax_amount REAL DEFAULT 0,
+      total REAL DEFAULT 0,
+      notes TEXT,
+      obra TEXT,
+      albaran TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS expense_items (
+      id TEXT PRIMARY KEY,
+      expense_id TEXT NOT NULL,
+      article_code TEXT,
+      description TEXT NOT NULL,
+      quantity REAL DEFAULT 1,
+      unit_price REAL NOT NULL,
+      discount REAL DEFAULT 0,
+      total REAL NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      FOREIGN KEY (expense_id) REFERENCES expenses(id) ON DELETE CASCADE
     );
   `);
 
