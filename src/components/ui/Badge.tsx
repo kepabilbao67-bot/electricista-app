@@ -10,23 +10,23 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantStyles: Record<string, string> = {
-  blue: "bg-blue-100 text-blue-800 border-blue-200/80",
-  green: "bg-emerald-100 text-emerald-800 border-emerald-200/80",
-  amber: "bg-amber-100 text-amber-800 border-amber-200/80",
-  red: "bg-red-100 text-red-800 border-red-200/80",
-  gray: "bg-slate-100 text-slate-700 border-slate-200/80",
-  purple: "bg-purple-100 text-purple-800 border-purple-200/80",
-  cyan: "bg-cyan-100 text-cyan-800 border-cyan-200/80",
+  blue: "bg-blue-500/10 text-blue-200 border-blue-400/30",
+  green: "bg-emerald-500/10 text-emerald-200 border-emerald-400/30",
+  amber: "bg-amber-500/10 text-amber-200 border-amber-400/30",
+  red: "bg-red-500/10 text-red-200 border-red-400/30",
+  gray: "bg-slate-700/80 text-slate-200 border-slate-600/80",
+  purple: "bg-purple-500/10 text-purple-200 border-purple-400/30",
+  cyan: "bg-cyan-500/10 text-cyan-200 border-cyan-400/30",
 };
 
 const dotStyles: Record<string, string> = {
-  blue: "bg-blue-600",
-  green: "bg-emerald-600",
-  amber: "bg-amber-600",
-  red: "bg-red-600",
-  gray: "bg-slate-500",
-  purple: "bg-purple-600",
-  cyan: "bg-cyan-600",
+  blue: "bg-blue-400",
+  green: "bg-emerald-400",
+  amber: "bg-amber-400",
+  red: "bg-red-400",
+  gray: "bg-slate-400",
+  purple: "bg-purple-400",
+  cyan: "bg-cyan-400",
 };
 
 export const Badge: React.FC<BadgeProps> = ({

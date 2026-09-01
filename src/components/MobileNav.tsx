@@ -22,18 +22,18 @@ export function MobileNav({ navItems, brand }: MobileNavProps) {
 
   return (
     <div className="md:hidden sticky top-0 z-40">
-      <div className="flex h-14 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 shadow-sm">
+      <div className="flex h-14 items-center justify-between border-b border-slate-700/80 bg-slate-950/85 px-4 shadow-[0_12px_30px_rgba(2,6,23,0.5)] backdrop-blur-md">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 shadow-sm">
-            <BrandIcon className="h-4 w-4 text-amber-400" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#f5d48a] via-[#d9b35f] to-[#8b6425] shadow-sm">
+            <BrandIcon className="h-4 w-4 text-slate-950" />
           </div>
-          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">{brand.tradeName}</span>
+          <span className="text-sm font-bold tracking-tight text-slate-50">{brand.tradeName}</span>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-xl p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 transition-colors"
+            className="rounded-xl p-2 text-slate-200 transition-colors hover:bg-slate-800 active:bg-slate-700"
             aria-label="Abrir menú"
           >
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -43,10 +43,10 @@ export function MobileNav({ navItems, brand }: MobileNavProps) {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 top-14 z-40 bg-slate-950/40 backdrop-blur-xs"
+            className="fixed inset-0 top-14 z-40 bg-slate-950/60 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute inset-x-2 top-16 z-50 border border-slate-200/80 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl shadow-2xl rounded-2xl p-3 animate-scale-in">
+          <div className="absolute inset-x-2 top-16 z-50 rounded-2xl border border-slate-700 bg-slate-900/95 p-3 shadow-[0_24px_56px_rgba(2,6,23,0.6)] animate-scale-in">
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = resolveIcon(item.iconKey);
@@ -60,11 +60,11 @@ export function MobileNav({ navItems, brand }: MobileNavProps) {
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-md shadow-blue-500/20"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200"
+                        ? "bg-gradient-to-r from-[#f5d48a]/18 to-[#d9b35f]/10 text-slate-50 shadow-[inset_0_0_0_1px_rgba(217,179,95,0.15)]"
+                        : "text-slate-300 hover:bg-slate-800 active:bg-slate-700"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 ${isActive ? "text-amber-300" : "text-slate-500 dark:text-slate-400"}`} />
+                    <Icon className={`h-4 w-4 ${isActive ? "text-[#f5d48a]" : "text-slate-400"}`} />
                     <span>{item.label}</span>
                   </Link>
                 );

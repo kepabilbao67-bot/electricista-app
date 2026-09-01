@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, FormEvent } from "react";
+import { useEffect, useState, useCallback, FormEvent } from "react";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -19,6 +19,10 @@ import {
   ChevronRight,
   Filter,
   Check,
+  Building2,
+  Flame,
+  UserCheck,
+  Send,
 } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -76,14 +80,19 @@ interface CommercialMetrics {
   closedWonCount: number;
 }
 
-// Barymont Kanban Visual Columns
-const PIPELINE_COLUMNS: { key: CrmStage; label: string; bgHeader: string }[] = [
-  { key: "nuevo", label: "1. Lead / Nuevo", bgHeader: "from-blue-600/20 to-blue-500/10" },
-  { key: "contactado", label: "2. Contacto Inicial", bgHeader: "from-sky-600/20 to-sky-500/10" },
-  { key: "reunion", label: "3. Reunión / Diagnóstico", bgHeader: "from-purple-600/20 to-purple-500/10" },
-  { key: "seguimiento", label: "4. En Seguimiento", bgHeader: "from-amber-600/20 to-amber-500/10" },
-  { key: "propuesta", label: "5. Propuesta Enviada", bgHeader: "from-indigo-600/20 to-indigo-500/10" },
-  { key: "cliente", label: "6. Cierre Ganado", bgHeader: "from-emerald-600/20 to-emerald-500/10" },
+// 6 Columnas Visuales del Pipeline Barymont
+const PIPELINE_COLUMNS: {
+  key: CrmStage;
+  label: string;
+  badgeBg: string;
+  headerBorder: string;
+}[] = [
+  { key: "nuevo", label: "1. Lead / Nuevo", badgeBg: "bg-slate-700/60 text-slate-300", headerBorder: "border-slate-700" },
+  { key: "contactado", label: "2. Contacto Inicial", badgeBg: "bg-sky-500/20 text-sky-300", headerBorder: "border-sky-500/30" },
+  { key: "reunion", label: "3. Reunión / Diagnóstico", badgeBg: "bg-purple-500/20 text-purple-300", headerBorder: "border-purple-500/30" },
+  { key: "seguimiento", label: "4. En Seguimiento", badgeBg: "bg-amber-500/20 text-amber-300", headerBorder: "border-amber-500/30" },
+  { key: "propuesta", label: "5. Propuesta Enviada", badgeBg: "bg-blue-500/20 text-blue-300", headerBorder: "border-blue-500/30" },
+  { key: "cliente", label: "6. Cierre Ganado", badgeBg: "bg-emerald-500/20 text-emerald-300", headerBorder: "border-emerald-500/30" },
 ];
 
 export default function CRMCommercialPage() {
@@ -206,26 +215,32 @@ export default function CRMCommercialPage() {
       showToast("error", "Error al completar tarea");
     }
   };
-  const pendingTasks = tasks.filter((t) => t.status === "pending");
-  const hotOpportunities = opportunities.filter((o) => (o.probability || 0) >= 60 && !["ganada", "cliente", "perdida", "no_interesado"].includes(o.stage));
-  const pendingDocsClients = clients.filter((c) => c.status === "doc_pendiente");
 
+  const pendingTasks = tasks.filter((t) => t.status === "pending");
+  const hotOpportunities = opportunities.filter(
+    (o) => (o.probability || 0) >= 60 && !["ganada", "cliente", "perdida", "no_interesado"].includes(o.stage)
+  );
+  const pendingDocsClients = clients.filter((c) => c.status === "doc_pendiente");
+  const proposalWaitingOpps = opportunities.filter((o) => ["propuesta", "negociacion"].includes(o.stage));
+  const pipelineValue = metrics?.pipelineValue || opportunities.reduce((acc, o) => acc + Number(o.estimated_value || 0), 0);
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-8 max-w-7xl mx-auto pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Breadcrumbs items={[{ label: "CRM & Centro de Trabajo" }]} />
-          <h1 className="text-2xl font-black text-slate-100 mt-1 tracking-tight flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-sky-400" />
-            Centro Comercial Barymont
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-100 mt-1 tracking-tight flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0284c7] via-[#0369a1] to-[#0b1b30] border border-sky-400/30 text-white shadow-md">
+              <TrendingUp className="h-5 w-5 text-[#f5d48a]" />
+            </div>
+            <span>Centro Comercial Barymont</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Gestión comercial integral para Pedro: pipeline visual de ventas, agenda y tareas prioritarias.
+          <p className="text-xs text-slate-400 mt-1">
+            Gestión comercial y patrimonial para Pedro: agenda diaria de seguimiento y pipeline visual Kanban.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="primary"
             icon={Plus}
@@ -238,76 +253,91 @@ export default function CRMCommercialPage() {
       </div>
 
       {/* KPI Stats Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1: Pipeline Total */}
+        <div className="card p-5 bg-[#0a1424]/90 border border-[#d9b35f]/30 flex flex-col justify-between relative overflow-hidden">
           <div>
-            <p className="text-xs text-slate-400 font-medium">Pipeline Total</p>
-            <p className="text-xl font-black text-sky-400 mt-0.5">
+            <span className="text-[11px] font-bold text-[#f5d48a] uppercase tracking-wider">
+              Pipeline Total
+            </span>
+            <p className="text-2xl font-black text-[#f5d48a] font-mono mt-1">
               {(metrics?.pipelineValue || 0).toLocaleString("es-ES", { minimumFractionDigits: 0 })} €
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              Ponderado: {(metrics?.weightedPipelineValue || 0).toLocaleString("es-ES", { minimumFractionDigits: 0 })} €
-            </p>
           </div>
-          <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
-            <DollarSign className="h-5 w-5" />
-          </div>
+          <p className="text-[11px] text-slate-400 mt-2">
+            Ponderado: <strong className="text-sky-400 font-mono">{(metrics?.weightedPipelineValue || 0).toLocaleString("es-ES", { minimumFractionDigits: 0 })} €</strong>
+          </p>
         </div>
 
-        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 font-medium">Oportunidades Activas</p>
-            <p className="text-xl font-black text-slate-100 mt-0.5">
+        {/* Metric 2: Oportunidades Activas */}
+        <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Operaciones Abiertas
+            </span>
+            <span className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+              <Briefcase className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-1">
+            <p className="text-2xl font-black text-slate-100 font-mono">
               {metrics?.openOpportunities || 0}
             </p>
-            <p className="text-[10px] text-emerald-400 mt-0.5">
-              {hotOpportunities.length} calientes (&gt;60%)
+            <p className="text-[11px] text-[#f5d48a] mt-0.5 font-medium">
+              {hotOpportunities.length} prioritarias / calientes
             </p>
-          </div>
-          <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
-            <Briefcase className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 font-medium">Tareas Pendientes</p>
-            <p className="text-xl font-black text-amber-400 mt-0.5">
+        {/* Metric 3: Tareas de Hoy */}
+        <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Tareas & Citas
+            </span>
+            <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <Clock className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-1">
+            <p className="text-2xl font-black text-amber-400 font-mono">
               {metrics?.pendingTasks || 0}
             </p>
-            <p className="text-[10px] text-amber-400 mt-0.5">
-              {metrics?.todayTasks || 0} para hoy
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              {metrics?.todayTasks || 0} agendadas para hoy
             </p>
-          </div>
-          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <CheckCircle2 className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 font-medium">Cierres Ganados</p>
-            <p className="text-xl font-black text-emerald-400 mt-0.5">
+        {/* Metric 4: Cierres Ganados */}
+        <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Cierres Ganados
+            </span>
+            <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <UserCheck className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-1">
+            <p className="text-2xl font-black text-emerald-400 font-mono">
               {metrics?.closedWonCount || 0}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">
-              {clients.length} contactos totales
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              {clients.length} contactos en cartera
             </p>
-          </div>
-          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <Users className="h-5 w-5" />
           </div>
         </div>
       </div>
 
       {/* Switch Views: Centro de Trabajo Diario vs Pipeline Kanban */}
-      <div className="flex items-center gap-2 border-b border-slate-700 pb-2">
+      <div className="flex items-center gap-3 border-b border-slate-700/80 pb-3">
         <button
           onClick={() => setViewMode("workspace")}
-          className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
             viewMode === "workspace"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              ? "bg-[#d9b35f] text-slate-950 shadow-md ring-2 ring-[#f5d48a]/30"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800"
           }`}
         >
           <Sparkles className="h-4 w-4" />
@@ -316,208 +346,315 @@ export default function CRMCommercialPage() {
 
         <button
           onClick={() => setViewMode("pipeline")}
-          className={`px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
+          className={`px-4 py-2.5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
             viewMode === "pipeline"
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              ? "bg-[#d9b35f] text-slate-950 shadow-md ring-2 ring-[#f5d48a]/30"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800"
           }`}
         >
           <TrendingUp className="h-4 w-4" />
           Pipeline Visual Kanban ({opportunities.length})
         </button>
       </div>
-      {/* Tab 1: Centro de Trabajo Diario */}
+      {/* View 1: Centro de Trabajo Diario (HOY + PRIORIDAD) */}
       {viewMode === "workspace" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Column 1: Tareas y Llamadas de Hoy */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  Tareas & Llamadas Pendientes ({pendingTasks.length})
-                </h3>
-              </div>
+        <div className="space-y-8">
+          {/* Section 1: HOY */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-l-4 border-[#d9b35f] pl-3">
+              <h2 className="text-base font-black text-slate-100 uppercase tracking-wider">
+                Hoy en la Agenda de Pedro
+              </h2>
+              <span className="text-xs text-slate-400">
+                · Llamadas pendientes, reuniones y documentación urgente
+              </span>
+            </div>
 
-              {pendingTasks.length === 0 ? (
-                <div className="card p-6 text-center text-xs text-slate-400">
-                  <Check className="h-8 w-8 mx-auto text-emerald-400 mb-1" />
-                  <p className="font-semibold">¡Todo al día!</p>
-                  <p className="text-[11px] text-slate-500">No hay tareas pendientes para hoy.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Column: Llamadas y Citas */}
+              <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-sky-400" />
+                    Llamadas y Tareas ({pendingTasks.length})
+                  </h3>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {pendingTasks.map((t) => (
-                    <div
-                      key={t.id}
-                      className="p-3.5 rounded-xl border border-slate-800 bg-slate-900/80 hover:border-slate-700 transition-all space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => handleCompleteTask(t.id)}
-                            className="mt-0.5 h-4 w-4 rounded border border-slate-600 flex items-center justify-center text-transparent hover:border-emerald-400 hover:text-emerald-400 transition-colors"
-                            title="Marcar como hecha"
-                          >
-                            ✓
-                          </button>
-                          <div>
-                            <p className="text-xs font-bold text-slate-200">{t.title}</p>
-                            {t.client_name && (
-                              <p className="text-[11px] text-sky-400 mt-0.5 font-medium">
-                                Cliente: {t.client_name}
-                              </p>
-                            )}
+
+                {pendingTasks.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 space-y-1">
+                    <Check className="h-7 w-7 mx-auto text-emerald-400" />
+                    <p className="font-bold text-slate-300">¡Al día!</p>
+                    <p className="text-[11px] text-slate-500">Sin llamadas pendientes para hoy.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {pendingTasks.map((t) => (
+                      <div
+                        key={t.id}
+                        className="p-3.5 rounded-xl border border-slate-800 bg-[#0c192d] hover:border-slate-700 transition-all space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2.5">
+                            <button
+                              type="button"
+                              onClick={() => handleCompleteTask(t.id)}
+                              className="mt-0.5 h-4 w-4 rounded border border-slate-600 flex items-center justify-center text-transparent hover:border-emerald-400 hover:text-emerald-400 transition-colors shrink-0"
+                              title="Marcar como completada"
+                            >
+                              ✓
+                            </button>
+                            <div>
+                              <p className="text-xs font-bold text-slate-100">{t.title}</p>
+                              {t.client_name && (
+                                <p className="text-[11px] text-sky-400 mt-0.5 font-medium flex items-center gap-1">
+                                  <Building2 className="h-3 w-3 text-slate-500" />
+                                  {t.client_name}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
 
-                        {t.priority === "high" && (
-                          <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                            Alta
-                          </span>
-                        )}
-                      </div>
-
-                      {t.client_phone && (
-                        <div className="pt-2 border-t border-slate-800/60 flex items-center gap-2">
-                          <WhatsAppButton
-                            phone={t.client_phone}
-                            message={`Hola ${t.client_name || ""},`}
-                            className="h-7 px-2 text-[11px]"
-                          />
-                          <a
-                            href={`tel:${t.client_phone}`}
-                            className="btn-secondary h-7 px-2 flex items-center gap-1 text-[11px] text-sky-400 border-sky-500/30"
-                          >
-                            <Phone className="h-3 w-3" /> Llamar
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Column 2: Oportunidades Calientes */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-sky-400" />
-                  Oportunidades Calientes ({hotOpportunities.length})
-                </h3>
-              </div>
-
-              {hotOpportunities.length === 0 ? (
-                <div className="card p-6 text-center text-xs text-slate-400">
-                  <Briefcase className="h-8 w-8 mx-auto text-slate-500 mb-1" />
-                  <p>Sin oportunidades de alta probabilidad (&gt;60%)</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {hotOpportunities.map((opp) => (
-                    <div
-                      key={opp.id}
-                      className="p-3.5 rounded-xl border border-sky-500/20 bg-sky-950/20 hover:border-sky-500/40 transition-all space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-xs font-bold text-slate-100">{opp.title}</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            {opp.client_name ? `Cliente: ${opp.client_name}` : "Prospecto"}
-                          </p>
-                        </div>
-                        <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                          {opp.probability || 60}%
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs pt-1">
-                        <span className="font-black text-sky-400">
-                          {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
-                        </span>
-                        {opp.client_id && (
-                          <Link
-                            href={`/clientes/${opp.client_id}`}
-                            className="text-[11px] font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1"
-                          >
-                            Ver cliente <ChevronRight className="h-3 w-3" />
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Column 3: Alertas & Documentación Pendiente */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-400" />
-                  Documentación Pendiente & Alertas ({pendingDocsClients.length})
-                </h3>
-              </div>
-
-              {pendingDocsClients.length === 0 ? (
-                <div className="card p-6 text-center text-xs text-slate-400">
-                  <Check className="h-8 w-8 mx-auto text-emerald-400 mb-1" />
-                  <p className="font-semibold">Sin clientes atascados en documentación</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {pendingDocsClients.map((c) => (
-                    <div
-                      key={c.id}
-                      className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-950/20 hover:border-amber-500/40 transition-all space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-xs font-bold text-slate-100">{c.name}</p>
-                          {c.company && (
-                            <p className="text-[11px] text-slate-400">{c.company}</p>
+                          {t.priority === "high" && (
+                            <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 shrink-0">
+                              Alta
+                            </span>
                           )}
                         </div>
-                        <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          Pte. Doc
-                        </span>
-                      </div>
 
-                      <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between">
-                        {c.phone ? (
-                          <WhatsAppButton
-                            phone={c.phone}
-                            message={`Hola ${c.name}, te escribo de Barymont para ver si pudiste revisar la documentación pendiente.`}
-                            className="h-7 px-2 text-[11px]"
-                          />
-                        ) : <div />}
-                        <Link
-                          href={`/clientes/${c.id}`}
-                          className="text-[11px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
-                        >
-                          Ficha <ArrowRight className="h-3 w-3" />
-                        </Link>
+                        {t.client_phone && (
+                          <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+                            <WhatsAppButton
+                              phone={t.client_phone}
+                              message={`Hola ${t.client_name || ""}, te contacto desde Barymont.`}
+                              className="h-7 px-2.5 text-[11px]"
+                            />
+                            <a
+                              href={`tel:${t.client_phone}`}
+                              className="btn-secondary h-7 px-2.5 flex items-center gap-1 text-[11px] text-sky-400 border-sky-500/30"
+                            >
+                              <Phone className="h-3 w-3" /> Llamar
+                            </a>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Column: Próximas Citas */}
+              <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-purple-400" />
+                    Citas y Diagnósticos
+                  </h3>
                 </div>
-              )}
+
+                <div className="p-6 text-center text-xs text-slate-400 space-y-2 border border-dashed border-slate-800 rounded-xl">
+                  <Calendar className="h-7 w-7 mx-auto text-purple-400/60" />
+                  <p className="font-bold text-slate-300">Agenda Comercial Sincronizada</p>
+                  <p className="text-[11px] text-slate-500">
+                    {metrics?.upcomingMeetings || 0} reuniones programadas en calendario.
+                  </p>
+                  <Link href="/agenda" className="btn-secondary text-[11px] h-7 px-3 inline-flex items-center gap-1">
+                    Abrir Agenda Completa <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Column: Documentación Pendiente */}
+              <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-400" />
+                    Documentación Pendiente ({pendingDocsClients.length})
+                  </h3>
+                </div>
+
+                {pendingDocsClients.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 space-y-1">
+                    <Check className="h-7 w-7 mx-auto text-emerald-400" />
+                    <p className="font-bold text-slate-300">Sin expedientes bloqueados</p>
+                    <p className="text-[11px] text-slate-500">No hay clientes con pólizas esperando firma.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {pendingDocsClients.map((c) => (
+                      <div
+                        key={c.id}
+                        className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-950/10 hover:border-amber-500/40 transition-all space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-bold text-slate-100">{c.name}</p>
+                            {c.company && (
+                              <p className="text-[11px] text-slate-400">{c.company}</p>
+                            )}
+                          </div>
+                          <span className="px-2 py-0.5 text-[9px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            Pte. Firma
+                          </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                          {c.phone ? (
+                            <WhatsAppButton
+                              phone={c.phone}
+                              message={`Hola ${c.name}, te contacto desde Barymont para recordar la documentación pendiente.`}
+                              className="h-7 px-2.5 text-[11px]"
+                            />
+                          ) : <div />}
+                          <Link
+                            href={`/clientes/${c.id}`}
+                            className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                          >
+                            Ver Ficha <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: PRIORIDAD COMERCIAL */}
+          <div className="space-y-4 pt-4 border-t border-slate-800">
+            <div className="flex items-center gap-2 border-l-4 border-sky-400 pl-3">
+              <h2 className="text-base font-black text-slate-100 uppercase tracking-wider">
+                Prioridades Comerciales de la Cartera
+              </h2>
+              <span className="text-xs text-slate-400">
+                · Oportunidades calientes (&gt;60%) y propuestas en negociación
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Oportunidades Calientes */}
+              <div className="card p-5 bg-[#0a1424]/90 border border-[#d9b35f]/30 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-[#f5d48a] uppercase tracking-wider flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-[#f5d48a]" />
+                    Oportunidades Calientes ({hotOpportunities.length})
+                  </h3>
+                </div>
+
+                {hotOpportunities.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 space-y-1">
+                    <p>No hay operaciones marcadas con probabilidad &gt;60%.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {hotOpportunities.map((opp) => (
+                      <div
+                        key={opp.id}
+                        className="p-3.5 rounded-xl border border-[#d9b35f]/20 bg-[#0d1c33] hover:border-[#d9b35f]/40 transition-all space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-bold text-slate-100">{opp.title}</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {opp.client_name ? `Cliente: ${opp.client_name}` : "Prospecto"}
+                              {opp.client_company ? ` · ${opp.client_company}` : ""}
+                            </p>
+                          </div>
+                          <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-[#d9b35f]/20 text-[#f5d48a] border border-[#d9b35f]/40 shrink-0">
+                            {opp.probability || 60}%
+                          </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                          <span className="font-mono font-black text-[#f5d48a]">
+                            {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
+                          </span>
+                          {opp.client_id ? (
+                            <Link
+                              href={`/clientes/${opp.client_id}`}
+                              className="text-[11px] font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1"
+                            >
+                              Ficha Cliente <ChevronRight className="h-3 w-3" />
+                            </Link>
+                          ) : (
+                            <span className="text-[10px] text-slate-500">Sin cliente asociado</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Propuestas en Negociación */}
+              <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <Send className="h-4 w-4 text-blue-400" />
+                    Propuestas Enviadas & Negociación ({proposalWaitingOpps.length})
+                  </h3>
+                </div>
+
+                {proposalWaitingOpps.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 space-y-1">
+                    <p>No hay propuestas pendientes de respuesta en este momento.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {proposalWaitingOpps.map((opp) => (
+                      <div
+                        key={opp.id}
+                        className="p-3.5 rounded-xl border border-blue-500/20 bg-[#0b172a] hover:border-blue-500/40 transition-all space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-bold text-slate-100">{opp.title}</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {opp.client_name ? `Cliente: ${opp.client_name}` : "Prospecto"}
+                            </p>
+                          </div>
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 shrink-0">
+                            {CRM_STAGE_LABELS[opp.stage] || opp.stage}
+                          </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                          <span className="font-mono font-black text-sky-400">
+                            {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
+                          </span>
+                          {opp.next_action && (
+                            <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> {opp.next_action}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
-      {/* Tab 2: Visual Pipeline Kanban */}
+      {/* View 2: Visual Pipeline Kanban (6 Etapas Sobrias) */}
       {viewMode === "pipeline" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Pipeline de Soluciones Financieras Barymont
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
+                Pipeline de Soluciones Financieras Barymont
+              </h2>
+              <p className="text-xs text-slate-400">
+                Flujo visual de 6 etapas comerciales desde el primer contacto hasta el cierre de póliza o plan.
+              </p>
+            </div>
+            <span className="text-xs font-mono font-bold text-[#f5d48a] self-start sm:self-auto">
+              Total Pipeline: {pipelineValue.toLocaleString("es-ES")} €
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 overflow-x-auto pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3.5 overflow-x-auto pb-4">
             {PIPELINE_COLUMNS.map((col) => {
               const colOpps = opportunities.filter((o) => o.stage === col.key);
               const colTotal = colOpps.reduce((acc, o) => acc + Number(o.estimated_value || 0), 0);
@@ -525,24 +662,24 @@ export default function CRMCommercialPage() {
               return (
                 <div
                   key={col.key}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-3 flex flex-col justify-between space-y-3 min-w-[220px]"
+                  className={`rounded-2xl border ${col.headerBorder} bg-[#091322]/90 p-3.5 flex flex-col justify-between space-y-3 min-w-[230px] shadow-md`}
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {/* Column Header */}
-                    <div className={`p-2.5 rounded-xl bg-gradient-to-r ${col.bgHeader} border border-slate-800 space-y-0.5`}>
+                    <div className="space-y-1 pb-2.5 border-b border-slate-800">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-200">{col.label}</span>
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${col.badgeBg}`}>
                           {colOpps.length}
                         </span>
                       </div>
-                      <p className="text-[11px] font-bold text-sky-400">
+                      <p className="text-xs font-mono font-bold text-[#f5d48a]">
                         {colTotal.toLocaleString("es-ES")} €
                       </p>
                     </div>
 
                     {/* Column Cards */}
-                    <div className="space-y-2 max-h-[600px] overflow-y-auto pr-0.5">
+                    <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-0.5">
                       {colOpps.length === 0 ? (
                         <div className="p-4 text-center text-[11px] text-slate-500 rounded-xl border border-dashed border-slate-800">
                           Sin operaciones
@@ -551,23 +688,32 @@ export default function CRMCommercialPage() {
                         colOpps.map((opp) => (
                           <div
                             key={opp.id}
-                            className="p-3 rounded-xl border border-slate-800 bg-slate-900/90 hover:border-slate-700 transition-all space-y-2 shadow-sm"
+                            className="p-3.5 rounded-xl border border-slate-800 bg-[#0d1a2d] hover:border-slate-700 transition-all space-y-2 shadow-sm group"
                           >
                             <div>
-                              <p className="text-xs font-bold text-slate-100">{opp.title}</p>
+                              <p className="text-xs font-bold text-slate-100 group-hover:text-sky-300 transition-colors">
+                                {opp.title}
+                              </p>
                               {opp.client_name && (
-                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                  <Users className="h-3 w-3 text-slate-500" />
                                   {opp.client_name}
+                                </p>
+                              )}
+                              {opp.client_company && (
+                                <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                                  <Building2 className="h-2.5 w-2.5 text-slate-600" />
+                                  {opp.client_company}
                                 </p>
                               )}
                             </div>
 
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-bold text-sky-400">
+                            <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/80">
+                              <span className="font-mono font-black text-[#f5d48a]">
                                 {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
                               </span>
                               {opp.probability !== undefined && (
-                                <span className="text-[10px] text-slate-500">
+                                <span className="text-[10px] font-bold text-slate-400">
                                   {opp.probability}%
                                 </span>
                               )}
@@ -585,7 +731,7 @@ export default function CRMCommercialPage() {
                               <select
                                 value={opp.stage}
                                 onChange={(e) => handleStageChange(opp.id, e.target.value as CrmStage)}
-                                className="input-base text-[10px] py-1 px-1.5 h-6 bg-slate-800 border-slate-700 text-slate-300 w-full"
+                                className="input-field text-[10px] py-1 px-1.5 h-7 bg-slate-900 border-slate-700 text-slate-300 w-full rounded-lg"
                               >
                                 {CRM_STAGES.slice(0, 11).map((st) => (
                                   <option key={st} value={st}>
@@ -608,11 +754,11 @@ export default function CRMCommercialPage() {
 
       {/* Modal Nueva Oportunidad */}
       {showNewOppModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg p-6 bg-slate-900 border border-slate-700 shadow-2xl space-y-4 animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="card w-full max-w-lg p-6 bg-[#0c182c] border border-slate-700 shadow-2xl space-y-4 animate-scale-in max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <Plus className="h-5 w-5 text-sky-400" />
-              Nueva Oportunidad Comercial Barymont
+              <Plus className="h-5 w-5 text-[#f5d48a]" />
+              Nueva Oportunidad Comercial (Barymont)
             </h3>
             <form onSubmit={handleCreateOpp} className="space-y-3">
               <div>
@@ -620,7 +766,7 @@ export default function CRMCommercialPage() {
                 <select
                   value={newOppForm.client_id}
                   onChange={(e) => setNewOppForm({ ...newOppForm, client_id: e.target.value })}
-                  className="input-base text-xs w-full mt-1"
+                  className="input-field text-xs w-full mt-1"
                 >
                   <option value="">-- Sin cliente específico --</option>
                   {clients.map((c) => (
@@ -636,10 +782,10 @@ export default function CRMCommercialPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Planificación Jubilación PIAS / Vida Protección"
+                  placeholder="Ej: Plan de Ahorro PIAS / Seguro Protección Familiar"
                   value={newOppForm.title}
                   onChange={(e) => setNewOppForm({ ...newOppForm, title: e.target.value })}
-                  className="input-base text-xs w-full mt-1"
+                  className="input-field text-xs w-full mt-1"
                 />
               </div>
 
@@ -652,7 +798,7 @@ export default function CRMCommercialPage() {
                     placeholder="0.00"
                     value={newOppForm.estimated_value}
                     onChange={(e) => setNewOppForm({ ...newOppForm, estimated_value: e.target.value })}
-                    className="input-base text-xs w-full mt-1"
+                    className="input-field text-xs w-full mt-1"
                   />
                 </div>
                 <div>
@@ -667,7 +813,7 @@ export default function CRMCommercialPage() {
                         probability: STAGE_PROBABILITIES[st] || 20,
                       });
                     }}
-                    className="input-base text-xs w-full mt-1"
+                    className="input-field text-xs w-full mt-1"
                   >
                     {CRM_STAGES.slice(0, 11).map((st) => (
                       <option key={st} value={st}>
@@ -686,7 +832,7 @@ export default function CRMCommercialPage() {
                     placeholder="Ej: Presentación de propuesta"
                     value={newOppForm.next_action}
                     onChange={(e) => setNewOppForm({ ...newOppForm, next_action: e.target.value })}
-                    className="input-base text-xs w-full mt-1"
+                    className="input-field text-xs w-full mt-1"
                   />
                 </div>
                 <div>
@@ -695,7 +841,7 @@ export default function CRMCommercialPage() {
                     type="date"
                     value={newOppForm.next_action_at}
                     onChange={(e) => setNewOppForm({ ...newOppForm, next_action_at: e.target.value })}
-                    className="input-base text-xs w-full mt-1"
+                    className="input-field text-xs w-full mt-1"
                   />
                 </div>
               </div>
@@ -707,7 +853,7 @@ export default function CRMCommercialPage() {
                   placeholder="Detalles sobre perfil de riesgo, ahorro mensual u objetivos..."
                   value={newOppForm.notes}
                   onChange={(e) => setNewOppForm({ ...newOppForm, notes: e.target.value })}
-                  className="input-base text-xs w-full mt-1"
+                  className="input-field text-xs w-full mt-1"
                 />
               </div>
 

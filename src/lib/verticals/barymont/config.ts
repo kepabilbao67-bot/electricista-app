@@ -3,6 +3,8 @@
  *
  * Módulo especializado para planificación financiera, asesoramiento patrimonial,
  * gestión de clientes, oportunidades y seguimiento comercial para Barymont / Pedro.
+ *
+ * Concepto de marca: "Planifica. Protege. Haz crecer."
  */
 
 import type {
@@ -154,7 +156,7 @@ const barymontKnowledge: KnowledgeProvider = {
     const q = query.toLowerCase();
     if (q.includes("metodo") || q.includes("planificacion financiera") || q.includes("que es barymont")) {
       return (
-        "**Planificación Financiera Barymont:**\n\n" +
+        "**Planificación Financiera Barymont — “Planifica. Protege. Haz crecer.”**\n\n" +
         "El método Barymont se fundamenta en la **educación financiera** y en un análisis personalizado en 4 etapas:\n" +
         "1. **Diagnóstico Patrimonial:** Evaluación de ingresos, gastos, endeudamiento y capacidad de ahorro.\n" +
         "2. **Protección Familiar:** Cobertura de contingencias vitales (fallecimiento, invalidez, salud y bajas).\n" +

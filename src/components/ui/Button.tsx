@@ -9,12 +9,12 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
-  primary: "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-blue-800 active:scale-[0.98] focus:ring-blue-500 border border-blue-500/30",
-  secondary: "border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-400 active:scale-[0.98] focus:ring-slate-400",
-  ghost: "bg-transparent text-slate-600 hover:bg-slate-100 active:bg-slate-200 focus:ring-slate-300",
-  danger: "bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-md shadow-red-500/20 hover:from-red-700 hover:to-rose-800 active:scale-[0.98] focus:ring-red-500 border border-red-500/30",
-  success: "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-800 active:scale-[0.98] focus:ring-emerald-500 border border-emerald-500/30",
-  accent: "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-700 active:scale-[0.98] focus:ring-amber-400 border border-amber-500/30",
+  primary: "bg-gradient-to-r from-[#f5d48a] via-[#d9b35f] to-[#c79d46] text-slate-950 shadow-[0_16px_30px_rgba(217,179,95,0.28)] hover:brightness-110 active:scale-[0.98] focus:ring-[#f5d48a] border border-[#d9b35f]/60",
+  secondary: "border border-slate-700 bg-slate-900/90 text-slate-100 shadow-sm hover:bg-slate-800 hover:border-slate-600 active:scale-[0.98] focus:ring-slate-500",
+  ghost: "bg-transparent text-slate-300 hover:bg-slate-800 hover:text-slate-100 active:bg-slate-700 focus:ring-slate-500",
+  danger: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-[0_16px_30px_rgba(239,68,68,0.25)] hover:brightness-110 active:scale-[0.98] focus:ring-red-500 border border-red-400/50",
+  success: "bg-gradient-to-r from-emerald-400 to-emerald-500 text-slate-950 shadow-[0_16px_30px_rgba(16,185,129,0.25)] hover:brightness-110 active:scale-[0.98] focus:ring-emerald-400 border border-emerald-300/60",
+  accent: "bg-gradient-to-r from-[#6aa7ff] to-[#3d7ae6] text-white shadow-[0_16px_30px_rgba(61,122,230,0.25)] hover:brightness-110 active:scale-[0.98] focus:ring-blue-400 border border-blue-400/60",
 };
 
 const sizeStyles: Record<NonNullable<ButtonProps["size"]>, string> = {
@@ -36,7 +36,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none select-none cursor-pointer ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none select-none cursor-pointer ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       {...props}
     >
       {loading ? (
