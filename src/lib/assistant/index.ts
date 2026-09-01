@@ -4,3 +4,7 @@ export type { AppModule, ModuleStatus } from "./app-knowledge";
 export { ELECTRICAL_SAFETY_RULES, isDangerousElectricalQuery, DANGEROUS_QUERY_RESPONSE } from "./electrical-safety";
 export { KNOWLEDGE_VERSION } from "./knowledge-version";
 export { answerCommercialQuery } from "./commercial-assistant";
+export { ASSISTANT_TOOLS } from "./tools-schema";
+export type { OpenAITool } from "./tools-schema";
+export { executeAssistantTool } from "./tool-handlers";
+export type { ToolExecutionResult } from "./tool-handlers";

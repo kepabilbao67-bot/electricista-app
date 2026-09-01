@@ -1,7 +1,6 @@
 /**
- * Filtro de datos sensibles para el asistente de texto.
+ * Filtro de datos sensibles para el asistente de texto y consultas externas.
  * Detecta y protege: NIF/CIF/NIE, IBAN, emails, teléfonos, importes, fechas, horas, URLs.
- * No es perfecto pero reduce el riesgo de que la IA modifique datos protegidos.
  */
 
 // Patterns for sensitive tokens
@@ -12,7 +11,7 @@ const PATTERNS = {
   iban: /\b[A-Z]{2}\d{2}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/gi,
   email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z]{2,}\b/gi,
   phone: /\b(\+?\d{1,3}[\s.-]?)?\d{3}[\s.-]?\d{3}[\s.-]?\d{3}\b/g,
-  amount: /\b\d+([.,]\d{1,2})?\s*€\b/g,
+  amount: /\b\d+([.,]\d{1,2})?\s*€?\b/g,
   date: /\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/g,
   time: /\b\d{1,2}:\d{2}(:\d{2})?\b/g,
   url: /https?:\/\/[^\s]+/gi,
@@ -49,6 +48,21 @@ export function extractSensitiveTokens(text: string): SensitiveTokens {
 }
 
 /**
+ * Detecta PII estricta (NIF/CIF/NIE, IBAN, email, teléfono) que no debe enviarse a un modelo externo.
+ * Permite expresamente importes, fechas, horas y números libres.
+ */
+export function containsStrictPii(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const tokens = extractSensitiveTokens(text);
+  return (
+    tokens.nif.length > 0 ||
+    tokens.iban.length > 0 ||
+    tokens.email.length > 0 ||
+    tokens.phone.length > 0
+  );
+}
+
+/**
  * Returns true if the text contains ANY sensitive data
  * that should not be sent to an external AI service.
  * Blocks: NIF/CIF/NIE, IBAN, email, phone, amounts, dates, times, URLs.
@@ -73,7 +87,6 @@ export function containsHighRiskData(text: string): boolean {
  */
 export function protectedTokensPreserved(original: string, corrected: string): boolean {
   const origTokens = extractSensitiveTokens(original);
-  const corrTokens = extractSensitiveTokens(corrected);
 
   // Check amounts are preserved exactly
   for (const amt of origTokens.amount) {
@@ -98,7 +111,6 @@ export function protectedTokensPreserved(original: string, corrected: string): b
   }
 
   // Check standalone numbers (amounts without €) are preserved
-  // Only check numbers > 2 digits to avoid false positives
   for (const n of origTokens.numbers) {
     if (n.length > 2 && !corrected.includes(n)) return false;
   }
