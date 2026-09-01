@@ -4,7 +4,7 @@ import { guardModule } from "@/lib/core/module-guard";
 import ChatInbox from "@/components/communications/ChatInbox";
 export const dynamic="force-dynamic";
 export default function ChatsPage() {
-  guardModule("communications");
+  guardModule("chats");
   if(loadVerticalConfig().id!=="barymont") notFound();
   return <ChatInbox/>;
 }

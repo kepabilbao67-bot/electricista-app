@@ -45,6 +45,7 @@ describe("Vertical Barymont (Pedro Barymont 360) - Loader y Configuración", () 
     assert.ok(config.modules.includes("crm"));
     assert.ok(config.modules.includes("leads"));
     assert.ok(config.modules.includes("communications"));
+    assert.ok(config.modules.includes("chats"));
     assert.ok(config.modules.includes("schedule"));
     assert.ok(config.modules.includes("invoices"));
     assert.ok(config.modules.includes("budgets"));

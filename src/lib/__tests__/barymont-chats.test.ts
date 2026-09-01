@@ -9,6 +9,8 @@ import { migrateChats,executeChat,chatDetail,listChats,ChatError } from "../comm
 import { assertChatAccess } from "../communications/chat-access";
 import { loadVerticalConfig } from "../core/vertical-loader";
 import { getActiveModules } from "../core/modules";
+import { guardModule } from "../core/module-guard";
+import { barymontConfig } from "../verticals/barymont/config";
 import { middleware } from "../../../middleware";
 import { NextRequest } from "next/server";
 
@@ -95,13 +97,29 @@ test('Chats: índice y transacción bloquean duplicados desde dos conexiones',as
 });
 test('Chats: navegación exclusiva y permisos cerrados; auth original conservada',()=>{
   const names=['APP_VERTICAL','CHAT_DEMO_MODE','DEMO_MODE','TURSO_DATABASE_URL','VERCEL','AWS_LAMBDA_FUNCTION_NAME','APP_BASIC_AUTH_USER','APP_BASIC_AUTH_PASSWORD'];const saved=Object.fromEntries(names.map(n=>[n,process.env[n]]));
+  const originalModules=[...barymontConfig.modules];
   try{
     for(const n of names)delete process.env[n];
     process.env.CHAT_DEMO_MODE='true';process.env.TURSO_DATABASE_URL='file:barymont-chats-demo.db';
     for(const vertical of ['electricista','general','tecnologia','barymont']){
       process.env.APP_VERTICAL=vertical;const config=loadVerticalConfig();assert.equal(getActiveModules(config.modules).some(m=>m.href==='/comunicaciones/chats'),vertical==='barymont');
-      if(vertical==='barymont')assert.doesNotThrow(()=>assertChatAccess(new URL('http://localhost:3000')));else assert.throws(()=>assertChatAccess(new URL('http://localhost:3000')),/No encontrado/);
+      if(vertical==='barymont'){
+        assert.doesNotThrow(()=>assertChatAccess(new URL('http://localhost:3000')));
+        assert.doesNotThrow(()=>guardModule('chats'));
+      }else{
+        assert.throws(()=>assertChatAccess(new URL('http://localhost:3000')),/No encontrado/);
+        assert.throws(()=>guardModule('chats'));
+      }
     }
+    // Desacoplamiento explícito: communications activo pero chats deshabilitado en Barymont
+    process.env.APP_VERTICAL='barymont';
+    barymontConfig.modules=originalModules.filter(m=>m!=='chats');
+    assert.equal(barymontConfig.modules.includes('communications'),true);
+    assert.equal(barymontConfig.modules.includes('chats'),false);
+    assert.throws(()=>assertChatAccess(new URL('http://localhost:3000')),/No encontrado/);
+    assert.throws(()=>guardModule('chats'));
+    barymontConfig.modules=[...originalModules];
+
     assert.throws(()=>assertChatAccess(new URL('https://example.com')),/local/);
     assert.throws(()=>assertChatAccess(new URL('http://localhost:3000'),'https://example.com'),/Origen/);
     process.env.TURSO_DATABASE_URL='libsql://example.invalid';assert.throws(()=>assertChatAccess(new URL('http://localhost:3000')),/Configura/);
@@ -110,5 +128,8 @@ test('Chats: navegación exclusiva y permisos cerrados; auth original conservada
     process.env.APP_BASIC_AUTH_USER='test-only';process.env.APP_BASIC_AUTH_PASSWORD='local-test-only';assert.equal(middleware(new NextRequest(url)).status,401);
     const headers={authorization:'Basic '+Buffer.from('test-only:local-test-only').toString('base64')};assert.equal(middleware(new NextRequest(url,{method:'POST',headers})).status,200);
     process.env.DEMO_MODE='true';assert.equal(middleware(new NextRequest(url,{method:'POST',headers})).status,403);
-  }finally{for(const n of names){if(saved[n]===undefined)delete process.env[n];else process.env[n]=saved[n];}}
+  }finally{
+    barymontConfig.modules=[...originalModules];
+    for(const n of names){if(saved[n]===undefined)delete process.env[n];else process.env[n]=saved[n];}
+  }
 });
