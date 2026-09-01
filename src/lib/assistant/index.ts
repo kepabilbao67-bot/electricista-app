@@ -3,3 +3,4 @@ export { APP_MODULES, buildAppKnowledgeContext, answerAboutApp } from "./app-kno
 export type { AppModule, ModuleStatus } from "./app-knowledge";
 export { ELECTRICAL_SAFETY_RULES, isDangerousElectricalQuery, DANGEROUS_QUERY_RESPONSE } from "./electrical-safety";
 export { KNOWLEDGE_VERSION } from "./knowledge-version";
+export { answerCommercialQuery } from "./commercial-assistant";

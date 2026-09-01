@@ -1,395 +1,498 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Search, Plus, Edit2, Trash2, Phone, Mail, FileText, Users, Eye, Upload, MapPin } from "lucide-react";
-import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { showToast } from "@/components/Toast";
-import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/autocorrect-es";
-import TextAssistantButton from "@/components/TextAssistantButton";
-import ColorSelect from "@/components/ColorSelect";
-import { getTextColorClass } from "@/lib/text-colors";
+import {
+  Users,
+  Search,
+  Plus,
+  Phone,
+  Mail,
+  Building2,
+  Filter,
+  ArrowRight,
+  TrendingUp,
+  UserCheck,
+  Clock,
+  Sparkles,
+} from "lucide-react";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { showToast } from "@/components/Toast";
+import {
+  CRM_STAGES,
+  CRM_STAGE_LABELS,
+  CRM_STAGE_BADGES,
+  CrmStage,
+} from "@/lib/crm";
 
 interface Client {
   id: string;
   name: string;
-  nif: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  postal_code: string;
-  province: string;
-  notes: string;
-  client_type: string;
-  invoice_count?: number;
+  first_name?: string;
+  last_name?: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  status?: string;
+  source?: string;
+  notes?: string;
+  created_at?: string;
 }
 
 export default function ClientesPage() {
-  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
-  const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({
+  const [search, setSearch] = useState("");
+  const [selectedStage, setSelectedStage] = useState<string>("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [formData, setFormData] = useState({
     name: "",
-    nif: "",
-    email: "",
+    company: "",
     phone: "",
+    email: "",
     address: "",
     city: "",
-    postal_code: "",
-    province: "",
+    source: "",
+    status: "nuevo",
     notes: "",
-    client_type: "particular",
-    address_color: "default",
-    notes_color: "default",
   });
 
-  const fetchClients = () => {
-    const url = search ? `/api/clients?search=${encodeURIComponent(search)}` : "/api/clients";
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        setClients(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+  const loadClients = async () => {
+    try {
+      const res = await fetch("/api/clients");
+      if (res.ok) {
+        const data = await res.json();
+        setClients(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      showToast("error", "Error al cargar la lista de clientes");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchClients();
-  }, [search]);
+    loadClients();
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    const url = editingClient ? `/api/clients/${editingClient.id}` : "/api/clients";
-    const method = editingClient ? "PUT" : "POST";
+    if (!formData.name.trim()) return;
 
     try {
-      const res = await fetch(url, {
-        method,
+      const res = await fetch("/api/clients", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(formData),
       });
 
       if (res.ok) {
-        showToast("success", editingClient ? "Cliente actualizado correctamente" : "Cliente creado correctamente");
-        setShowForm(false);
-        setEditingClient(null);
-        setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
-        fetchClients();
+        showToast("success", "Cliente comercial añadido correctamente");
+        setShowCreateModal(false);
+        setFormData({
+          name: "",
+          company: "",
+          phone: "",
+          email: "",
+          address: "",
+          city: "",
+          source: "",
+          status: "nuevo",
+          notes: "",
+        });
+        loadClients();
       } else {
-        showToast("error", "Error al guardar el cliente");
+        const err = await res.json().catch(() => ({}));
+        showToast("error", err.error || "No se pudo crear el cliente");
       }
     } catch {
-      showToast("error", "Error de conexión. Comprueba tu red e inténtalo de nuevo.");
+      showToast("error", "Error de conexión al crear cliente");
     }
   };
 
-  const handleEdit = (client: Client) => {
-    setEditingClient(client);
-    setForm({
-      name: client.name || "",
-      nif: client.nif || "",
-      email: client.email || "",
-      phone: client.phone || "",
-      address: client.address || "",
-      city: client.city || "",
-      postal_code: client.postal_code || "",
-      province: client.province || "",
-      notes: client.notes || "",
-      client_type: client.client_type || "particular",
-      address_color: (client as any).address_color || "default",
-      notes_color: (client as any).notes_color || "default",
+  const filteredClients = useMemo(() => {
+    return clients.filter((c) => {
+      const matchSearch =
+        search === "" ||
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.company && c.company.toLowerCase().includes(search.toLowerCase())) ||
+        (c.phone && c.phone.includes(search)) ||
+        (c.email && c.email.toLowerCase().includes(search.toLowerCase()));
+
+      const matchStage =
+        selectedStage === "all" || (c.status || "nuevo") === selectedStage;
+
+      return matchSearch && matchStage;
     });
-    setShowForm(true);
-  };
+  }, [clients, search, selectedStage]);
 
-  const handleDelete = async (id: string) => {
-    if (confirm("¿Seguro que desea eliminar este cliente? Esta acción no se puede deshacer.")) {
-      try {
-        const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
-        if (res.ok) {
-          showToast("success", "Cliente eliminado");
-          fetchClients();
-        } else {
-          const data = await res.json();
-          showToast("error", data.error || "Error al eliminar el cliente");
-        }
-      } catch {
-        showToast("error", "Error al eliminar el cliente");
-      }
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-800 border-t-transparent"></div>
-      </div>
-    );
-  }
-
+  // KPI Metrics
+  const totalCount = clients.length;
+  const inFollowUpCount = clients.filter((c) =>
+    ["contactado", "reunion", "seguimiento", "interesado"].includes(c.status || "nuevo")
+  ).length;
+  const proposalCount = clients.filter((c) =>
+    ["propuesta", "negociacion", "doc_pendiente"].includes(c.status || "nuevo")
+  ).length;
+  const wonCount = clients.filter((c) => c.status === "cliente").length;
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Clientes</h1>
-          <p className="text-sm text-slate-500 mt-1">{clients.length} clientes registrados en tu cartera</p>
+          <Breadcrumbs items={[{ label: "Clientes y Contactos" }]} />
+          <h1 className="text-2xl font-black text-slate-100 mt-1 tracking-tight flex items-center gap-2">
+            <Users className="h-6 w-6 text-sky-400" />
+            Gestión de Clientes & Contactos
+          </h1>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Base de datos de contactos, empresas, estado comercial y seguimiento para Barymont.
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="secondary"
-            size="md"
-            icon={Upload}
-            onClick={() => router.push("/clientes/importar")}
-          >
-            Importar
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            icon={Plus}
-            onClick={() => {
-              setEditingClient(null);
-              setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
-              setShowForm(true);
-            }}
-          >
-            Nuevo Cliente
-          </Button>
+
+        <Button
+          variant="primary"
+          icon={Plus}
+          onClick={() => setShowCreateModal(true)}
+          className="shrink-0"
+        >
+          Nuevo Cliente
+        </Button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-400 font-medium">Total Contactos</p>
+            <p className="text-xl font-black text-slate-100 mt-0.5">{totalCount}</p>
+          </div>
+          <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <Users className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-400 font-medium">En Seguimiento / Cita</p>
+            <p className="text-xl font-black text-amber-400 mt-0.5">{inFollowUpCount}</p>
+          </div>
+          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <Clock className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-400 font-medium">Propuestas / Negoc.</p>
+            <p className="text-xl font-black text-sky-400 mt-0.5">{proposalCount}</p>
+          </div>
+          <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+            <TrendingUp className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="card p-4 bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-400 font-medium">Clientes Cerrados</p>
+            <p className="text-xl font-black text-emerald-400 mt-0.5">{wonCount}</p>
+          </div>
+          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <UserCheck className="h-5 w-5" />
+          </div>
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Buscar por nombre, NIF, email o teléfono..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="input-field pl-10"
-        />
-      </div>
-
-      {/* Form Card */}
-      {showForm && (
-        <Card variant="gradient" className="border border-blue-200 shadow-md">
-          <h2 className="text-lg font-bold text-slate-900 mb-4 pb-2 border-b border-slate-200/60">
-            {editingClient ? "Editar Cliente" : "Nuevo Cliente"}
-          </h2>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Nombre completo *</label>
-              <input type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-field" placeholder="Nombre o Razón Social" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Tipo de cliente</label>
-              <select value={form.client_type} onChange={(e) => setForm({ ...form, client_type: e.target.value })} className="input-field">
-                <option value="particular">Particular</option>
-                <option value="empresa">Empresa</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">NIF / CIF / NIE</label>
-              <input type="text" value={form.nif} onChange={(e) => setForm({ ...form, nif: e.target.value })} className="input-field" placeholder="12345678Z" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Correo Electrónico</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-field" placeholder="cliente@ejemplo.com" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Teléfono móvil / fijo</label>
-              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" placeholder="+34 600 000 000" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Dirección de trabajo / fiscal</label>
-                <ColorSelect value={form.address_color} onChange={(v) => setForm({ ...form, address_color: v })} />
-              </div>
-              <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, address: c })); }} className={`input-field ${getTextColorClass(form.address_color)}`} placeholder="Calle, número, piso" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Población / Ciudad</label>
-              <input type="text" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="input-field" placeholder="Bilbao" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Código Postal</label>
-              <input type="text" value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} className="input-field" placeholder="48001" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Provincia</label>
-              <input type="text" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} className="input-field" placeholder="Bizkaia" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Notas de servicio</label>
-                <ColorSelect value={form.notes_color} onChange={(v) => setForm({ ...form, notes_color: v })} />
-              </div>
-              <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: autocorrectSpanishOnBoundary(e.target.value) })} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) setForm((f) => ({ ...f, notes: c })); }} rows={2} className={`input-field ${getTextColorClass(form.notes_color)}`} placeholder="Ej: Llaves del portal en conserjería" />
-              <div className="mt-1"><TextAssistantButton value={form.notes} onAccept={(t) => setForm({ ...form, notes: t })} /></div>
-            </div>
-            <div className="md:col-span-2 flex items-center gap-3 pt-2">
-              <Button type="submit" variant="primary" size="md">
-                {editingClient ? "Guardar Cambios" : "Crear Cliente"}
-              </Button>
-              <Button type="button" variant="secondary" size="md" onClick={() => setShowForm(false)}>
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-
-      {/* Empty State */}
-      {clients.length === 0 ? (
-        <EmptyState
-          title="Aún no tienes clientes"
-          description="Añade tu primer cliente o importa tu lista para empezar a gestionar presupuestos, partes de trabajo y facturación."
-          actionLabel="Crear Primer Cliente"
-          onAction={() => {
-            setEditingClient(null);
-            setForm({ name: "", nif: "", email: "", phone: "", address: "", city: "", postal_code: "", province: "", notes: "", client_type: "particular", address_color: "default", notes_color: "default" });
-            setShowForm(true);
-          }}
-        />
-      ) : (
-        /* Vista de Clientes con Cards / Tabla Estilizada */
-        <div className="space-y-4">
-          {/* Mobile Cards (Visible en pantallas pequeñas) */}
-          <div className="grid grid-cols-1 md:hidden gap-3">
-            {clients.map((client) => (
-              <Card key={client.id} variant="default" className="p-4 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <Link href={`/clientes/${client.id}`} className="text-base font-bold text-slate-900 hover:text-blue-600 transition-colors">
-                      {client.name}
-                    </Link>
-                    {client.nif && <p className="text-xs text-slate-400 mt-0.5">{client.nif}</p>}
-                  </div>
-                  <Badge variant={client.client_type === "empresa" ? "green" : "blue"} size="sm">
-                    {client.client_type === "empresa" ? "Empresa" : "Particular"}
-                  </Badge>
-                </div>
-
-                <div className="space-y-1 text-xs text-slate-600">
-                  {client.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5 text-slate-400" />
-                      <a href={`tel:${client.phone}`} className="hover:text-blue-600">{client.phone}</a>
-                    </div>
-                  )}
-                  {client.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-3.5 w-3.5 text-slate-400" />
-                      <a href={`mailto:${client.email}`} className="truncate hover:text-blue-600">{client.email}</a>
-                    </div>
-                  )}
-                  {client.city && (
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                      <span>{client.city}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end gap-1 pt-2 border-t border-slate-100">
-                  {client.phone && <WhatsAppButton compact phone={client.phone} />}
-                  <Link href={`/clientes/${client.id}`}>
-                    <Button variant="ghost" size="sm" icon={Eye}>Ver</Button>
-                  </Link>
-                  <Button variant="ghost" size="sm" icon={Edit2} onClick={() => handleEdit(client)}>Editar</Button>
-                  <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(client.id)} className="text-red-600 hover:text-red-700">Borrar</Button>
-                </div>
-              </Card>
-            ))}
+      {/* Filter and Search Bar */}
+      <div className="card p-4 bg-slate-900/80 border border-slate-800 space-y-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, empresa, teléfono o email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-base pl-10 text-xs w-full"
+            />
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="table-header">
-                <tr>
-                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Cliente</th>
-                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Tipo</th>
-                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Contacto</th>
-                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Ubicación</th>
-                  <th className="px-4 py-3.5 text-center text-xs font-bold uppercase tracking-wider text-slate-500">Facturas</th>
-                  <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {clients.map((client) => (
-                  <tr key={client.id} className="hover:bg-blue-50/20 transition-colors">
-                    <td className="px-5 py-4">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+            <select
+              value={selectedStage}
+              onChange={(e) => setSelectedStage(e.target.value)}
+              className="input-base text-xs w-full sm:w-48"
+            >
+              <option value="all">Todos los estados</option>
+              {CRM_STAGES.slice(0, 11).map((st) => (
+                <option key={st} value={st}>
+                  {CRM_STAGE_LABELS[st]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Quick Filter Stage Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <button
+            onClick={() => setSelectedStage("all")}
+            className={`px-3 py-1 rounded-lg font-bold shrink-0 transition-all ${
+              selectedStage === "all"
+                ? "bg-blue-600 text-white"
+                : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+            }`}
+          >
+            Todos ({clients.length})
+          </button>
+          {CRM_STAGES.slice(0, 11).map((st) => {
+            const count = clients.filter((c) => (c.status || "nuevo") === st).length;
+            if (count === 0 && selectedStage !== st) return null;
+            const isActive = selectedStage === st;
+            return (
+              <button
+                key={st}
+                onClick={() => setSelectedStage(st)}
+                className={`px-3 py-1 rounded-lg font-bold shrink-0 transition-all ${
+                  isActive
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                }`}
+              >
+                {CRM_STAGE_LABELS[st]} ({count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {/* Clients List */}
+      {loading ? (
+        <div className="flex h-48 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+        </div>
+      ) : filteredClients.length === 0 ? (
+        <div className="card p-12 text-center text-slate-400 space-y-3">
+          <Users className="h-10 w-10 mx-auto text-slate-500" />
+          <p className="text-sm font-bold text-slate-300">No se encontraron clientes</p>
+          <p className="text-xs text-slate-500">
+            {search || selectedStage !== "all"
+              ? "Prueba a cambiar los filtros o el término de búsqueda."
+              : "Comienza registrando tu primer cliente o prospecto."}
+          </p>
+          <Button variant="secondary" size="sm" onClick={() => setShowCreateModal(true)}>
+            + Crear nuevo cliente
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredClients.map((client) => {
+            const stKey = (client.status || "nuevo") as CrmStage;
+            const badge = CRM_STAGE_BADGES[stKey] || CRM_STAGE_BADGES.nuevo;
+
+            return (
+              <div
+                key={client.id}
+                className="card p-5 bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between space-y-4 group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800 text-sm font-bold text-sky-400 border border-slate-700">
+                        {client.name.slice(0, 2).toUpperCase()}
+                      </div>
                       <div>
-                        <Link href={`/clientes/${client.id}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors text-sm">
+                        <Link
+                          href={`/clientes/${client.id}`}
+                          className="font-bold text-sm text-slate-100 hover:text-sky-400 transition-colors line-clamp-1"
+                        >
                           {client.name}
                         </Link>
-                        {client.nif && <p className="text-xs text-slate-400">{client.nif}</p>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <Badge variant={client.client_type === "empresa" ? "green" : "blue"} size="sm">
-                        {client.client_type === "empresa" ? "Empresa" : "Particular"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="space-y-1">
-                        {client.phone ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-700 font-medium">{client.phone}</span>
-                            <WhatsAppButton compact phone={client.phone} />
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-300">-</span>
-                        )}
-                        {client.email && (
-                          <a href={`mailto:${client.email}`} className="text-xs text-blue-600 hover:underline block truncate max-w-[180px]">
-                            {client.email}
-                          </a>
+                        {client.company && (
+                          <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Building2 className="h-3 w-3 text-slate-500" />
+                            {client.company}
+                          </p>
                         )}
                       </div>
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-600">
-                      {client.city || client.province ? (
-                        <span>{client.city} {client.province ? `(${client.province})` : ""}</span>
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      {client.invoice_count !== undefined && client.invoice_count > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
-                          <FileText className="h-3 w-3" />
-                          {client.invoice_count}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-300">0</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link href={`/clientes/${client.id}`}>
-                          <Button variant="ghost" size="sm" icon={Eye}>Ver</Button>
-                        </Link>
-                        <Button variant="ghost" size="sm" icon={Edit2} onClick={() => handleEdit(client)}>Editar</Button>
-                        <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(client.id)} className="text-red-600 hover:text-red-700">Borrar</Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-full border shrink-0 ${badge.bg} ${badge.text} ${badge.border}`}
+                    >
+                      {CRM_STAGE_LABELS[stKey] || stKey}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs text-slate-400 pt-1">
+                    {client.phone && (
+                      <p className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 text-slate-500" />
+                        <span className="text-slate-300 font-mono">{client.phone}</span>
+                      </p>
+                    )}
+                    {client.email && (
+                      <p className="flex items-center gap-2 truncate">
+                        <Mail className="h-3.5 w-3.5 text-slate-500" />
+                        <span className="text-slate-300 truncate">{client.email}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {client.phone && (
+                      <WhatsAppButton
+                        phone={client.phone}
+                        message={`Hola ${client.name},`}
+                        className="h-8 px-2.5 text-xs"
+                      />
+                    )}
+                    {client.phone && (
+                      <a
+                        href={`tel:${client.phone}`}
+                        className="btn-secondary h-8 px-2.5 flex items-center gap-1 text-xs font-bold text-sky-400 border-sky-500/30"
+                        title="Llamar"
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                  </div>
+
+                  <Link
+                    href={`/clientes/${client.id}`}
+                    className="btn-ghost h-8 px-3 text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1"
+                  >
+                    Ver Ficha <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Create Client Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+          <div className="card w-full max-w-lg p-6 bg-slate-900 border border-slate-700 shadow-2xl space-y-4 animate-scale-in max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Plus className="h-5 w-5 text-sky-400" />
+              Nuevo Cliente Comercial (Barymont)
+            </h3>
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-300">Nombre completo / Persona de contacto *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Laura Gómez Sánchez"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="input-base text-xs w-full mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Empresa / Negocio:</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Inversiones Sur SL"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    className="input-base text-xs w-full mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Teléfono:</label>
+                  <input
+                    type="tel"
+                    placeholder="612345678"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="input-base text-xs w-full mt-1"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Email:</label>
+                  <input
+                    type="email"
+                    placeholder="cliente@ejemplo.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="input-base text-xs w-full mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Origen del prospecto:</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Recomendación, Web, Llamada"
+                    value={formData.source}
+                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                    className="input-base text-xs w-full mt-1"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Estado inicial:</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="input-base text-xs w-full mt-1"
+                  >
+                    {CRM_STAGES.slice(0, 11).map((st) => (
+                      <option key={st} value={st}>
+                        {CRM_STAGE_LABELS[st]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Ciudad / Población:</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Madrid, Sevilla..."
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="input-base text-xs w-full mt-1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Notas / Diagnóstico Financiero Preliminar:</label>
+                <textarea
+                  rows={3}
+                  placeholder="Interés en jubilación, protección familiar, ahorro..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="input-base text-xs w-full mt-1"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+                  Cancelar
+                </Button>
+                <Button variant="primary" size="sm" type="submit">
+                  Guardar Cliente
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

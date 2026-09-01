@@ -8,6 +8,12 @@ export const clientSchema = z.object({
     .string()
     .trim()
     .min(2, "El nombre debe tener al menos 2 caracteres"),
+  first_name: z.string().trim().optional().or(z.literal("")).nullable(),
+  last_name: z.string().trim().optional().or(z.literal("")).nullable(),
+  company: z.string().trim().optional().or(z.literal("")).nullable(),
+  source: z.string().trim().optional().or(z.literal("")).nullable(),
+  status: z.string().trim().optional().default("nuevo"),
+  probability: z.number().optional().default(0),
   nif: z
     .string()
     .trim()

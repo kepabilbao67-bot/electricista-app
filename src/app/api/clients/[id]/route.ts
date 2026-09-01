@@ -40,11 +40,41 @@ export async function PUT(
     const db = getDbClient();
     const body = await request.json();
 
+    let fullName = body.name;
+    if ((!fullName || fullName.trim().length === 0) && (body.first_name || body.last_name)) {
+      fullName = [body.first_name, body.last_name].filter(Boolean).join(" ");
+    }
+
     await db.execute({
-      sql: `UPDATE clients SET name = ?, nif = ?, email = ?, phone = ?, address = ?, city = ?, postal_code = ?, province = ?, notes = ?, client_type = ?, address_color = ?, notes_color = ?, updated_at = datetime('now')
+      sql: `UPDATE clients SET
+        name = ?,
+        first_name = ?,
+        last_name = ?,
+        company = ?,
+        source = ?,
+        status = ?,
+        probability = ?,
+        nif = ?,
+        email = ?,
+        phone = ?,
+        address = ?,
+        city = ?,
+        postal_code = ?,
+        province = ?,
+        notes = ?,
+        client_type = ?,
+        address_color = ?,
+        notes_color = ?,
+        updated_at = datetime('now')
        WHERE id = ?`,
       args: [
-        body.name,
+        fullName || body.name || "",
+        body.first_name || null,
+        body.last_name || null,
+        body.company || null,
+        body.source || null,
+        body.status || "nuevo",
+        typeof body.probability === "number" ? body.probability : 0,
         body.nif || null,
         body.email || null,
         body.phone || null,
@@ -100,7 +130,12 @@ export async function DELETE(
       );
     }
 
+    // Clean up crm records
+    await db.execute({ sql: "DELETE FROM crm_activities WHERE client_id = ?", args: [id] });
+    await db.execute({ sql: "DELETE FROM crm_tasks WHERE client_id = ?", args: [id] });
+    await db.execute({ sql: "DELETE FROM opportunities WHERE client_id = ?", args: [id] });
     await db.execute({ sql: "DELETE FROM clients WHERE id = ?", args: [id] });
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

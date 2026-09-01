@@ -28,6 +28,11 @@ import {
   HelpCircle,
   Briefcase,
   Wrench,
+  TrendingUp,
+  Shield,
+  PieChart,
+  Target,
+  LineChart,
 } from "lucide-react";
 
 /**
@@ -62,12 +67,17 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "wrench": Wrench,
   "settings": Settings,
   "help-circle": HelpCircle,
+  "trending-up": TrendingUp,
+  "shield": Shield,
+  "pie-chart": PieChart,
+  "target": Target,
+  "line-chart": LineChart,
 };
 
 /**
  * Resuelve un iconKey a su componente lucide-react.
- * Fallback a Wrench si no se encuentra.
+ * Fallback a Briefcase si no se encuentra.
  */
 export function resolveIcon(iconKey: string): LucideIcon {
-  return ICON_MAP[iconKey] || Wrench;
+  return ICON_MAP[iconKey] || Briefcase;
 }

@@ -1,8 +1,8 @@
 /**
- * AUTÓNOMO360 — Core Types
+ * AUTÓNOMO360 - Core Types
  *
  * Contratos fundamentales del núcleo común.
- * Toda vertical (electricista, tecnología, pintor, administrador...)
+ * Toda vertical (electricista, tecnología, general, barymont, pintor, administrador...)
  * implementa estas interfaces para conectarse al sistema.
  *
  * Reglas:
@@ -17,7 +17,12 @@
 /**
  * Identificador de vertical. Extensible con string para verticales custom.
  */
-export type Vertical = "electricista" | "tecnologia" | (string & {});
+export type Vertical =
+  | "electricista"
+  | "tecnologia"
+  | "general"
+  | "barymont"
+  | (string & {});
 
 // --- Company ---
 
@@ -48,7 +53,7 @@ export interface VerticalBrand {
   shortName: string;
   description: string;
   themeColor: string;
-  /** Clave lucide-react serializable (ej: "zap", "cpu", "paintbrush") */
+  /** Clave lucide-react serializable (ej: "zap", "cpu", "trending-up", "briefcase") */
   iconKey: string;
   initials: string;
 }

@@ -86,6 +86,12 @@ async function ensureColumns(
 
 async function migrateSchema(db: Client): Promise<void> {
   await ensureColumns(db, "clients", [
+    { name: "first_name", def: "TEXT" },
+    { name: "last_name", def: "TEXT" },
+    { name: "company", def: "TEXT" },
+    { name: "source", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'nuevo'" },
+    { name: "probability", def: "REAL DEFAULT 0" },
     { name: "nif", def: "TEXT" },
     { name: "email", def: "TEXT" },
     { name: "phone", def: "TEXT" },
@@ -99,6 +105,12 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "updated_at", def: "TEXT" },
     { name: "address_color", def: "TEXT" },
     { name: "notes_color", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "opportunities", [
+    { name: "probability", def: "REAL DEFAULT 0" },
+    { name: "assigned_to", def: "TEXT" },
+    { name: "responsable", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "invoices", [
@@ -252,11 +264,11 @@ async function migrateSchema(db: Client): Promise<void> {
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_source_part_id_unique ON invoices(source_part_id) WHERE source_part_id IS NOT NULL;"
   );
 
-  // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
+  // MigraciÃ³n de budgets.client_id NOT NULL â†’ nullable (BUD-SINCLIENTE-001):
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
   // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
   //   npx tsx scripts/migrate-budgets-client-nullable.ts --url "file:electricista.db" --yes
-  // No se ejecuta automáticamente en arranque para evitar riesgos en producción.
+  // No se ejecuta automÃ¡ticamente en arranque para evitar riesgos en producciÃ³n.
 }
 
 export async function initializeDatabase(client?: Client): Promise<void> {

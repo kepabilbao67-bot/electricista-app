@@ -20,6 +20,18 @@ describe("core/vertical-loader: getVertical", () => {
     assert.equal(getVertical(), "electricista");
   });
 
+  test("APP_VERTICAL=barymont devuelve barymont", async () => {
+    process.env.APP_VERTICAL = "barymont";
+    const { getVertical } = await import("../core/vertical-loader");
+    assert.equal(getVertical(), "barymont");
+  });
+
+  test("APP_VERTICAL=general devuelve general", async () => {
+    process.env.APP_VERTICAL = "general";
+    const { getVertical } = await import("../core/vertical-loader");
+    assert.equal(getVertical(), "general");
+  });
+
   test("APP_VERTICAL=tecnologia devuelve tecnologia", async () => {
     process.env.APP_VERTICAL = "tecnologia";
     const { getVertical } = await import("../core/vertical-loader");
@@ -44,6 +56,20 @@ describe("core/vertical-loader: loadVerticalConfig", () => {
     assert.ok(config.modules.includes("work_orders"));
     assert.ok(config.modules.includes("normativa"));
     assert.ok(config.modules.includes("settings"));
+  });
+
+  test("barymont carga barymont config", async () => {
+    process.env.APP_VERTICAL = "barymont";
+    const { loadVerticalConfig } = await import("../core/vertical-loader");
+    const config = loadVerticalConfig();
+    assert.equal(config.id, "barymont");
+    assert.equal(config.brand.tradeName, "Barymont");
+    assert.equal(config.brand.iconKey, "trending-up");
+    assert.ok(config.modules.includes("crm"));
+    assert.ok(config.modules.includes("clients"));
+    assert.ok(config.modules.includes("assistant"));
+    assert.ok(!config.modules.includes("work_orders"));
+    assert.ok(!config.modules.includes("normativa"));
   });
 
   test("tecnologia no incluye work_orders ni normativa", async () => {
@@ -102,7 +128,6 @@ describe("verticals/electricista: config", () => {
   test("no contiene datos personales en config", async () => {
     const { electricistaConfig } = await import("../verticals/electricista/config");
     const json = JSON.stringify(electricistaConfig);
-    // Brand puede contener S&H Eléctricas como tradeName (público), pero no NIF/teléfono
     assert.ok(!json.includes("16063731W"), "No debe contener NIF");
     assert.ok(!json.includes("609 421 750"), "No debe contener teléfono");
     assert.ok(!json.includes("sh.electricas@gmail"), "No debe contener email");

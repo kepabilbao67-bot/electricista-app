@@ -7,6 +7,7 @@ import {
   isDangerousElectricalQuery,
   DANGEROUS_QUERY_RESPONSE,
   KNOWLEDGE_VERSION,
+  answerCommercialQuery,
 } from "@/lib/assistant";
 
 export const dynamic = "force-dynamic";
@@ -87,9 +88,6 @@ async function callLLM(
 
 export async function POST(request: NextRequest) {
   try {
-    // Protección: Basic Auth global (middleware.ts) protege este endpoint.
-    // No se requiere x-ai-secret adicional dado el esquema fail-closed de SEC-004B.
-
     const body = await request.json().catch(() => ({}));
     const query = typeof body?.query === "string" ? body.query.trim() : "";
     const history: ChatMessage[] = Array.isArray(body?.history) ? body.history : [];
@@ -103,6 +101,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         answer: DANGEROUS_QUERY_RESPONSE,
         source: "safety",
+        knowledgeVersion: KNOWLEDGE_VERSION,
+      });
+    }
+
+    // Consultas comerciales basadas en datos reales de BD (CRM / Barymont)
+    const commercialAnswer = await answerCommercialQuery(query);
+    if (commercialAnswer) {
+      return NextResponse.json({
+        answer: commercialAnswer,
+        source: "crm-data",
         knowledgeVersion: KNOWLEDGE_VERSION,
       });
     }

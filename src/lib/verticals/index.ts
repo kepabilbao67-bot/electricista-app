@@ -1,9 +1,11 @@
 /**
- * AUTÓNOMO360 — Verticals Registry
+ * AUTÓNOMO360 - Verticals Registry
  *
  * Punto de entrada para acceder a la configuración de verticales.
- * Re-exporta el loader del core.
+ * Re-exporta el loader del core y las configuraciones específicas.
  */
 
 export { getVertical, loadVerticalConfig } from "../core/vertical-loader";
 export { electricistaConfig } from "./electricista/config";
+export { generalConfig } from "./general/config";
+export { barymontConfig } from "./barymont/config";
