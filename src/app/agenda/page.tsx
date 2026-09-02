@@ -33,9 +33,9 @@ interface Visit {
 }
 
 const statusLabels: Record<string, { label: string; color: string; bg: string }> = {
-  scheduled: { label: "Pendiente", color: "text-blue-700", bg: "bg-blue-100 border-blue-300" },
-  completed: { label: "Completada", color: "text-emerald-700", bg: "bg-emerald-100 border-emerald-300" },
-  cancelled: { label: "Cancelada", color: "text-red-700", bg: "bg-red-100 border-red-300" },
+  scheduled: { label: "Pendiente", color: "text-sky-300", bg: "bg-sky-500/20 border-sky-500/30" },
+  completed: { label: "Completada", color: "text-emerald-300", bg: "bg-emerald-500/20 border-emerald-500/30" },
+  cancelled: { label: "Cancelada", color: "text-rose-300", bg: "bg-rose-500/20 border-rose-500/30" },
 };
 
 function getWeekDates(date: Date): Date[] {
@@ -267,12 +267,12 @@ export default function AgendaPage() {
 
       {showForm && (
         <div className="mb-6 card">
-          <h2 className="text-base font-semibold text-slate-900 mb-4">
+          <h2 className="text-base font-semibold text-slate-100 mb-4">
             {editingVisit ? "Editar visita" : "Nueva visita"}
           </h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Titulo *</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Titulo *</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -286,7 +286,7 @@ export default function AgendaPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Cliente</label>
               <select
                 value={form.client_id}
                 onChange={(e) => setForm({ ...form, client_id: e.target.value })}
@@ -299,7 +299,7 @@ export default function AgendaPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Fecha *</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Fecha *</label>
               <input
                 type="date"
                 required
@@ -309,7 +309,7 @@ export default function AgendaPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Hora</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Hora</label>
               <input
                 type="time"
                 value={form.time}
@@ -318,7 +318,7 @@ export default function AgendaPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Duracion (min)</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Duracion (min)</label>
               <input
                 type="number"
                 min="15"
@@ -329,7 +329,7 @@ export default function AgendaPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Estado</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Estado</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -341,7 +341,7 @@ export default function AgendaPage() {
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Direccion</label>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Direccion</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -356,7 +356,7 @@ export default function AgendaPage() {
             </div>
             <div className="md:col-span-2">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">Descripcion</label>
+                <label className="block text-sm font-medium text-slate-300">Descripcion</label>
                 <ColorSelect value={form.description_color} onChange={(v) => setForm({ ...form, description_color: v })} />
               </div>
               <textarea
@@ -393,7 +393,7 @@ export default function AgendaPage() {
               <ChevronLeft className="h-5 w-5 text-slate-600" />
             </button>
             <div className="flex items-center gap-3">
-              <h3 className="text-sm font-semibold text-slate-900">
+              <h3 className="text-sm font-semibold text-slate-100">
                 {weekDates[0].toLocaleDateString("es-ES", { day: "numeric", month: "short" })} - {weekDates[4].toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
               </h3>
               <button onClick={goToToday} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
@@ -413,10 +413,10 @@ export default function AgendaPage() {
               const dayVisits = visits.filter((v) => v.date === dateStr);
               
               return (
-                <div key={idx} className={`rounded-lg border p-3 min-h-[120px] ${isToday ? "border-indigo-300 bg-indigo-50/30" : "border-slate-200 bg-white"}`}>
-                  <div className={`text-xs font-semibold mb-2 ${isToday ? "text-indigo-700" : "text-slate-500"}`}>
+                <div key={idx} className={`rounded-2xl border p-3 min-h-[120px] ${isToday ? "border-[#d9b35f]/50 bg-[#0d1d33]" : "border-slate-700/80 bg-[#0a1424]/90"}`}>
+                  <div className={`text-xs font-bold mb-2 uppercase tracking-wider ${isToday ? "text-[#f5d48a]" : "text-slate-400"}`}>
                     {dayNames[idx]}
-                    <span className={`ml-1 inline-flex items-center justify-center rounded-full w-5 h-5 text-[10px] ${isToday ? "bg-indigo-600 text-white" : "text-slate-600"}`}>
+                    <span className={`ml-1 inline-flex items-center justify-center rounded-full w-5 h-5 text-[10px] font-bold ${isToday ? "bg-[#d9b35f] text-slate-950 shadow-sm" : "text-slate-400"}`}>
                       {date.getDate()}
                     </span>
                   </div>
@@ -457,7 +457,7 @@ export default function AgendaPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <h3 className="font-semibold text-slate-900">{visit.title}</h3>
+                      <h3 className="font-semibold text-slate-100">{visit.title}</h3>
                       <span className={`badge ${status.bg} ${status.color} border`}>
                         {status.label}
                       </span>
