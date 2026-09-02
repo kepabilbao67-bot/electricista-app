@@ -40,6 +40,8 @@ export interface CompanyProfile {
   phone: string;
   email: string;
   logo?: string;
+  iban?: string;
+  bankName?: string;
 }
 
 // --- Brand ---
