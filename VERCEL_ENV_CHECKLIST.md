@@ -88,3 +88,5 @@ NEXT_PUBLIC_DEFAULT_TAX_RATE=21
 2. Haz clic en el recuadro **"Paste variables directly..."**.
 3. Pega el bloque anterior y pulsa **Save**.
 4. Haz un nuevo despliegue o pulsa **Redeploy** en el menú de Deployments para aplicar las variables.
+Agent
+Autonomo3
