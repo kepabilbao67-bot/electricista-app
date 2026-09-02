@@ -1,6 +1,10 @@
 # Changelog del Asistente
 
-## 2026-08-30-v25 — Dashboard de Analíticas y Métricas de Negocio (Recharts)
+## 2026-09-02-v26 — Estabilización del Flujo Comercial Completo
+- Verificación e integración del flujo comercial end-to-end: Cliente → Presupuesto → Parte de Trabajo → Factura → Cobro.
+- Endpoints de conversión atómica: `POST /api/budgets/[id]/create-parte` y `POST /api/partes-trabajo/[id]/convert` con control de duplicidad por `source_part_id` y transacciones en base de datos.
+- Carga dinámica de datos de empresa en las cabeceras imprimibles de Partes de Trabajo (`/partes-trabajo/[id]`) desde `/api/settings`.
+- Verificación suite de tests completa (`npm test`, 313 pasados, 0 fallados) y verificación estricta de tipos TypeScript (`npm run lint`, 0 errores).
 - Creación de la ruta interactiva `/dashboard` con KPIs de negocio (leads totales, variación mensual, tasa de conversión, facturación cobrada y partes ejecutados).
 - Integración de gráficos interactivos y ligeros con `recharts` (evolución semanal en líneas, pipeline por estado en barras y desglose de servicios en donut).
 - Creación del endpoint `GET /api/analytics` con agregación de métricas de base de datos en tiempo real.
