@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
+import { getCompanyProfileFromDb } from "@/lib/core/company";
 import { generateTicketBAIXml, generateLROEXml, TICKETBAI_CONFIG, signTicketBAIXml, isCertificateConfigured } from "@/lib/ticketbai";
 import type { TicketBAIInvoice } from "@/lib/ticketbai";
 
@@ -68,15 +69,17 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const hora = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 
+    const companyProfile = await getCompanyProfileFromDb(db);
+
     const ticketbaiInvoice: TicketBAIInvoice = {
       serie: TICKETBAI_CONFIG.serie,
       numero: (invoice.number as string).replace(TICKETBAI_CONFIG.serie, ""),
       fecha: invoice.date as string,
       hora,
-      descripcion: invoice.notes as string || `Factura ${invoice.number} - Servicios electricos`,
+      descripcion: invoice.notes as string || `Factura ${invoice.number} - Servicios profesionales`,
       emisor: {
-        nif: TICKETBAI_CONFIG.emisor.nif,
-        nombre: TICKETBAI_CONFIG.emisor.nombre,
+        nif: companyProfile.nif || TICKETBAI_CONFIG.emisor.nif,
+        nombre: companyProfile.legalName || companyProfile.tradeName || TICKETBAI_CONFIG.emisor.nombre,
       },
       destinatario: invoice.client_nif
         ? {
