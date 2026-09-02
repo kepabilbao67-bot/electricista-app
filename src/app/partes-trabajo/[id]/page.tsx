@@ -81,6 +81,39 @@ function ParteTrabajoDetail() {
   const [convertingToInvoice, setConvertingToInvoice] = useState(false);
   const [activeTab, setActiveTab] = useState<"trabajos" | "materiales">("trabajos");
 
+  const [company, setCompany] = useState({
+    legalName: COMPANY_PROFILE.legalName,
+    tradeName: COMPANY_PROFILE.tradeName,
+    nif: COMPANY_PROFILE.nif,
+    addressLine1: COMPANY_PROFILE.addressLine1,
+    addressLine2: COMPANY_PROFILE.addressLine2,
+    phone: COMPANY_PROFILE.phone,
+    email: COMPANY_PROFILE.email,
+    iban: COMPANY_PROFILE.iban,
+    bankName: COMPANY_PROFILE.bankName,
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((settings) => {
+        if (settings) {
+          setCompany({
+            legalName: settings.legal_name || settings.trade_name || COMPANY_PROFILE.legalName,
+            tradeName: settings.trade_name || COMPANY_PROFILE.tradeName,
+            nif: settings.nif || COMPANY_PROFILE.nif,
+            addressLine1: settings.address_line1 || COMPANY_PROFILE.addressLine1,
+            addressLine2: settings.address_line2 || COMPANY_PROFILE.addressLine2,
+            phone: settings.phone || COMPANY_PROFILE.phone,
+            email: settings.email || COMPANY_PROFILE.email,
+            iban: settings.iban || COMPANY_PROFILE.iban,
+            bankName: settings.bank_name || COMPANY_PROFILE.bankName,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const fetchParte = async () => {
     try {
       const res = await fetch(`/api/partes-trabajo/${id}`);
@@ -248,8 +281,8 @@ function ParteTrabajoDetail() {
               <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-8 w-8 object-contain" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
-              <p className="text-xs text-slate-600 mt-0.5">{COMPANY_PROFILE.ownerName || COMPANY_PROFILE.legalName} · Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{company.tradeName}</h2>
+              <p className="text-xs text-slate-600 mt-0.5">{company.legalName} · NIF: {company.nif} · Tel: {company.phone} · {company.email}</p>
             </div>
           </div>
           <div className="text-right">

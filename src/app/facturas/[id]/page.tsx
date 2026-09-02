@@ -76,6 +76,39 @@ export default function FacturaDetailPage() {
   const [confirmData, setConfirmData] = useState({ ticketbai_id: "", ticketbai_signature: "", ticketbai_qr: "" });
   const [tbaiResult, setTbaiResult] = useState<{ xml: string; instructions: string[] } | null>(null);
 
+  const [company, setCompany] = useState({
+    legalName: COMPANY_PROFILE.legalName,
+    tradeName: COMPANY_PROFILE.tradeName,
+    nif: COMPANY_PROFILE.nif,
+    addressLine1: COMPANY_PROFILE.addressLine1,
+    addressLine2: COMPANY_PROFILE.addressLine2,
+    phone: COMPANY_PROFILE.phone,
+    email: COMPANY_PROFILE.email,
+    iban: COMPANY_PROFILE.iban,
+    bankName: COMPANY_PROFILE.bankName,
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((settings) => {
+        if (settings) {
+          setCompany({
+            legalName: settings.legal_name || settings.trade_name || COMPANY_PROFILE.legalName,
+            tradeName: settings.trade_name || COMPANY_PROFILE.tradeName,
+            nif: settings.nif || COMPANY_PROFILE.nif,
+            addressLine1: settings.address_line1 || COMPANY_PROFILE.addressLine1,
+            addressLine2: settings.address_line2 || COMPANY_PROFILE.addressLine2,
+            phone: settings.phone || COMPANY_PROFILE.phone,
+            email: settings.email || COMPANY_PROFILE.email,
+            iban: settings.iban || COMPANY_PROFILE.iban,
+            bankName: settings.bank_name || COMPANY_PROFILE.bankName,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (params.id) {
       fetch(`/api/invoices/${params.id}`)
@@ -385,11 +418,12 @@ export default function FacturaDetailPage() {
               <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-9 w-9 object-contain" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{COMPANY_PROFILE.legalName}</h2>
-              <p className="text-sm text-slate-500 mt-0.5">NIF: {COMPANY_PROFILE.nif}</p>
-              {COMPANY_PROFILE.addressLine1 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine1}</p>}
-              {COMPANY_PROFILE.addressLine2 && <p className="text-sm text-slate-500">{COMPANY_PROFILE.addressLine2}</p>}
-              <p className="text-sm text-slate-500 mt-1 font-medium">Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
+              <h2 className="text-xl font-bold text-slate-900">{company.legalName}</h2>
+              <p className="text-sm text-slate-500 mt-0.5">NIF: {company.nif}</p>
+              {company.addressLine1 && <p className="text-sm text-slate-500">{company.addressLine1}</p>}
+              {company.addressLine2 && <p className="text-sm text-slate-500">{company.addressLine2}</p>}
+              <p className="text-sm text-slate-500 mt-1 font-medium">Tel: {company.phone} · {company.email}</p>
+              {company.iban && <p className="text-xs text-slate-400 mt-0.5">IBAN: {company.iban}</p>}
             </div>
           </div>
           <div className="text-right">

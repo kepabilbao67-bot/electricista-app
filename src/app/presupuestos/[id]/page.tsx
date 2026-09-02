@@ -78,6 +78,38 @@ export default function PresupuestoDetailPage() {
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
   const [creatingParte, setCreatingParte] = useState(false);
+  const [company, setCompany] = useState({
+    legalName: COMPANY_PROFILE.legalName,
+    tradeName: COMPANY_PROFILE.tradeName,
+    nif: COMPANY_PROFILE.nif,
+    addressLine1: COMPANY_PROFILE.addressLine1,
+    addressLine2: COMPANY_PROFILE.addressLine2,
+    phone: COMPANY_PROFILE.phone,
+    email: COMPANY_PROFILE.email,
+    iban: COMPANY_PROFILE.iban,
+    bankName: COMPANY_PROFILE.bankName,
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((settings) => {
+        if (settings) {
+          setCompany({
+            legalName: settings.legal_name || settings.trade_name || COMPANY_PROFILE.legalName,
+            tradeName: settings.trade_name || COMPANY_PROFILE.tradeName,
+            nif: settings.nif || COMPANY_PROFILE.nif,
+            addressLine1: settings.address_line1 || COMPANY_PROFILE.addressLine1,
+            addressLine2: settings.address_line2 || COMPANY_PROFILE.addressLine2,
+            phone: settings.phone || COMPANY_PROFILE.phone,
+            email: settings.email || COMPANY_PROFILE.email,
+            iban: settings.iban || COMPANY_PROFILE.iban,
+            bankName: settings.bank_name || COMPANY_PROFILE.bankName,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (params.id) {
@@ -279,12 +311,13 @@ export default function PresupuestoDetailPage() {
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{COMPANY_PROFILE.legalName}</h2>
-              <p className="text-sm text-gray-500">NIF: {COMPANY_PROFILE.nif}</p>
-              {COMPANY_PROFILE.addressLine1 && <p className="text-sm text-gray-500">{COMPANY_PROFILE.addressLine1}</p>}
-              {COMPANY_PROFILE.addressLine2 && <p className="text-sm text-gray-500">{COMPANY_PROFILE.addressLine2}</p>}
-              <p className="text-sm text-gray-500">Teléfono: {COMPANY_PROFILE.phone}</p>
-              <p className="text-sm text-gray-500">Email: {COMPANY_PROFILE.email}</p>
+              <h2 className="text-xl font-bold text-gray-900">{company.legalName}</h2>
+              <p className="text-sm text-gray-500">NIF: {company.nif}</p>
+              {company.addressLine1 && <p className="text-sm text-gray-500">{company.addressLine1}</p>}
+              {company.addressLine2 && <p className="text-sm text-gray-500">{company.addressLine2}</p>}
+              <p className="text-sm text-gray-500">Teléfono: {company.phone}</p>
+              <p className="text-sm text-gray-500">Email: {company.email}</p>
+              {company.iban && <p className="text-xs text-gray-400 mt-0.5">IBAN: {company.iban}</p>}
             </div>
 
             {/* Logo de empresa */}
@@ -292,7 +325,7 @@ export default function PresupuestoDetailPage() {
               <div className="flex items-center justify-center rounded-2xl bg-slate-900 shadow-md ring-1 ring-slate-200 p-2" style={{ width: "80px", height: "80px" }}>
                 <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-14 w-14 object-contain" />
               </div>
-              <span className="text-[11px] font-bold text-gray-800 mt-1.5 tracking-wider uppercase">{COMPANY_PROFILE.tradeName}</span>
+              <span className="text-[11px] font-bold text-gray-800 mt-1.5 tracking-wider uppercase">{company.tradeName}</span>
             </div>
 
             <div className="text-right">

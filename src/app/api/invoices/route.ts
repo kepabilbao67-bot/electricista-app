@@ -91,16 +91,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar items
+    if (!Array.isArray(body.items) || body.items.length === 0) {
+      return NextResponse.json(
+        { error: "La factura debe incluir al menos una línea de concepto o servicio." },
+        { status: 400 }
+      );
+    }
+
     const subtotal = body.items.reduce(
       (acc: number, item: { quantity: number; unit_price: number; discount?: number; discount_type?: string }) => {
-        const gross = item.quantity * item.unit_price;
+        const gross = Number(item.quantity || 1) * Number(item.unit_price || 0);
         if (!item.discount || item.discount <= 0) return acc + gross;
         if (item.discount_type === "eur") return acc + gross - item.discount;
         return acc + gross * (1 - item.discount / 100);
       },
       0
     );
-    const taxRate = body.tax_rate ?? 21;
+    const taxRate = typeof body.tax_rate === "number" ? body.tax_rate : 21;
     const taxAmount = subtotal * (taxRate / 100);
     const total = subtotal + taxAmount;
 
