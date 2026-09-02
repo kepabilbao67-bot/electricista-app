@@ -4,6 +4,9 @@ import { GET, PATCH } from "@/app/api/parte-trabajo/[id]/route";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { NextRequest } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { useIsolatedTestDb } from "./test-db";
+
+useIsolatedTestDb();
 
 describe("Autónomo 360 - Módulo de Parte de Trabajo Imprimible (v24)", () => {
   test("1. GET retorna 404 si el ID no existe", async () => {

@@ -4,6 +4,9 @@ import { GET } from "@/app/api/trabajos/route";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { NextRequest } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { useIsolatedTestDb } from "./test-db";
+
+useIsolatedTestDb();
 
 describe("Autónomo 360 - Centro de Trabajos y Flujo Operativo (/trabajos)", () => {
   test("1. GET retorna estructura completa de KPIs y lista de trabajos", async () => {

@@ -4,6 +4,9 @@ import { POST } from "@/app/api/partes-trabajo/[id]/convert/route";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { NextRequest } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { useIsolatedTestDb } from "./test-db";
+
+useIsolatedTestDb();
 
 describe("Autónomo 360 - Conversión Transaccional e Idempotente Parte -> Factura (/api/partes-trabajo/[id]/convert)", () => {
   test("1. Esquema: invoices contiene exactamente una sola columna source_part_id e índice UNIQUE parcial activo", async () => {

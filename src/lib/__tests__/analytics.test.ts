@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { GET } from "@/app/api/analytics/route";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { useIsolatedTestDb } from "./test-db";
+
+useIsolatedTestDb();
 
 describe("Autónomo 360 - Módulo de Analíticas y Métricas de Negocio (v25)", () => {
   test("1. GET retorna estructura de métricas y KPIs completa", async () => {
