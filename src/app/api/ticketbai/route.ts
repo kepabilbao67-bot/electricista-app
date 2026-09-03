@@ -1,30 +1,100 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
-import { getCompanyProfileFromDb } from "@/lib/core/company";
+import { getStrictBizkaiaFiscalProfile } from "@/lib/core/company";
 import { generateTicketBAIXml, generateLROEXml, TICKETBAI_CONFIG, signTicketBAIXml, isCertificateConfigured } from "@/lib/ticketbai";
 import type { TicketBAIInvoice } from "@/lib/ticketbai";
 
-// POST - Generar XML TicketBAI para subir a Batuz
+// POST - Generar XML TicketBAI o Confirmar recepción desde Batuz (Exclusivo Bizkaia)
 export async function POST(request: NextRequest) {
   try {
     await initializeDatabase();
     const db = getDbClient();
-    const body = await request.json();
-    const invoiceId = body.invoice_id;
-    const action = body.action || "generate"; // "generate" | "confirm"
 
-    // Si es confirmar TBAI desde Batuz (meter el código real)
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Cuerpo de la petición JSON no válido" }, { status: 400 });
+    }
+
+    const action = body.action || "generate"; // "generate" | "confirm"
+    if (action !== "generate" && action !== "confirm") {
+      return NextResponse.json(
+        { error: "Acción no válida. Solo se admite generate o confirm" },
+        { status: 400 }
+      );
+    }
+
+    const invoiceId = typeof body.invoice_id === "string" ? body.invoice_id.trim() : "";
+    if (!invoiceId) {
+      return NextResponse.json(
+        { error: "invoice_id es obligatorio y debe ser texto no vacío" },
+        { status: 400 }
+      );
+    }
+
+    // Validar siempre el perfil fiscal estricto de la empresa activa (Bizkaia/Batuz)
+    const fiscalRes = await getStrictBizkaiaFiscalProfile(db);
+    if (!fiscalRes.success) {
+      return NextResponse.json(
+        { error: fiscalRes.error },
+        { status: fiscalRes.status }
+      );
+    }
+
+    // Acción CONFIRM - Confirmar TBAI desde Batuz (meter código real)
     if (action === "confirm") {
-      await db.execute({
+      const ticketbaiId = typeof body.ticketbai_id === "string" ? body.ticketbai_id.trim() : "";
+      const ticketbaiSignature = typeof body.ticketbai_signature === "string" ? body.ticketbai_signature.trim() : "";
+      const ticketbaiQr = typeof body.ticketbai_qr === "string" ? body.ticketbai_qr.trim() : "";
+
+      if (!ticketbaiId || !ticketbaiSignature || !ticketbaiQr) {
+        return NextResponse.json(
+          { error: "Faltan datos de confirmación TicketBAI (ticketbai_id, ticketbai_signature o ticketbai_qr)" },
+          { status: 400 }
+        );
+      }
+
+      // Comprobar que la factura existe antes de actualizar
+      const checkInvoice = await db.execute({
+        sql: "SELECT status FROM invoices WHERE id = ? LIMIT 1",
+        args: [invoiceId],
+      });
+
+      if (checkInvoice.rows.length === 0) {
+        return NextResponse.json(
+          { error: "Factura no encontrada" },
+          { status: 404 }
+        );
+      }
+
+      const invoiceStatus = checkInvoice.rows[0].status as string;
+
+      // Endurecimiento: solo permite confirmar facturas que estén en estado 'pending_batuz'
+      if (invoiceStatus !== "pending_batuz") {
+        return NextResponse.json(
+          { error: "La factura no está en estado pendiente de confirmación Batuz" },
+          { status: 409 }
+        );
+      }
+
+      const updateRes = await db.execute({
         sql: `UPDATE invoices SET 
           ticketbai_id = ?, 
           ticketbai_signature = ?, 
           ticketbai_qr = ?, 
           status = 'sent', 
           updated_at = datetime('now') 
-        WHERE id = ?`,
-        args: [body.ticketbai_id, body.ticketbai_signature, body.ticketbai_qr, invoiceId],
+        WHERE id = ? AND status = 'pending_batuz'`,
+        args: [ticketbaiId, ticketbaiSignature, ticketbaiQr, invoiceId],
       });
+
+      if (updateRes.rowsAffected === 0) {
+        return NextResponse.json(
+          { error: "No se pudo actualizar la factura" },
+          { status: 404 }
+        );
+      }
 
       return NextResponse.json({
         success: true,
@@ -32,7 +102,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Obtener factura con datos del cliente
+    // Acción GENERATE - Obtener factura con datos del cliente
     const invoiceResult = await db.execute({
       sql: `SELECT invoices.*, clients.name as client_name, clients.nif as client_nif,
          clients.address as client_address, clients.city as client_city,
@@ -69,8 +139,6 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const hora = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 
-    const companyProfile = await getCompanyProfileFromDb(db);
-
     const ticketbaiInvoice: TicketBAIInvoice = {
       serie: TICKETBAI_CONFIG.serie,
       numero: (invoice.number as string).replace(TICKETBAI_CONFIG.serie, ""),
@@ -78,8 +146,8 @@ export async function POST(request: NextRequest) {
       hora,
       descripcion: invoice.notes as string || `Factura ${invoice.number} - Servicios profesionales`,
       emisor: {
-        nif: companyProfile.nif || TICKETBAI_CONFIG.emisor.nif,
-        nombre: companyProfile.legalName || companyProfile.tradeName || TICKETBAI_CONFIG.emisor.nombre,
+        nif: fiscalRes.profile.nif,
+        nombre: fiscalRes.profile.legalName,
       },
       destinatario: invoice.client_nif
         ? {
@@ -127,7 +195,6 @@ export async function POST(request: NextRequest) {
         firmadoConCertificado = true;
       } catch (error) {
         console.error("Error firmando con certificado:", error);
-        // Si falla la firma, seguimos con la versión sin firma XAdES
       }
     }
 

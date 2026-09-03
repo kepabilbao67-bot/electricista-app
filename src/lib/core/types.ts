@@ -24,6 +24,14 @@ export type Vertical =
   | "barymont"
   | (string & {});
 
+// --- Fiscal Territory ---
+
+export type FiscalTerritory =
+  | "common"
+  | "bizkaia"
+  | "araba"
+  | "gipuzkoa";
+
 // --- Company ---
 
 /**
@@ -42,6 +50,7 @@ export interface CompanyProfile {
   logo?: string;
   iban?: string;
   bankName?: string;
+  fiscalTerritory?: FiscalTerritory;
 }
 
 // --- Brand ---

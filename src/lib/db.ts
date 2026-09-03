@@ -304,6 +304,7 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "work_order_series_prefix", def: "TEXT DEFAULT 'PT-'" },
     { name: "default_tax_rate", def: "REAL DEFAULT 21" },
     { name: "theme_color", def: "TEXT DEFAULT '#2563eb'" },
+    { name: "fiscal_territory", def: "TEXT NOT NULL DEFAULT 'common'" },
     { name: "updated_at", def: "TEXT" },
   ]);
 
@@ -642,6 +643,7 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       work_order_series_prefix TEXT DEFAULT 'PT-',
       default_tax_rate REAL DEFAULT 21,
       theme_color TEXT DEFAULT '#2563eb',
+      fiscal_territory TEXT NOT NULL DEFAULT 'common',
       updated_at TEXT DEFAULT (datetime('now'))
     );
 
