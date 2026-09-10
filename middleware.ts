@@ -1,39 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Protege TODA la app (paginas y APIs) con Basic Auth (SEC-004B).
+ * Protege TODA la app con Basic Auth en produccion.
  *
- * Excepcion limitada para previews SOKOEL:
- * - /catalogo/sokoel es publica en preview;
- * - GET/HEAD/OPTIONS de /api/catalog/sokoel son publicos;
- * - /catalogo y / redirigen a /catalogo/sokoel para evitar pantallas muertas;
- * - las demas rutas siguen protegidas;
- * - produccion conserva Basic Auth sin cambios.
+ * Preview SOKOEL: se sirve una vista publica, estatica y de solo lectura
+ * para evitar bucles de autenticacion/prefetch del layout principal.
+ * Ninguna API de escritura queda publica y produccion no cambia.
  */
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
   const isPreview = process.env.VERCEL_ENV === "preview";
 
-  if (
-    isPreview &&
-    ["GET", "HEAD"].includes(method) &&
-    (pathname === "/" || pathname === "/catalogo")
-  ) {
-    const target = request.nextUrl.clone();
-    target.pathname = "/catalogo/sokoel";
-    return NextResponse.redirect(target);
-  }
+  if (isPreview) {
+    const isStandaloneSokoel = pathname === "/sokoel-preview.html";
 
-  const isPublicSokoelPreview =
-    isPreview &&
-    (
-      pathname === "/catalogo/sokoel" ||
-      (pathname === "/api/catalog/sokoel" && ["GET", "HEAD", "OPTIONS"].includes(method))
-    );
+    if (isStandaloneSokoel && ["GET", "HEAD"].includes(method)) {
+      return NextResponse.next();
+    }
 
-  if (isPublicSokoelPreview) {
-    return NextResponse.next();
+    // Cualquier pagina navegable del preview termina en la vista SOKOEL
+    // estatica. Asi, atras/adelante o enlaces del historial no muestran
+    // Basic Auth ni "Preview protegido".
+    if (!pathname.startsWith("/api/") && ["GET", "HEAD"].includes(method)) {
+      const target = request.nextUrl.clone();
+      target.pathname = "/sokoel-preview.html";
+      target.search = "";
+      return NextResponse.redirect(target);
+    }
+
+    // Ninguna API del preview queda expuesta por esta excepcion.
+    return new NextResponse("Preview API protegida.", {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   const expectedUser = process.env.APP_BASIC_AUTH_USER;
@@ -71,15 +71,8 @@ export function middleware(request: NextRequest) {
         return NextResponse.next();
       }
     } catch {
-      // Cabecera mal formada: se trata igual que "no autenticado".
+      // Cabecera mal formada: se trata igual que no autenticado.
     }
-  }
-
-  if (isPreview) {
-    return new NextResponse("Preview protegido.", {
-      status: 403,
-      headers: { "Cache-Control": "no-store" },
-    });
   }
 
   return new NextResponse("Autenticacion requerida.", {
