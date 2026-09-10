@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { showToast } from "@/components/Toast";
 import {
+  SOKOEL_CATALOG,
   SOKOEL_DOCUMENT_SUBTOTAL,
   SOKOEL_DOCUMENT_TOTAL,
   SOKOEL_DOCUMENT_VAT,
@@ -38,11 +39,24 @@ function eur(value: number) {
   }).format(value);
 }
 
+function initialRows(): SokoelRow[] {
+  return SOKOEL_CATALOG.map((item) => ({
+    ...item,
+    supplier: SOKOEL_SUPPLIER,
+    priceDate: SOKOEL_PRICE_DATE,
+    sourceDocument: SOKOEL_SOURCE_DOCUMENT,
+    catalogId: `sokoel:${item.supplierReference}`,
+    imported: false,
+    salePrice: null,
+  }));
+}
+
 export default function SokoelCatalogPage() {
-  const [rows, setRows] = useState<SokoelRow[]>([]);
+  const [rows, setRows] = useState<SokoelRow[]>(initialRows);
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [savingRef, setSavingRef] = useState<string | null>(null);
+  const [databaseAvailable, setDatabaseAvailable] = useState(true);
 
   const load = async () => {
     setLoading(true);
@@ -51,6 +65,7 @@ export default function SokoelCatalogPage() {
       const data = await response.json();
       if (!response.ok || !Array.isArray(data)) throw new Error("No se pudo cargar SOKOEL");
       setRows(data);
+      setDatabaseAvailable(true);
       setPrices((current) => {
         const next = { ...current };
         for (const item of data as SokoelRow[]) {
@@ -61,7 +76,8 @@ export default function SokoelCatalogPage() {
         return next;
       });
     } catch {
-      showToast("error", "No se pudo cargar el catálogo SOKOEL");
+      setDatabaseAvailable(false);
+      setRows(initialRows());
     } finally {
       setLoading(false);
     }
@@ -146,6 +162,12 @@ export default function SokoelCatalogPage() {
         </div>
       </div>
 
+      {!databaseAvailable && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          Los 32 productos se muestran desde la oferta guardada, pero la base de datos del preview no está disponible. No se guardará ningún precio hasta que la conexión de catálogo esté operativa.
+        </div>
+      )}
+
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
         Seguridad: mientras el precio de venta esté pendiente, el producto no se inserta en <strong>catalog_items</strong> y no puede seleccionarse desde presupuestos o facturas como artículo de 0 €.
       </div>
@@ -165,7 +187,7 @@ export default function SokoelCatalogPage() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">Cargando productos SOKOEL…</td>
+                  <td colSpan={5} className="px-4 py-10 text-center text-slate-500">Comprobando catálogo…</td>
                 </tr>
               ) : rows.map((item) => (
                 <tr key={item.supplierReference} className="hover:bg-slate-50">
@@ -206,9 +228,9 @@ export default function SokoelCatalogPage() {
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <button
                       type="button"
-                      disabled={savingRef === item.supplierReference}
+                      disabled={!databaseAvailable || savingRef === item.supplierReference}
                       onClick={() => void saveToCatalog(item)}
-                      className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+                      className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {savingRef === item.supplierReference
                         ? "Guardando…"
