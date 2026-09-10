@@ -1,82 +1,23 @@
 /**
- * AUTÓNOMO360 - Vertical Loader
+ * Electricista360 — product loader.
  *
- * Lee APP_VERTICAL del entorno y carga la configuración correspondiente.
- * Si no está definida o es "electricista" → vertical electricista.
- * Si es "barymont" → vertical Barymont (asesoramiento financiero / CRM comercial).
- * Si es "general" → vertical General (núcleo neutral multi-oficio).
- * Si es un valor no soportado → error explícito.
+ * Esta aplicación es standalone: la identidad del producto no se selecciona
+ * mediante variables de entorno. `APP_VERTICAL` se ignora deliberadamente
+ * para evitar que un despliegue de Electricista360 arranque como otro negocio.
  *
- * Este módulo es server-only (lee process.env).
+ * Los contratos de `core` se mantienen porque son útiles para separar marca,
+ * módulos y catálogo, pero la única configuración de runtime es electricista.
  */
 
 import type { Vertical, VerticalConfig } from "./types";
 import { electricistaConfig } from "../verticals/electricista/config";
-import { generalConfig } from "../verticals/general/config";
-import { barymontConfig } from "../verticals/barymont/config";
 
-const VALID_VERTICALS: ReadonlySet<string> = new Set([
-  "electricista",
-  "tecnologia",
-  "general",
-  "barymont",
-]);
-
-/**
- * Obtiene el identificador de vertical activa.
- */
+/** Devuelve siempre la identidad única del producto standalone. */
 export function getVertical(): Vertical {
-  const raw = process.env.APP_VERTICAL?.trim();
-  if (!raw) return "electricista";
-  if (!VALID_VERTICALS.has(raw)) {
-    throw new Error(
-      `APP_VERTICAL inválida: "${raw}". Valores permitidos: ${Array.from(VALID_VERTICALS).join(", ")}.`
-    );
-  }
-  return raw as Vertical;
+  return "electricista";
 }
 
-/**
- * Carga la configuración completa de la vertical activa.
- */
+/** Carga la única configuración permitida por Electricista360. */
 export function loadVerticalConfig(): VerticalConfig {
-  const vertical = getVertical();
-
-  switch (vertical) {
-    case "electricista":
-      return electricistaConfig;
-    case "barymont":
-      return barymontConfig;
-    case "general":
-      return generalConfig;
-    case "tecnologia":
-      return {
-        ...electricistaConfig,
-        id: "tecnologia",
-        brand: {
-          tradeName: "Kepa360",
-          shortName: "Kepa360",
-          description: "Gestión profesional de servicios tecnológicos",
-          themeColor: "#0f172a",
-          iconKey: "cpu",
-          initials: "K3",
-        },
-        modules: [
-          "dashboard",
-          "assistant",
-          "clients",
-          "crm",
-          "leads",
-          "invoices",
-          "budgets",
-          "expenses",
-          "communications",
-          "schedule",
-          "catalog",
-          "export",
-        ],
-      };
-    default:
-      return electricistaConfig;
-  }
+  return electricistaConfig;
 }
