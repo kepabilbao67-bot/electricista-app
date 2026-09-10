@@ -1,8 +1,8 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { buildBudgetDraft } from "../autonomo360/budget-draft";
-import { parseIntent } from "../autonomo360/intent-parser";
-import type { ParsedIntent } from "../autonomo360/intent-schema";
+import { buildBudgetDraft } from "../electricista/budget-draft";
+import { parseIntent } from "../electricista/intent-parser";
+import type { ParsedIntent } from "../electricista/intent-schema";
 
 describe("budget-draft: buildBudgetDraft", () => {
   test("intent correcto genera payload exitoso", () => {
@@ -42,9 +42,7 @@ describe("budget-draft: buildBudgetDraft", () => {
   test("payload siempre tiene status draft", () => {
     const intent = parseIntent("Presupuesto para Test. 1 hora a 50 euros");
     const result = buildBudgetDraft(intent);
-    if (result.payload) {
-      assert.equal(result.payload.status, "draft");
-    }
+    if (result.payload) assert.equal(result.payload.status, "draft");
   });
 
   test("cálculos de preview son correctos", () => {
@@ -77,9 +75,7 @@ describe("budget-draft: buildBudgetDraft", () => {
       type: "create_budget",
       security: "CONFIRM_REQUIRED",
       confidence: 0.85,
-      fields: {
-        lines: [{ description: "Servicio", quantity: 1, unitPrice: 100 }],
-      },
+      fields: { lines: [{ description: "Servicio", quantity: 1, unitPrice: 100 }] },
       rawInput: "test",
       missingFields: ["clientName"],
       isDraft: true,
@@ -95,10 +91,7 @@ describe("budget-draft: buildBudgetDraft", () => {
       type: "create_budget",
       security: "CONFIRM_REQUIRED",
       confidence: 0.85,
-      fields: {
-        clientName: "Test",
-        lines: [{ description: "Algo", quantity: -1, unitPrice: 50 }],
-      },
+      fields: { clientName: "Test", lines: [{ description: "Algo", quantity: -1, unitPrice: 50 }] },
       rawInput: "test",
       missingFields: [],
       isDraft: true,
@@ -113,10 +106,7 @@ describe("budget-draft: buildBudgetDraft", () => {
       type: "create_budget",
       security: "CONFIRM_REQUIRED",
       confidence: 0.85,
-      fields: {
-        clientName: "Test",
-        lines: [{ description: "Algo", quantity: 1, unitPrice: 2_000_000 }],
-      },
+      fields: { clientName: "Test", lines: [{ description: "Algo", quantity: 1, unitPrice: 2_000_000 }] },
       rawInput: "test",
       missingFields: [],
       isDraft: true,
@@ -129,7 +119,6 @@ describe("budget-draft: buildBudgetDraft", () => {
   test("no persiste durante preview (payload es solo datos)", () => {
     const intent = parseIntent("Presupuesto para Ana Pérez. 3 horas a 40 euros");
     const result = buildBudgetDraft(intent);
-    // El payload es un objeto plano sin métodos de persistencia
     assert.equal(typeof result.payload, "object");
     assert.equal(typeof (result.payload as unknown as Record<string, unknown>).save, "undefined");
   });
