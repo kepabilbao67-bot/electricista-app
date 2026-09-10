@@ -23,7 +23,11 @@ export async function GET() {
   try {
     await initializeDatabase();
     const db = getDbClient();
-    const result = await db.execute("SELECT * FROM catalog_items ORDER BY category, name");
+    // Contrato comercial: solo exponemos al catálogo seleccionable artículos con venta válida.
+    // Los precios pendientes nunca se propagan a presupuestos/facturas como 0 €.
+    const result = await db.execute(
+      "SELECT * FROM catalog_items WHERE unit_price > 0 ORDER BY category, name"
+    );
     return NextResponse.json(result.rows);
   } catch {
     return NextResponse.json({ error: "Error al obtener catalogo" }, { status: 500 });
