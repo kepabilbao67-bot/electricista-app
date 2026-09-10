@@ -3,27 +3,27 @@ import { NextRequest, NextResponse } from "next/server";
 /**
  * Protege TODA la app (paginas y APIs) con Basic Auth (SEC-004B).
  *
- * Motivo: Vercel Authentication no esta protegiendo de forma fiable todos
- * los dominios del proyecto (electricista-app-two sigue accesible sin login
- * en incognito). Esta proteccion vive dentro del propio codigo, es
- * independiente de la configuracion de la plataforma y protege cualquier
- * dominio que apunte a este deployment.
- *
- * Excepcion deliberada y limitada para previews de la rama SOKOEL:
- * - solo en VERCEL_ENV=preview;
- * - solo permite la pagina /catalogo/sokoel;
- * - solo permite GET/HEAD/OPTIONS de /api/catalog/sokoel;
- * - nunca habilita escrituras publicas ni afecta produccion.
- *
- * En preview, las peticiones no autorizadas devuelven 403 sin
- * WWW-Authenticate para evitar que prefetches o recursos secundarios de
- * Next.js abran el dialogo nativo de Basic Auth encima de la pagina publica
- * SOKOEL. En produccion se mantiene el reto Basic Auth normal.
+ * Excepcion limitada para previews SOKOEL:
+ * - /catalogo/sokoel es publica en preview;
+ * - GET/HEAD/OPTIONS de /api/catalog/sokoel son publicos;
+ * - /catalogo y / redirigen a /catalogo/sokoel para evitar pantallas muertas;
+ * - las demas rutas siguen protegidas;
+ * - produccion conserva Basic Auth sin cambios.
  */
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
   const isPreview = process.env.VERCEL_ENV === "preview";
+
+  if (
+    isPreview &&
+    ["GET", "HEAD"].includes(method) &&
+    (pathname === "/" || pathname === "/catalogo")
+  ) {
+    const target = request.nextUrl.clone();
+    target.pathname = "/catalogo/sokoel";
+    return NextResponse.redirect(target);
+  }
 
   const isPublicSokoelPreview =
     isPreview &&
