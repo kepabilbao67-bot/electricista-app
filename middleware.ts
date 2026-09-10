@@ -9,15 +9,33 @@ import { NextRequest, NextResponse } from "next/server";
  * independiente de la configuracion de la plataforma y protege cualquier
  * dominio que apunte a este deployment.
  *
+ * Excepcion deliberada y limitada para previews de la rama SOKOEL:
+ * - solo en VERCEL_ENV=preview;
+ * - solo permite la pagina /catalogo/sokoel;
+ * - solo permite GET/HEAD/OPTIONS de /api/catalog/sokoel;
+ * - nunca habilita escrituras publicas ni afecta produccion.
+ *
  * - Si APP_BASIC_AUTH_USER o APP_BASIC_AUTH_PASSWORD no estan configuradas,
  *   se bloquea el acceso (fail-closed): no se puede entrar a nada hasta que
  *   se configuren ambas variables en Vercel.
  * - Si estan configuradas, se exige Basic Auth valido (usuario y contrasena)
  *   en cada peticion a paginas y a APIs.
- * - No se modifica ningun endpoint ni pagina existente: esta capa se ejecuta
- *   antes de que la peticion llegue a cualquier route.ts o page.tsx.
  */
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const method = request.method;
+
+  const isPublicSokoelPreview =
+    process.env.VERCEL_ENV === "preview" &&
+    (
+      pathname === "/catalogo/sokoel" ||
+      (pathname === "/api/catalog/sokoel" && ["GET", "HEAD", "OPTIONS"].includes(method))
+    );
+
+  if (isPublicSokoelPreview) {
+    return NextResponse.next();
+  }
+
   const expectedUser = process.env.APP_BASIC_AUTH_USER;
   const expectedPassword = process.env.APP_BASIC_AUTH_PASSWORD;
 
@@ -42,8 +60,8 @@ export function middleware(request: NextRequest) {
       if (providedUser === expectedUser && providedPassword === expectedPassword) {
         if (
           process.env.DEMO_MODE === "true" &&
-          request.nextUrl.pathname.startsWith("/api/") &&
-          !["GET", "HEAD", "OPTIONS"].includes(request.method)
+          pathname.startsWith("/api/") &&
+          !["GET", "HEAD", "OPTIONS"].includes(method)
         ) {
           return NextResponse.json(
             { error: "DEMO / SIN VALIDEZ FISCAL: modo de solo lectura" },
