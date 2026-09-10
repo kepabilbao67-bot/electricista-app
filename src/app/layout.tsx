@@ -76,7 +76,16 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var stored = localStorage.getItem('autonomo360_theme');
+                  var key = 'electricista360_theme';
+                  var legacyKey = 'autonomo360_theme';
+                  var stored = localStorage.getItem(key);
+                  if (!stored) {
+                    var legacy = localStorage.getItem(legacyKey);
+                    if (legacy === 'dark' || legacy === 'light') {
+                      stored = legacy;
+                      localStorage.setItem(key, legacy);
+                    }
+                  }
                   var isDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   if (isDark) {
                     document.documentElement.classList.add('dark');
