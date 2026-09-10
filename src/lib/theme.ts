@@ -1,11 +1,22 @@
 export type Theme = "light" | "dark";
 
-const THEME_KEY = "autonomo360_theme";
+const THEME_KEY = "electricista360_theme";
+const LEGACY_THEME_KEY = "autonomo360_theme";
 
 export function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "light";
+
   const stored = localStorage.getItem(THEME_KEY);
   if (stored === "dark" || stored === "light") return stored;
+
+  // Compatibilidad de una sola dirección: conserva la preferencia existente
+  // de usuarios que venían de la versión anterior y la migra al nuevo nombre.
+  const legacy = localStorage.getItem(LEGACY_THEME_KEY);
+  if (legacy === "dark" || legacy === "light") {
+    localStorage.setItem(THEME_KEY, legacy);
+    return legacy;
+  }
+
   if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
     return "dark";
   }
