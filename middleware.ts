@@ -15,18 +15,18 @@ import { NextRequest, NextResponse } from "next/server";
  * - solo permite GET/HEAD/OPTIONS de /api/catalog/sokoel;
  * - nunca habilita escrituras publicas ni afecta produccion.
  *
- * - Si APP_BASIC_AUTH_USER o APP_BASIC_AUTH_PASSWORD no estan configuradas,
- *   se bloquea el acceso (fail-closed): no se puede entrar a nada hasta que
- *   se configuren ambas variables en Vercel.
- * - Si estan configuradas, se exige Basic Auth valido (usuario y contrasena)
- *   en cada peticion a paginas y a APIs.
+ * En preview, las peticiones no autorizadas devuelven 403 sin
+ * WWW-Authenticate para evitar que prefetches o recursos secundarios de
+ * Next.js abran el dialogo nativo de Basic Auth encima de la pagina publica
+ * SOKOEL. En produccion se mantiene el reto Basic Auth normal.
  */
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
+  const isPreview = process.env.VERCEL_ENV === "preview";
 
   const isPublicSokoelPreview =
-    process.env.VERCEL_ENV === "preview" &&
+    isPreview &&
     (
       pathname === "/catalogo/sokoel" ||
       (pathname === "/api/catalog/sokoel" && ["GET", "HEAD", "OPTIONS"].includes(method))
@@ -73,6 +73,13 @@ export function middleware(request: NextRequest) {
     } catch {
       // Cabecera mal formada: se trata igual que "no autenticado".
     }
+  }
+
+  if (isPreview) {
+    return new NextResponse("Preview protegido.", {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   return new NextResponse("Autenticacion requerida.", {
