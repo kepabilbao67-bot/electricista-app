@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
-import { parseIntent } from "@/lib/autonomo360/intent-parser";
-import { buildBudgetDraft } from "@/lib/autonomo360/budget-draft";
+import { parseIntent } from "@/lib/electricista/intent-parser";
+import { buildBudgetDraft } from "@/lib/electricista/budget-draft";
 
 /**
  * POST /api/asistente/analyze
@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse intent
     const intent = parseIntent(input);
 
     if (intent.type === "unknown") {
@@ -33,7 +32,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Solo soportamos create_budget en esta fase
     if (intent.type !== "create_budget") {
       return NextResponse.json(
         { success: false, error: `Intención "${intent.type}" detectada pero no soportada todavía. Solo se pueden crear presupuestos.` },
@@ -41,7 +39,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build budget draft
     const draftResult = buildBudgetDraft(intent);
 
     if (!draftResult.success || !draftResult.payload || !draftResult.preview) {
@@ -51,15 +48,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve client name → matches
     let clientMatches: { id: string; name: string }[] = [];
     const clientNameHint = draftResult.payload.client_name_hint;
 
     if (clientNameHint) {
       await initializeDatabase();
       const db = getDbClient();
-
-      // Búsqueda normalizada: LIKE con el nombre
       const result = await db.execute({
         sql: "SELECT id, name FROM clients WHERE LOWER(name) LIKE LOWER(?) ORDER BY name LIMIT 10",
         args: [`%${clientNameHint}%`],
