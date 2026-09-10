@@ -1,8 +1,8 @@
 /**
- * AUTÓNOMO 360 — Configuración Centralizada SaaS White-Label
- * 
- * Permite personalizar el nombre de la app, datos fiscales, bancarios
- * y de contacto mediante variables de entorno o valores por defecto genéricos.
+ * Electricista360 — configuración centralizada y white-label.
+ *
+ * Permite personalizar nombre, datos fiscales, bancarios y de contacto
+ * mediante variables de entorno o valores por defecto seguros.
  */
 
 export interface AppConfig {
@@ -36,11 +36,11 @@ export interface AppConfig {
 
 export const DEFAULT_APP_CONFIG: AppConfig = {
   app: {
-    name: "Gestión Profesional 360",
-    shortName: "Gestión 360",
-    description: "Software de gestión integral para autónomos y pymes",
+    name: "Electricista360",
+    shortName: "Electricista 360",
+    description: "Gestión profesional para instalaciones y servicios eléctricos",
     version: "1.0.0",
-    themeColor: "#2563eb",
+    themeColor: "#1e293b",
   },
   company: {
     tradeName: "Mi Empresa",
@@ -62,10 +62,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   },
 };
 
-/**
- * Obtiene la configuración activa combinando variables de entorno
- * y valores por defecto genéricos.
- */
+/** Obtiene la configuración activa combinando entorno y defaults seguros. */
 export function getAppConfig(): AppConfig {
   const getEnv = (key: string) => process.env[key]?.trim();
 
