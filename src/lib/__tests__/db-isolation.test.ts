@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, statSync, rmSync } from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { getDbClient, resetDbClient, getTestDatabaseUrl } from "@/lib/db";
@@ -11,9 +11,9 @@ test("TEST env ignores remote URLs and never creates electricista.db", async () 
   const prevToken = process.env.TURSO_AUTH_TOKEN;
   const filePath = path.resolve(process.cwd(), "electricista.db");
   const tempTestDb = path.join(tmpdir(), `autonomo360-test-${process.pid}-${Date.now()}.db`);
+  const initialStat = existsSync(filePath) ? statSync(filePath) : null;
 
   try {
-    rmSync(filePath, { force: true });
     delete process.env.TEST_DATABASE_URL;
     process.env.TURSO_DATABASE_URL = "libsql://remote-forbidden.turso.io";
     process.env.TURSO_AUTH_TOKEN = "token-forbidden";
@@ -24,7 +24,13 @@ test("TEST env ignores remote URLs and never creates electricista.db", async () 
     const result = await db.execute("SELECT 1 AS ok");
 
     assert.equal(Number(result.rows[0].ok), 1);
-    assert.equal(existsSync(filePath), false, "No debe crearse electricista.db en tests");
+    assert.ok(existsSync(tempTestDb), "La consulta debe ejecutarse en tempTestDb");
+    if (initialStat === null) {
+      assert.equal(existsSync(filePath), false, "No debe crearse electricista.db en tests");
+    } else {
+      const currentStat = statSync(filePath);
+      assert.equal(currentStat.mtimeMs, initialStat.mtimeMs, "electricista.db no debe ser modificado");
+    }
     assert.ok(process.env.TEST_DATABASE_URL?.startsWith("file:"));
     assert.ok(process.env.TEST_DATABASE_URL.includes(tmpdir().replace(/\\/g, "/")) || process.env.TEST_DATABASE_URL.includes("autonomo360-test-"));
   } finally {
@@ -32,5 +38,6 @@ test("TEST env ignores remote URLs and never creates electricista.db", async () 
     if (prevTurso === undefined) delete process.env.TURSO_DATABASE_URL; else process.env.TURSO_DATABASE_URL = prevTurso;
     if (prevToken === undefined) delete process.env.TURSO_AUTH_TOKEN; else process.env.TURSO_AUTH_TOKEN = prevToken;
     resetDbClient();
+    try { rmSync(tempTestDb, { force: true }); } catch { /* ignore */ }
   }
 });

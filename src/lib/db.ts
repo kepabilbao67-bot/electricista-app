@@ -6,6 +6,7 @@ export interface SqlExecutor {
 import { tmpdir } from "os";
 import { join } from "path";
 import { MATERIALES_DEMO } from "./materiales-demo";
+import { SOKOEL_CATALOG_ITEMS } from "./sokoel-catalog";
 
 let client: Client | undefined;
 
@@ -109,6 +110,13 @@ export function setDbClientForTesting(testClient: Client): void {
  * ONLY for use in test teardown.
  */
 export function resetDbClient(): void {
+  if (client && typeof client.close === "function") {
+    try {
+      client.close();
+    } catch {
+      /* ignore */
+    }
+  }
   client = undefined;
 }
 
@@ -251,6 +259,10 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "name_color", def: "TEXT" },
     { name: "description_color", def: "TEXT" },
     { name: "category_color", def: "TEXT" },
+    { name: "supplier", def: "TEXT" },
+    { name: "supplier_reference", def: "TEXT" },
+    { name: "price_date", def: "TEXT" },
+    { name: "source_document", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "leads", [
@@ -305,6 +317,27 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "default_tax_rate", def: "REAL DEFAULT 21" },
     { name: "theme_color", def: "TEXT DEFAULT '#2563eb'" },
     { name: "updated_at", def: "TEXT" },
+  ]);
+
+
+  await ensureColumns(db, "purchase_orders", [
+    { name: "source", def: "TEXT DEFAULT 'voice'" },
+    { name: "original_text", def: "TEXT" },
+    { name: "needed_date", def: "TEXT" },
+    { name: "observations", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'draft'" },
+    { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
+  ]);
+
+  await ensureColumns(db, "purchase_order_items", [
+    { name: "order_id", def: "TEXT" },
+    { name: "product", def: "TEXT" },
+    { name: "quantity", def: "REAL" },
+    { name: "unit", def: "TEXT" },
+    { name: "observations", def: "TEXT" },
+    { name: "sort_order", def: "INTEGER DEFAULT 0" },
+    { name: "created_at", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "feedback_submissions", [
@@ -645,6 +678,33 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       updated_at TEXT DEFAULT (datetime('now'))
     );
 
+
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+      id TEXT PRIMARY KEY,
+      source TEXT DEFAULT 'voice',
+      original_text TEXT,
+      needed_date TEXT,
+      observations TEXT,
+      status TEXT DEFAULT 'draft',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS purchase_order_items (
+      id TEXT PRIMARY KEY,
+      order_id TEXT NOT NULL,
+      product TEXT NOT NULL,
+      quantity REAL NOT NULL,
+      unit TEXT NOT NULL,
+      observations TEXT,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_purchase_orders_needed_date
+      ON purchase_orders(needed_date, status);
+
     CREATE TABLE IF NOT EXISTS feedback_submissions (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
@@ -710,6 +770,13 @@ export async function initializeDatabase(client?: Client): Promise<void> {
   // Seed catalog items if empty (usa materiales profesionales de MAT-001)
   const result = await db.execute("SELECT COUNT(*) as count FROM catalog_items");
   const count = result.rows[0].count as number;
+
+  for (const item of SOKOEL_CATALOG_ITEMS) {
+    await db.execute({
+      sql: "INSERT OR IGNORE INTO catalog_items (id, name, description, unit_price, cost_price, category, supplier, supplier_reference, price_date, source_document) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?)",
+      args: [item.id, item.name, item.description, item.costPrice, item.category, item.supplier, item.reference, item.priceDate, item.sourceDocument],
+    });
+  }
 
   if (count === 0) {
     for (const mat of MATERIALES_DEMO) {
