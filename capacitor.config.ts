@@ -34,7 +34,14 @@ const config: CapacitorConfig = {
     // Dejar vacío / comentado para empaquetar assets estáticos locales (requiere next export).
     url: process.env.CAPACITOR_SERVER_URL || "http://192.168.1.141:3110",
 
-    cleartext: true, // permite HTTP (necesario en debug con IP local)
+    // cleartext: NO se activa aqui.
+    // Ponerlo a true hace que Capacitor escriba
+    // android:usesCleartextTraffic="true" en el AndroidManifest generado de
+    // capacitor-cordova-android-plugins, que se FUSIONA en el APK y habilita
+    // HTTP en claro hacia CUALQUIER host (no solo la LAN).
+    // El acceso HTTP al servidor de desarrollo se concede de forma explicita y
+    // limitada en android/app/src/main/res/xml/network_security_config.xml.
+    cleartext: false,
     androidScheme: "https",
   },
 
