@@ -1,7 +1,6 @@
 import { parseVoiceOrder, VoiceOrderDraft, VoiceOrderItem } from "./voice-order-parser";
 import { electricistaDomainAdapter } from "./assistant/electricista-adapter";
-import { Voice360Client, defaultVoice360Client } from "./assistant/voice360-client";
-import type { Voice360ClientConfig, Voice360CatalogCandidate } from "./assistant/types";
+import type { Voice360CatalogCandidate } from "./assistant/types";
 
 export interface EnrichedVoiceOrderItem extends VoiceOrderItem {
   catalog_item?: Voice360CatalogCandidate;
@@ -30,25 +29,26 @@ export interface InterpretedVoiceOrderResult {
     auto_send_supplier: boolean;
   };
   requestId: string;
-  voice360_active: boolean;
   error?: string;
 }
 
 export interface InterpretVoiceOrderOptions {
   tenantId?: string;
   requestId?: string;
+  /** Conservado por compatibilidad con POST /api/pedidos-voz/interpretar. */
   channel?: string;
   referenceDate?: Date;
-  config?: Voice360ClientConfig;
 }
 
 /**
- * Pipeline integral de pedidos-voz hacia Voice360 canónico:
+ * Pipeline integral de pedidos-voz, 100% local (sin motor externo):
  * 1. Normalización de jerga de electricista (adapter.normalizeInput)
  * 2. Parsing de cantidades y fechas (voice-order-parser)
  * 3. Resolución de materiales de catálogo SOKOEL (adapter.resolveCatalogItem)
- * 4. Delegación a Voice360 canónico vía HTTP con channel="electricista_voice_order"
- * 5. Aplicación estricta de Human Gate (PENDING_APPROVAL, NO autoenvío)
+ * 4. Aplicación estricta de Human Gate (PENDING_APPROVAL, NO autoenvío)
+ *
+ * El servidor Voice360 externo (localhost:3088) está retirado: este pipeline
+ * no realiza ninguna llamada HTTP.
  */
 export async function interpretVoiceOrder(
   rawText: string,
@@ -56,7 +56,6 @@ export async function interpretVoiceOrder(
 ): Promise<InterpretedVoiceOrderResult> {
   const tenantId = options.tenantId || "tenant-default-electricista";
   const requestId = options.requestId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `req-${Date.now()}`);
-  const client = options.config ? new Voice360Client(options.config) : defaultVoice360Client;
 
   // 1. Normalización de jerga técnica
   let normalizedText = rawText;
@@ -85,7 +84,6 @@ export async function interpretVoiceOrder(
         hasUnresolvedItems: true,
       },
       requestId,
-      voice360_active: false,
       error: err?.message || "No se pudieron identificar productos cuantificados",
     };
   }
@@ -120,29 +118,7 @@ export async function interpretVoiceOrder(
     }
   }
 
-  // 4. Delegación a Voice360 canónico
-  let voice360Active = false;
-  try {
-    const v360Res = await client.process({
-      tenantId,
-      input: normalizedText,
-      requestId,
-      channel: options.channel || "electricista_voice_order",
-      context: {
-        vertical: "electricista",
-        supplier: "SOKOEL",
-        intent: "order_draft",
-        parsed_items_count: enrichedItems.length,
-      },
-    });
-    if (v360Res.success) {
-      voice360Active = true;
-    }
-  } catch {
-    voice360Active = false;
-  }
-
-  // 5. Construcción del resultado seguro con Human Gate
+  // 4. Construcción del resultado seguro con Human Gate
   return {
     success: true,
     status: "PENDING_APPROVAL",
@@ -165,6 +141,5 @@ export async function interpretVoiceOrder(
       auto_send_supplier: false,
     },
     requestId,
-    voice360_active: voice360Active,
   };
 }

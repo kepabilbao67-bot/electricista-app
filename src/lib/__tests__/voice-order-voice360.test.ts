@@ -14,7 +14,6 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
   test("1. Pedido simple por voz cuantificado", async () => {
     const res = await interpretVoiceOrder("Pedir 5 magnetotérmicos de 16A para mañana", {
       referenceDate: new Date(2026, 8, 16, 10, 0, 0),
-      config: { enabled: false }
     });
     assert.equal(res.success, true);
     assert.equal(res.status, "PENDING_APPROVAL");
@@ -27,7 +26,6 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
   test("2. Jerga eléctrica normalizada mediante adapter ('magneto', 'manguera', 'dife')", async () => {
     const res = await interpretVoiceOrder("Necesito 3 magnetos de 20A y 50 metros de manguera para hoy", {
       referenceDate: new Date(2026, 8, 16, 10, 0, 0),
-      config: { enabled: false }
     });
     assert.equal(res.success, true);
     assert.equal(res.items.length, 2);
@@ -36,9 +34,7 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
   });
 
   test("3. Material SOKOEL resuelto con catálogo y pricing orientativo", async () => {
-    const res = await interpretVoiceOrder("Pide 4 bases de enchufe schuko para el viernes", {
-      config: { enabled: false }
-    });
+    const res = await interpretVoiceOrder("Pide 4 bases de enchufe schuko para el viernes");
     assert.equal(res.success, true);
     assert.ok(res.items.length >= 1);
     const schukoItem = res.items[0];
@@ -49,9 +45,7 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
   });
 
   test("4. Material no encontrado en catálogo no rompe y se conserva como texto libre", async () => {
-    const res = await interpretVoiceOrder("Necesito 2 taladros percutores especiales de 800W", {
-      config: { enabled: false }
-    });
+    const res = await interpretVoiceOrder("Necesito 2 taladros percutores especiales de 800W");
     assert.equal(res.success, true);
     assert.equal(res.items.length, 1);
     assert.ok(res.items[0].product.toLowerCase().includes("taladros percutores"));
@@ -62,7 +56,6 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
   test("5. Múltiples materiales combinados en una sola locución", async () => {
     const res = await interpretVoiceOrder("3 diferenciales de 40A, 100 metros de tubo y 10 downlights led para pasado mañana", {
       referenceDate: new Date(2026, 8, 16, 10, 0, 0),
-      config: { enabled: false }
     });
     assert.equal(res.success, true);
     assert.equal(res.items.length, 3);
@@ -70,14 +63,11 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
     assert.equal(res.neededDate, "2026-09-18");
   });
 
-  test("6. Tenant A/B aislados en llamadas a Voice360", async () => {
-    let capturedTenant = "";
-    const mockFetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      capturedTenant = (init?.headers as any)?.["x-tenant-id"];
-      return new Response(
-        JSON.stringify({ success: true, action: "order_draft", summary: "Order OK" }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+  test("6. El pipeline de pedidos-voz no realiza ninguna llamada HTTP externa (servidor :3088 retirado)", async () => {
+    let fetchCalls = 0;
+    const mockFetch = async (): Promise<Response> => {
+      fetchCalls += 1;
+      throw new Error("No debe existir tráfico HTTP hacia el servidor Voice360 retirado");
     };
 
     const originalFetch = globalThis.fetch;
@@ -86,25 +76,25 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
     try {
       const res = await interpretVoiceOrder("2 magnetotérmicos de 16A", {
         tenantId: "tenant-electricista-premium-99",
-        config: { baseUrl: "http://mock-voice360:3088", enabled: true }
       });
-      assert.equal(capturedTenant, "tenant-electricista-premium-99");
-      assert.equal(res.voice360_active, true);
+      assert.equal(fetchCalls, 0, "interpretVoiceOrder no debe realizar llamadas HTTP");
+      assert.equal(res.success, true);
+      assert.equal(res.status, "PENDING_APPROVAL");
+      assert.equal(res.items.length, 1);
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
-  test("7. Fallback seguro cuando Voice360 está deshabilitado", async () => {
-    const res = await interpretVoiceOrder("5 magnetotérmicos de 16A", {
-      config: { enabled: false }
-    });
+  test("7. El pedido se interpreta por completo sin configuración de motor externo", async () => {
+    const res = await interpretVoiceOrder("5 magnetotérmicos de 16A");
     assert.equal(res.success, true);
-    assert.equal(res.voice360_active, false);
     assert.equal(res.status, "PENDING_APPROVAL");
+    assert.equal(res.items.length, 1);
+    assert.equal(res.items[0].quantity, 5);
   });
 
-  test("8. Timeout / Error de conexión con Voice360 no rompe la experiencia del usuario", async () => {
+  test("8. Un fallo de red global no rompe la interpretación del pedido", async () => {
     const mockFetchFail = async (): Promise<Response> => {
       throw new Error("Connection timeout / ECONNREFUSED");
     };
@@ -113,21 +103,17 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
     globalThis.fetch = mockFetchFail as typeof fetch;
 
     try {
-      const res = await interpretVoiceOrder("5 magnetotérmicos de 16A", {
-        config: { baseUrl: "http://unreachable-host:9999", enabled: true, timeoutMs: 100 }
-      });
+      const res = await interpretVoiceOrder("5 magnetotérmicos de 16A");
       assert.equal(res.success, true);
-      assert.equal(res.voice360_active, false);
       assert.equal(res.status, "PENDING_APPROVAL");
+      assert.equal(res.items.length, 1);
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
   test("9. Human Gate estricto: pendingAction requiere confirmación y NO auto-envía a proveedor", async () => {
-    const res = await interpretVoiceOrder("10 diferenciales de 40A para hoy", {
-      config: { enabled: false }
-    });
+    const res = await interpretVoiceOrder("10 diferenciales de 40A para hoy");
     assert.equal(res.status, "PENDING_APPROVAL");
     assert.ok(res.pendingAction);
     assert.equal(res.pendingAction.requires_human_approval, true);
@@ -135,9 +121,7 @@ describe("COM360-V3 — Pedidos-Voz → Voice360 Canónico Integration Suite", (
   });
 
   test("10. Seguridad: Token claro nunca se persiste ni se expone", async () => {
-    const res = await interpretVoiceOrder("5 magnetos de 16A", {
-      config: { enabled: false }
-    });
+    const res = await interpretVoiceOrder("5 magnetos de 16A");
     const serialized = JSON.stringify(res);
     assert.equal(serialized.includes("secret_token"), false);
     assert.equal(serialized.includes("bearer_token"), false);
