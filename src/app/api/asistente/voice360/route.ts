@@ -100,11 +100,23 @@ function detectIntent(text: string): Intent {
   // Presupuesto
   if (/\b(hazme|crea|nuevo|hacer|prepara|genera)\b.*(presupuesto|presupu|budget)/.test(t)) return "budget_create";
   if (/\b(presupuesto|presupu|budget)\b.*(de|para)\b/.test(t)) return "budget_create";
+  // Modificación de una línea EXISTENTE — se evalúa ANTES de add_item.
+  // Con el orden anterior, "pon el precio del cable a 8 euros" era capturada por
+  // add_item (verbo "pon" + palabra "cable") y acababa AÑADIENDO una línea nueva
+  // ("Euros") en vez de modificar la existente.
+  // Un verbo puramente aditivo (añade/agrega/incluye) nunca es modificación, y un
+  // objeto cuantificado justo tras el verbo ("pon 3 enchufes a 12 euros") sigue
+  // siendo una adición.
+  const hasModifyVerb = /\b(cambia|modifica|actualiza|corrige|pon|sube|baja)\b/.test(t);
+  const hasPureAddVerb = /\b(a[ñn]ade|anade|agrega|incluye)\b/.test(t);
+  const quantifiedObject =
+    /\b(?:cambia|modifica|actualiza|corrige|pon|sube|baja)\s+(?:\d+(?:[.,]\d+)?|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|veinte|veinticinco|treinta|cuarenta|cincuenta)\b/.test(t);
+  if (hasModifyVerb && !hasPureAddVerb && !quantifiedObject) return "budget_modify_item";
+
   if (
     /\b(a[ñn]ade|agrega|incluye|pon|meter|mete|añade)\b.*(l[ií]nea|item|partida|enchufe|cable|magnetot|diferencial|enchufe|luz|punto)/.test(t) ||
     /\b(a[ñn]ade|agrega|incluye|pon)\b.*(unidades|uds|metros|m\b|cajas)/.test(t)
   ) return "budget_add_item";
-  if (/\b(cambia|modifica|actualiza|corrige|pon|sube|baja)\b.*(precio|cantidad|unidades|euros?|€|iva)/.test(t)) return "budget_modify_item";
   if (/\b(el\s+cliente\s+es|para\s+el\s+cliente|cliente[:\s]+|cliente\s+se\s+llama)/.test(t)) return "budget_set_client";
   if (/\b(presupuestos?)\b.*(pendientes?|activos?|lista|ver|mostrar|consultar|buscar)/.test(t)) return "budget_query";
 
@@ -368,6 +380,35 @@ async function handleAddItem(
   };
 }
 
+/**
+ * Localiza en el borrador la línea a la que se refiere una frase hablada.
+ * Consume los artículos (el/la/los/las/un/una) para que "las horas" busque "horas",
+ * y admite referencias genéricas ("cantidad", "unidades") sólo cuando el borrador
+ * tiene una única línea, caso en el que no hay ambigüedad posible.
+ * Devuelve -1 cuando el artículo no puede resolverse inequívocamente.
+ */
+function findItemIndex(items: Voice360Item[], spoken: string): number {
+  const key = spoken
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/^(?:el|la|los|las|un|una|unos|unas)\s+/, "")
+    .trim();
+
+  const normalized = items.map((item) =>
+    item.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  );
+
+  if (key.length >= 2) {
+    const direct = normalized.findIndex((description) => description.includes(key));
+    if (direct >= 0) return direct;
+  }
+
+  if (/^(?:cantidad|unidades|uds?)$/.test(key) && items.length === 1) return 0;
+
+  return -1;
+}
+
 async function handleModifyItem(
   text: string,
   currentDraft: Voice360Draft | null
@@ -378,48 +419,56 @@ async function handleModifyItem(
 
   const t = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-  // Cambiar cantidad — "cambia los enchufes a cuatro"
-  const qtyMatch = t.match(
-    /(?:cambia|pon|modifica)\s+(?:los?\s+)?(.{2,30}?)\s+a\s+(\d+(?:[.,]\d+)?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|quince|veinte)\s*(?:unidades?|uds?)?/i
+  // Cambiar PRECIO — "pon el precio del cable a 8 euros".
+  // Se evalúa ANTES que la cantidad: "precio" es el marcador explícito de precio.
+  const priceMatch = t.match(
+    /(?:cambia|modifica|actualiza|corrige|pon|sube|baja)\s+(?:el\s+|la\s+|los\s+|las\s+)?precio\s+(?:del?\s+|de\s+la\s+)?(.{2,30}?)\s+a\s+(\d+(?:[.,]\d+)?)\s*(?:euros?|€)?/i
   );
 
-  // Cambiar precio — "pon el precio del cable a 8 euros"
-  const priceMatch = t.match(
-    /(?:cambia|pon|modifica)\s+(?:el\s+)?precio\s+(?:del?\s+)?(.{2,30}?)\s+a\s+(\d+(?:[.,]\d+)?)\s*(?:euros?|€)?/i
+  // Cambiar CANTIDAD — "cambia las horas a 10".
+  // El artículo (el/la/los/las/un/una) se consume antes de capturar la referencia.
+  const qtyMatch = t.match(
+    /(?:cambia|modifica|actualiza|corrige|pon|sube|baja)\s+(?:el\s+|la\s+|los\s+|las\s+|un\s+|una\s+)?(.{2,30}?)\s+a\s+(\d+(?:[.,]\d+)?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|quince|veinte)\s*(?:unidades?|uds?)?/i
   );
+
+  // "…a 8 euros" sin la palabra "precio" sigue siendo un precio, no una cantidad.
+  const currencyAfterNumber = /\ba\s+\d+(?:[.,]\d+)?\s*(?:euros?|€|eur\b)/i.test(t);
 
   let modified = false;
   const items = [...currentDraft.items];
 
-  if (qtyMatch) {
-    const keyword = qtyMatch[1].trim();
-    const newQty = parseNumber(qtyMatch[2]);
-    if (newQty !== null) {
-      for (const item of items) {
-        if (item.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(keyword)) {
-          item.quantity = newQty;
-          modified = true;
-          break;
-        }
-      }
+  const priceSource = priceMatch ?? (currencyAfterNumber ? qtyMatch : null);
+  if (priceSource) {
+    const newPrice = parseNumber(priceSource[2]);
+    const index = newPrice === null ? -1 : findItemIndex(items, priceSource[1]);
+    if (index >= 0 && newPrice !== null) {
+      const item = items[index];
+      // Se conserva la cantidad y el resto de la línea; sólo cambia el precio.
+      items[index] = {
+        ...item,
+        unit_price: newPrice,
+        total: Math.round(newPrice * item.quantity * 100) / 100,
+      };
+      modified = true;
     }
-  } else if (priceMatch) {
-    const keyword = priceMatch[1].trim();
-    const newPrice = parseNumber(priceMatch[2]);
-    if (newPrice !== null) {
-      for (const item of items) {
-        if (item.description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(keyword)) {
-          item.unit_price = newPrice;
-          modified = true;
-          break;
-        }
-      }
+  } else if (qtyMatch) {
+    const newQty = parseNumber(qtyMatch[2]);
+    const index = newQty === null ? -1 : findItemIndex(items, qtyMatch[1]);
+    if (index >= 0 && newQty !== null) {
+      const item = items[index];
+      // Se conserva el precio unitario y el resto de la línea; sólo cambia la cantidad.
+      items[index] = {
+        ...item,
+        quantity: newQty,
+        total: Math.round((item.unit_price ?? 0) * newQty * 100) / 100,
+      };
+      modified = true;
     }
   }
 
   if (!modified) {
     return {
-      answer: "No he encontrado ese artículo en el borrador. Intenta con: \"Cambia los enchufes a cuatro\" o \"Pon el precio del cable a 8 euros\".",
+      answer: "No he encontrado ese artículo en el borrador. Intenta con: \"Cambia las horas a 10\" o \"Pon el precio del cable a 8 euros\".",
       draft: currentDraft,
     };
   }

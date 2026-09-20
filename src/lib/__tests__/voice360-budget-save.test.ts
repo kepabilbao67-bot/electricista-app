@@ -958,28 +958,306 @@ test("VOZ 360 — P1.1: budget_set_tax (IVA del borrador, 0 líneas IVA)", async
     );
 
     await t.test(
-      "24. P1.2 intacto: 'Cambia las horas a 10' y 'Pon el precio del cable a 8 euros'",
+      "24. Las frases de horas/precio no son IVA (P1.1 no las captura; P1.2 las resuelve)",
       async () => {
         const base = await baseDraft();
 
-        const horas = await postVoice360({ input: "Cambia las horas a 10", draft: base });
-        assert.equal(
-          horas.json.intent,
-          "electricista:general",
-          "P1.2 sigue sin reconocerse: NO se arregla aquí"
-        );
-        assert.notEqual(horas.json.intent, "electricista:budget_set_tax");
+        // Sobre un borrador SIN línea de horas ni de cable: P1.1 no debe capturarlas
+        // como IVA, y P1.2 las resuelve como modificación sin añadir líneas.
+        for (const frase of [
+          "Cambia las horas a 10",
+          "Pon el precio del cable a 8 euros",
+        ]) {
+          const step = await postVoice360({ input: frase, draft: base });
+          assert.notEqual(
+            step.json.intent,
+            "electricista:budget_set_tax",
+            `"${frase}" no es una frase de IVA`
+          );
+          assert.equal(
+            step.json.intent,
+            "electricista:budget_modify_item",
+            `"${frase}" debe resolverse como modificación (P1.2)`
+          );
+          assert.equal(
+            step.json.draft.items.length,
+            base.items.length,
+            `"${frase}" no debe añadir líneas`
+          );
+        }
+      }
+    );
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});
 
-        const cable = await postVoice360({
+/**
+ * P1.2 — Modificar cantidad y precio de una línea EXISTENTE sin duplicarla.
+ *
+ * Dos defectos del mismo bloque:
+ *  1. "Cambia las horas a 10" no se reconocía como modificación (la regla exigía una
+ *     palabra de precio/cantidad y el verbo no era de modificación); y aunque llegase
+ *     al handler, el artículo hablado se capturaba como "las horas" y no casaba.
+ *  2. "Pon el precio del cable a 8 euros" era capturada por add_item ANTES que
+ *     modify_item, y acababa AÑADIENDO una línea basura ("8 ud Euros").
+ *
+ * AISLAMIENTO: idéntico al resto del fichero — cliente libsql en memoria y
+ * TEST_DATABASE_URL apuntando a una ruta temporal.
+ */
+test("VOZ 360 — P1.2: modificar cantidad/precio sin duplicar líneas", async (t) => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-p12-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+
+  // Locución base: 4 horas a 40 €/hora → línea "Horas" (4 @40)
+  const DRAFT_INPUT = "Presupuesto para Test Cliente: 4 horas a 40 euros";
+  // Segunda línea por el flujo real de adición → "Cables manguera" (3 @4)
+  const ADD_CABLE_INPUT = "Añade 3 mangueras a 4 euros";
+
+  /** Borrador real con DOS líneas: "Horas" (4 @40) y "Cables manguera" (3 @4). */
+  async function twoLineDraft(): Promise<any> {
+    const first = await postVoice360({ input: DRAFT_INPUT });
+    assert.equal(first.status, 200);
+    assert.equal(first.json.intent, "electricista:budget_draft");
+    assert.equal(first.json.draft.items.length, 1, "la locución base produce 1 línea");
+
+    const second = await postVoice360({
+      input: ADD_CABLE_INPUT,
+      draft: first.json.draft,
+    });
+    assert.equal(second.json.intent, "electricista:budget_add_item");
+    assert.equal(second.json.draft.items.length, 2, "el borrador debe tener 2 líneas");
+    return second.json.draft;
+  }
+
+  function findItem(draft: any, needle: string): any {
+    return draft.items.find((item: any) =>
+      String(item.description).toLowerCase().includes(needle)
+    );
+  }
+
+  try {
+    await t.test("A. 'Cambia las horas a 10' cambia la cantidad sin duplicar", async () => {
+      const base = await twoLineDraft();
+      const step = await postVoice360({ input: "Cambia las horas a 10", draft: base });
+      const draft = step.json.draft;
+
+      assert.equal(step.json.intent, "electricista:budget_modify_item");
+      assert.equal(draft.items.length, base.items.length, "misma cantidad de líneas");
+      assert.equal(draft.items.length, 2, "no debe añadirse ninguna línea");
+
+      const horas = findItem(draft, "horas");
+      assert.equal(horas.quantity, 10, "quantity = 10");
+      assert.equal(horas.unit_price, 40, "unit_price intacto");
+      assert.equal(horas.total, 400, "total de línea recalculado (10 x 40)");
+
+      const cable = findItem(draft, "cable");
+      assert.equal(cable.quantity, 3, "la otra línea no se toca");
+      assert.equal(cable.unit_price, 4, "la otra línea no se toca");
+
+      assert.equal(step.json.totals.subtotal, 412, "subtotal recalculado (10x40 + 3x4)");
+      assert.equal(step.json.totals.tax_amount, 86.52, "IVA 21% de 412");
+      assert.equal(step.json.totals.total, 498.52, "total del presupuesto");
+      assert.equal(draft.revision, base.revision + 1, "revision +1");
+    });
+
+    await t.test(
+      "B. 'Pon el precio del cable a 8 euros' cambia el precio y NO crea línea 'Euros'",
+      async () => {
+        const base = await twoLineDraft();
+        const step = await postVoice360({
           input: "Pon el precio del cable a 8 euros",
           draft: base,
         });
+        const draft = step.json.draft;
+
+        assert.equal(step.json.intent, "electricista:budget_modify_item");
+        assert.equal(draft.items.length, base.items.length, "misma cantidad de líneas");
+        assert.equal(draft.items.length, 2, "no debe añadirse ninguna línea");
+        for (const item of draft.items) {
+          assert.doesNotMatch(
+            String(item.description),
+            /euros|%/i,
+            `línea basura detectada: "${item.description}"`
+          );
+        }
+
+        const cable = findItem(draft, "cable");
+        assert.equal(cable.unit_price, 8, "unit_price = 8");
+        assert.equal(cable.quantity, 3, "quantity intacta");
+        assert.equal(cable.total, 24, "total de línea recalculado (3 x 8)");
+
+        const horas = findItem(draft, "horas");
+        assert.equal(horas.quantity, 4, "la otra línea no se toca");
+        assert.equal(horas.unit_price, 40, "la otra línea no se toca");
+
+        assert.equal(step.json.totals.subtotal, 184, "subtotal recalculado (4x40 + 3x8)");
+        assert.equal(step.json.totals.tax_amount, 38.64, "IVA 21% de 184");
+        assert.equal(step.json.totals.total, 222.64, "total del presupuesto");
+        assert.equal(draft.revision, base.revision + 1, "revision +1");
+      }
+    );
+
+    await t.test("C. Variantes de modificación (cantidad y precio)", async () => {
+      const variantesCantidad: Array<[string, number]> = [
+        ["Cambia las horas a 5", 5],
+        ["Modifica las horas a 7", 7],
+        ["Actualiza las horas a 8", 8],
+      ];
+
+      for (const [frase, esperado] of variantesCantidad) {
+        const base = await twoLineDraft();
+        const step = await postVoice360({ input: frase, draft: base });
+        assert.equal(step.json.intent, "electricista:budget_modify_item", frase);
+        assert.equal(step.json.draft.items.length, 2, `${frase}: sin duplicados`);
+        assert.equal(findItem(step.json.draft, "horas").quantity, esperado, frase);
         assert.equal(
-          cable.json.intent,
-          "electricista:budget_add_item",
-          "comportamiento previo intacto: NO se arregla aquí"
+          findItem(step.json.draft, "horas").unit_price,
+          40,
+          `${frase}: precio intacto`
         );
-        assert.notEqual(cable.json.intent, "electricista:budget_set_tax");
+      }
+
+      const base = await twoLineDraft();
+      const precio = await postVoice360({
+        input: "Pon el precio del cable a 6 euros",
+        draft: base,
+      });
+      assert.equal(precio.json.intent, "electricista:budget_modify_item");
+      assert.equal(precio.json.draft.items.length, 2, "sin duplicados");
+      assert.equal(findItem(precio.json.draft, "cable").unit_price, 6);
+      assert.equal(findItem(precio.json.draft, "cable").quantity, 3, "cantidad intacta");
+    });
+
+    await t.test(
+      "D. Regresión: 'Añade 3 enchufes a 12 euros' sigue siendo add_item",
+      async () => {
+        const base = await twoLineDraft();
+
+        const añade = await postVoice360({
+          input: "Añade 3 enchufes a 12 euros",
+          draft: base,
+        });
+        assert.equal(añade.json.intent, "electricista:budget_add_item");
+        assert.equal(añade.json.draft.items.length, 3, "sigue añadiendo una línea nueva");
+
+        // Un objeto cuantificado tras "pon" también sigue siendo una adición.
+        const pon = await postVoice360({ input: "Pon 3 enchufes a 12 euros", draft: base });
+        assert.equal(pon.json.intent, "electricista:budget_add_item");
+        assert.equal(pon.json.draft.items.length, 3, "sigue añadiendo una línea nueva");
+      }
+    );
+
+    await t.test("E. P1.1 intacto: IVA 10%, IVA 0 y 'Añade IVA'", async () => {
+      const base = await twoLineDraft();
+
+      const diez = await postVoice360({ input: "Añade el IVA del 10%", draft: base });
+      assert.equal(diez.json.intent, "electricista:budget_set_tax");
+      assert.equal(diez.json.draft.tax_rate, 10);
+      assert.equal(diez.json.draft.items.length, 2, "el IVA no toca las líneas");
+
+      const cero = await postVoice360({ input: "Quita el IVA", draft: diez.json.draft });
+      assert.equal(cero.json.intent, "electricista:budget_set_tax");
+      assert.equal(cero.json.draft.tax_rate, 0);
+      assert.equal(cero.json.totals.tax_amount, 0, "IVA 0 se preserva");
+
+      const conserva = await postVoice360({ input: "Añade IVA", draft: base });
+      assert.equal(conserva.json.intent, "electricista:budget_set_tax");
+      assert.equal(conserva.json.draft.tax_rate, 21, "sin porcentaje conserva el 21");
+    });
+
+    await t.test(
+      "F. P1.3 intacto: 'Confírmalo' genera Human Gate y la cancelación sigue prioritaria",
+      async () => {
+        const base = await twoLineDraft();
+        const step = await postVoice360({ input: "Confírmalo", draft: base });
+
+        assert.equal(step.json.intent, "electricista:budget_confirm");
+        assert.ok(step.json.pending_action, "debe emitir pending_action");
+        assert.equal(step.json.pending_action.action, "create_budget");
+        assert.ok(
+          typeof step.json.pending_action.token === "string" &&
+            step.json.pending_action.token.length > 0,
+          "debe emitir confirm_token"
+        );
+
+        const cancela = await postVoice360({ input: "Cancela", draft: base });
+        assert.equal(cancela.json.intent, "electricista:budget_cancel");
+        assert.equal(cancela.json.pending_action ?? null, null, "cancelar no emite token");
+
+        const negativo = await postVoice360({ input: "No lo confirmes", draft: base });
+        assert.notEqual(
+          negativo.json.intent,
+          "electricista:budget_confirm",
+          "una frase negativa no puede confirmar"
+        );
+        assert.equal(negativo.json.intent, "electricista:budget_cancel");
+      }
+    );
+
+    await t.test("G. Antes del token: budgets=0 y budget_items=0", async () => {
+      assert.equal(await countRows(testDb, "budgets"), 0, "0 presupuestos sin token");
+      assert.equal(await countRows(testDb, "budget_items"), 0, "0 líneas sin token");
+    });
+
+    await t.test(
+      "H-I. El token guarda una sola vez con los valores modificados; el reuso se rechaza",
+      async () => {
+        const base = await twoLineDraft();
+        const modificado = await postVoice360({
+          input: "Cambia las horas a 10",
+          draft: base,
+        });
+        const draft = modificado.json.draft;
+        assert.equal(findItem(draft, "horas").quantity, 10);
+
+        const confirm = await postVoice360({ input: "Confírmalo", draft });
+        const token = confirm.json.pending_action?.token;
+        assert.ok(token, "requiere token");
+        assert.equal(await countRows(testDb, "budgets"), 0, "0 persistencia antes del token");
+
+        const save = await postVoice360({ confirm_token: token });
+        assert.equal(save.status, 200, "el guardado debe responder 200");
+        assert.match(String(save.json.answer), /PRES_\d{4}/, "numeración canónica");
+
+        assert.equal(await countRows(testDb, "budgets"), 1, "exactamente 1 presupuesto");
+        const row = (
+          await testDb.execute("SELECT subtotal, tax_rate, tax_amount, total FROM budgets")
+        ).rows[0] as unknown as Record<string, unknown>;
+        assert.equal(Number(row.subtotal), 412, "subtotal con la cantidad modificada");
+        assert.equal(Number(row.tax_rate), 21, "tax_rate sin tocar");
+        assert.equal(Number(row.tax_amount), 86.52, "IVA 21% de 412");
+        assert.equal(Number(row.total), 498.52, "total persistido");
+
+        const lineas = (
+          await testDb.execute(
+            "SELECT description, quantity, unit_price FROM budget_items ORDER BY sort_order"
+          )
+        ).rows as unknown as Record<string, unknown>[];
+        assert.equal(lineas.length, 2, "exactamente 2 líneas persistidas (0 duplicados)");
+
+        const horasRow = lineas.find((l) =>
+          String(l.description).toLowerCase().includes("horas")
+        );
+        assert.ok(horasRow, "debe persistirse la línea de horas");
+        assert.equal(Number(horasRow!.quantity), 10, "cantidad persistida");
+        assert.equal(Number(horasRow!.unit_price), 40, "precio preservado");
+
+        const second = await postVoice360({ confirm_token: token });
+        assert.equal(second.status, 400, "el token es de un solo uso");
+        assert.equal(await countRows(testDb, "budgets"), 1, "el reuso no persiste nada");
       }
     );
   } finally {
