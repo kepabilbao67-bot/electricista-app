@@ -1,8 +1,9 @@
 // Service Worker para Autónomo 360
-const CACHE_NAME = "autonomo360-v1";
+const CACHE_NAME = "electricista360-v2";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
+  "/pedidos-voz",
   "/images/logo.svg",
   "/images/hero-bg.svg",
   "/images/empty-state.svg",

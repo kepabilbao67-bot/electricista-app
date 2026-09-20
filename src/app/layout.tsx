@@ -12,11 +12,14 @@ const verticalConfig = loadVerticalConfig();
 const companyProfile = loadCompanyProfile();
 const activeModules = getActiveModules(verticalConfig.modules);
 
-const navItems = activeModules.map((m) => ({
-  href: m.href,
-  label: m.label,
-  iconKey: m.iconKey,
-}));
+const navItems = [
+  ...activeModules.map((m) => ({
+    href: m.href,
+    label: m.label,
+    iconKey: m.iconKey,
+  })),
+  { href: "/pedidos-voz", label: "Pedido por voz", iconKey: "mic" },
+];
 
 const sidebarBrand = {
   tradeName: verticalConfig.brand.tradeName,

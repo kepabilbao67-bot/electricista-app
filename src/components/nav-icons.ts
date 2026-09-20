@@ -33,6 +33,7 @@ import {
   PieChart,
   Target,
   LineChart,
+  Mic,
 } from "lucide-react";
 
 /**
@@ -72,6 +73,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "pie-chart": PieChart,
   "target": Target,
   "line-chart": LineChart,
+  "mic": Mic,
 };
 
 /**
