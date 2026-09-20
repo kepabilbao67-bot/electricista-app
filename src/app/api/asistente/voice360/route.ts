@@ -110,11 +110,15 @@ interface ParsedItem {
   unit: string;
 }
 
-function extractBudgetItems(text: string): ParsedItem[] {
-  const normalized = electricistaDomainAdapter.normalizeInput
-    ? (electricistaDomainAdapter.normalizeInput(text) as string)
-    : text;
-
+/**
+ * Extrae las líneas de presupuesto de un texto YA normalizado.
+ *
+ * La normalización de vocabulario eléctrico ocurre UNA sola vez, en la frontera
+ * canónica POST /api/asistente/voice360 (normalizedInput -> handleBudgetCreate /
+ * handleAddItem). No normalizar aquí otra vez: normalizeInput no es idempotente
+ * y duplicaría las expansiones ("bases de enchufe" -> "bases de base de enchufe").
+ */
+function extractBudgetItems(normalized: string): ParsedItem[] {
   const items: ParsedItem[] = [];
 
   // Patrón: "N [unidades de] PRODUCTO [a PRECIO euros]"
@@ -474,43 +478,49 @@ async function executeBudgetSave(
     const budgetId = crypto.randomUUID();
     const now = new Date().toISOString().split("T")[0];
 
-    await db.execute({
-      sql: `INSERT INTO budgets (id, number, client_id, date, status, subtotal, tax_rate, tax_amount, total, created_at, updated_at)
-            VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, datetime('now'), datetime('now'))`,
-      args: [
-        budgetId,
-        budgetNumber,
-        clientId,
-        now,
-        totals.subtotal,
-        draft.tax_rate,
-        totals.tax_amount,
-        totals.total,
-      ],
-    });
-
-    for (const item of draft.items) {
-      await db.execute({
-        sql: `INSERT INTO budget_items (id, budget_id, description, quantity, unit, unit_price, total, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+    const budgetStatements = [
+      {
+        sql: `INSERT INTO budgets (id, number, client_id, date, status, subtotal, tax_rate, tax_amount, total, created_at, updated_at)
+              VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+        args: [
+          budgetId,
+          budgetNumber,
+          clientId,
+          now,
+          totals.subtotal,
+          draft.tax_rate,
+          totals.tax_amount,
+          totals.total,
+        ],
+      },
+      ...draft.items.map((item, index) => ({
+        sql: `INSERT INTO budget_items (id, budget_id, description, quantity, unit_price, total, sort_order)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
         args: [
           crypto.randomUUID(),
           budgetId,
           item.description,
           item.quantity,
-          item.unit,
           item.unit_price ?? 0,
           (item.unit_price ?? 0) * item.quantity,
+          index,
         ],
-      });
-    }
+      })),
+    ];
+
+    // D4: la cabecera y TODAS las líneas se escriben como una única unidad atómica,
+    // con el mismo patrón ya usado en /api/pedidos-voz. Si cualquier línea falla,
+    // libsql revierte el lote completo: no queda un presupuesto huérfano ni se
+    // consume el número PRES_XXXX. generateBudgetNumber() se ejecuta antes, como
+    // lectura, y su valor entra como parámetro del lote.
+    await db.batch(budgetStatements, "write");
 
     return {
       answer: `✅ **Presupuesto ${budgetNumber} guardado** correctamente${draft.client_name ? ` para ${draft.client_name}` : ""}.\n\nTotal: **${totals.total.toFixed(2)} €**\n\nPuedes verlo en la sección de Presupuestos.`,
     };
   } catch (err: any) {
     return {
-      answer: `❌ No se pudo guardar el presupuesto: ${err?.message ?? "Error de base de datos"}. Los datos no se han modificado.`,
+      answer: `❌ No se pudo guardar el presupuesto: ${err?.message ?? "Error de base de datos"}. No se ha guardado el presupuesto ni ninguna de sus líneas.`,
     };
   }
 }

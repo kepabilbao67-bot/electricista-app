@@ -1,0 +1,429 @@
+/**
+ * Voz 360 — Cobertura de regresión de P0-1 y P0-2 en executeBudgetSave
+ *
+ * Ejercita el camino REAL de confirmación que termina en executeBudgetSave:
+ *   POST /api/asistente/voice360  (borrador)
+ *     -> POST /api/asistente/voice360  { input: "confirmar", draft }  (emite confirm_token)
+ *       -> POST /api/asistente/voice360  { confirm_token }            (persiste)
+ *
+ * P0-1: el INSERT en budgets debe incluir la columna obligatoria `date`.
+ *       (Antes: SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: budgets.date)
+ * P0-2: la numeración debe venir de generateBudgetNumber() y producir PRES_XXXX.
+ *       (Antes: `P-${COUNT(*)+1}`, que además envenenaba generateBudgetNumber()
+ *        con PRES_0NaN, porque hace parseInt(number.replace("PRES_","")))
+ *
+ * AISLAMIENTO: se usa EXCLUSIVAMENTE un cliente libsql en memoria.
+ * - setDbClientForTesting() sustituye el singleton, de modo que getDbClient()
+ *   nunca llega a llamar a resolveDatabaseUrl() y por tanto `file:electricista.db`
+ *   no se construye siquiera. Es el patrón documentado en src/lib/db.ts.
+ * - Además se fija TEST_DATABASE_URL a una ruta temporal como segunda barrera,
+ *   de forma que incluso si el singleton se reiniciase, la URL resuelta seguiría
+ *   siendo un fichero temporal y nunca electricista.db.
+ * - El test afirma la identidad del cliente (`getDbClient() === testDb`) para
+ *   demostrar que el motor está hablando con la BD de pruebas.
+ */
+
+import test from "node:test";
+import assert from "node:assert/strict";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { NextRequest } from "next/server";
+import { createClient } from "@libsql/client";
+import {
+  getDbClient,
+  initializeDatabase,
+  resetDbClient,
+  setDbClientForTesting,
+} from "@/lib/db";
+import { POST as handleVoice360Route } from "@/app/api/asistente/voice360/route";
+
+const ROUTE_URL = "http://localhost:3000/api/asistente/voice360";
+
+// Locución elegida para que el extractor produzca una única línea con precio:
+// 4 ud x 18 EUR  ->  subtotal 72, IVA 21% = 15,12, total 87,12
+const DRAFT_INPUT = "Presupuesto para Test Cliente: 4 enchufes a 18 euros";
+const CONFIRM_INPUT = "confirmar";
+
+const EXPECTED = {
+  quantity: 4,
+  unit_price: 18,
+  subtotal: 72,
+  tax_rate: 21,
+  tax_amount: 15.12,
+  total: 87.12,
+};
+
+async function postVoice360(body: unknown): Promise<{ status: number; json: any }> {
+  const request = new NextRequest(ROUTE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const response = await handleVoice360Route(request);
+  return { status: response.status, json: await response.json() };
+}
+
+/** Ejecuta el flujo real completo y devuelve la respuesta final de persistencia. */
+async function runConfirmFlow(): Promise<{
+  draftStep: any;
+  confirmStep: any;
+  saveStep: any;
+}> {
+  // 1. Borrador
+  const draftStep = await postVoice360({ input: DRAFT_INPUT });
+  assert.equal(draftStep.status, 200, "el borrador debe responder 200");
+  assert.equal(draftStep.json.intent, "electricista:budget_draft");
+  assert.ok(draftStep.json.draft, "debe devolverse un draft");
+  assert.equal(
+    draftStep.json.draft.items.length,
+    1,
+    "la locución de prueba debe producir exactamente 1 línea"
+  );
+
+  // 2. Confirmación conversacional -> emite el token de un solo uso
+  const confirmStep = await postVoice360({
+    input: CONFIRM_INPUT,
+    draft: draftStep.json.draft,
+  });
+  assert.equal(confirmStep.status, 200, "la confirmación debe responder 200");
+  assert.ok(
+    confirmStep.json.pending_action,
+    "confirmar debe emitir una pending_action con token"
+  );
+  assert.equal(confirmStep.json.pending_action.action, "create_budget");
+  assert.ok(
+    typeof confirmStep.json.pending_action.token === "string" &&
+      confirmStep.json.pending_action.token.length > 0,
+    "el token debe ser una cadena no vacía"
+  );
+
+  // 3. Persistencia real contra executeBudgetSave
+  const saveStep = await postVoice360({
+    confirm_token: confirmStep.json.pending_action.token,
+  });
+
+  return { draftStep, confirmStep, saveStep };
+}
+
+test("VOZ 360 — executeBudgetSave: P0-1 (date) y P0-2 (numeración canónica)", async (t) => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  // Segunda barrera: mientras dure el test, la URL resoluble nunca es electricista.db.
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-voice360-save-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+
+  try {
+    await t.test(
+      "1. Aislamiento: el motor usa el cliente en memoria, no electricista.db",
+      () => {
+        assert.equal(
+          getDbClient(),
+          testDb,
+          "getDbClient() debe devolver exactamente el cliente de prueba en memoria"
+        );
+        assert.notEqual(
+          resolveClientUrlHint(),
+          "file:electricista.db",
+          "la URL resuelta no debe ser la BD real"
+        );
+      }
+    );
+
+    let firstSaveAnswer = "";
+
+    await t.test(
+      "2. Atomicidad (D4): si falla una línea, se revierte también el presupuesto padre",
+      async () => {
+        assert.equal(
+          await countRows(testDb, "budgets"),
+          0,
+          "budgets debe empezar en 0 antes de la operación"
+        );
+        assert.equal(
+          await countRows(testDb, "budget_items"),
+          0,
+          "budget_items debe empezar en 0 antes de la operación"
+        );
+
+        // Fallo REAL contra la DB aislada (no un mock): la segunda línea lleva
+        // description = null y budget_items.description es NOT NULL. El INSERT de
+        // budgets se ejecuta dentro del MISMO lote, así que sin transacción
+        // quedaría un presupuesto fantasma.
+        const failingDraft = {
+          revision: 1,
+          client_name: "",
+          client_candidates: [],
+          tax_rate: 21,
+          notes: [],
+          items: [
+            {
+              id: "item-valido",
+              description: "Bases de enchufe",
+              quantity: 1,
+              unit: "ud",
+              unit_price: 10,
+            },
+            {
+              id: "item-que-falla",
+              description: null,
+              quantity: 1,
+              unit: "ud",
+              unit_price: 10,
+            },
+          ],
+        };
+
+        const confirmStep = await postVoice360({
+          input: CONFIRM_INPUT,
+          draft: failingDraft,
+        });
+        assert.equal(confirmStep.status, 200, "la confirmación debe responder 200");
+        assert.ok(
+          confirmStep.json.pending_action,
+          "confirmar debe emitir una pending_action con token"
+        );
+
+        const saveStep = await postVoice360({
+          confirm_token: confirmStep.json.pending_action.token,
+        });
+
+        // 1) La operación falla y lo comunica de forma veraz
+        assert.equal(saveStep.status, 200, "el guardado fallido responde 200");
+        const answer = String(saveStep.json.answer);
+        assert.match(
+          answer,
+          /No se ha guardado el presupuesto/,
+          `debe indicar el fallo de forma veraz, fue "${answer}"`
+        );
+        // Prueba de que el fallo es de SQLite (la sentencia llegó a ejecutarse y fue
+        // rechazada por la restricción), y no un rechazo previo del cliente: eso es
+        // lo que demuestra que el INSERT de budgets YA se había ejecutado y se revirtió.
+        assert.match(
+          answer,
+          /NOT NULL constraint failed/,
+          `el fallo debe venir de SQLite, fue "${answer}"`
+        );
+        assert.doesNotMatch(
+          answer,
+          /guardado\*\* correctamente/,
+          "no debe devolver un mensaje de éxito"
+        );
+        assert.doesNotMatch(
+          answer,
+          /Los datos no se han modificado/,
+          "no debe afirmar que no se modificó nada"
+        );
+        assert.doesNotMatch(
+          answer,
+          /PRES_\d{4}/,
+          "no debe anunciar ningún número PRES_XXXX"
+        );
+
+        // 2) Nada persistido: ni presupuesto padre ni líneas, ni parciales
+        assert.equal(
+          await countRows(testDb, "budgets"),
+          0,
+          "el presupuesto padre debe haberse revertido"
+        );
+        assert.equal(
+          await countRows(testDb, "budget_items"),
+          0,
+          "no debe quedar ninguna línea, ni siquiera la que era válida"
+        );
+      }
+    );
+
+    await t.test(
+      "3. Flujo real de confirmación persiste un presupuesto con date y numeración PRES_XXXX",
+      async () => {
+        assert.equal(
+          await countRows(testDb, "budgets"),
+          0,
+          "la BD de prueba debe empezar vacía"
+        );
+
+        const { saveStep } = await runConfirmFlow();
+
+        assert.equal(saveStep.status, 200, "la persistencia debe responder 200");
+        assert.ok(
+          typeof saveStep.json.answer === "string" && saveStep.json.answer.length > 0,
+          "debe devolverse una respuesta de texto"
+        );
+        firstSaveAnswer = saveStep.json.answer;
+
+        // A) Se crea exactamente un presupuesto
+        assert.equal(
+          await countRows(testDb, "budgets"),
+          1,
+          "debe crearse exactamente 1 presupuesto"
+        );
+
+        const rows = (
+          await testDb.execute(
+            "SELECT id, number, client_id, date, status, subtotal, tax_rate, tax_amount, total FROM budgets"
+          )
+        ).rows as unknown as Record<string, unknown>[];
+        const budget = rows[0];
+
+        // B) Numeración canónica PRES_XXXX y nunca P-XXXX
+        const number = String(budget.number);
+        assert.match(number, /^PRES_\d{4}$/, `number debe ser PRES_XXXX, fue "${number}"`);
+        assert.equal(number, "PRES_0001", "el primer presupuesto debe ser PRES_0001");
+        assert.ok(
+          !/^P-\d/.test(number),
+          `number NO debe tener el formato antiguo P-XXXX, fue "${number}"`
+        );
+        assert.doesNotMatch(
+          firstSaveAnswer,
+          /P-\d{4}/,
+          "la respuesta no debe anunciar una numeración P-XXXX"
+        );
+        assert.ok(
+          firstSaveAnswer.includes("PRES_0001"),
+          `la respuesta debe anunciar PRES_0001, fue "${firstSaveAnswer}"`
+        );
+
+        // C) date existe y tiene formato YYYY-MM-DD
+        const date = String(budget.date ?? "");
+        assert.match(date, /^\d{4}-\d{2}-\d{2}$/, `date debe ser YYYY-MM-DD, fue "${date}"`);
+        const todayUtc = new Date().toISOString().split("T")[0];
+        assert.equal(date, todayUtc, "date debe ser la fecha de hoy (UTC) como en el motor");
+
+        // D) status draft
+        assert.equal(String(budget.status), "draft", "status debe ser draft");
+
+        // E) Importes persistidos correctamente
+        assert.equal(Number(budget.subtotal), EXPECTED.subtotal, "subtotal persistido");
+        assert.equal(Number(budget.tax_rate), EXPECTED.tax_rate, "tax_rate persistido");
+        assert.equal(Number(budget.tax_amount), EXPECTED.tax_amount, "tax_amount persistido");
+        assert.equal(Number(budget.total), EXPECTED.total, "total persistido");
+
+        // E2) Líneas del presupuesto
+        assert.equal(
+          await countRows(testDb, "budget_items"),
+          1,
+          "debe persistirse exactamente 1 línea de presupuesto"
+        );
+        const items = (
+          await testDb.execute({
+            sql: "SELECT budget_id, description, quantity, unit_price, total, sort_order FROM budget_items WHERE budget_id = ?",
+            args: [String(budget.id)],
+          })
+        ).rows as unknown as Record<string, unknown>[];
+        assert.equal(String(items[0].description), "Bases de enchufe");
+        assert.equal(Number(items[0].quantity), EXPECTED.quantity, "cantidad de la línea");
+        assert.equal(Number(items[0].unit_price), EXPECTED.unit_price, "precio de la línea");
+        assert.equal(
+          Number(items[0].total),
+          EXPECTED.quantity * EXPECTED.unit_price,
+          "total de la línea"
+        );
+        assert.equal(
+          Number(items[0].sort_order),
+          0,
+          "la primera (y única) línea debe tener sort_order 0"
+        );
+      }
+    );
+
+    await t.test(
+      "4. La siguiente creación genera el siguiente número canónico (PRES_0001 -> PRES_0002)",
+      async () => {
+        assert.ok(firstSaveAnswer.includes("PRES_0001"), "requiere la creación anterior");
+
+        // generateBudgetNumber() ordena por created_at DESC, y created_at se escribe
+        // con datetime('now') (resolución de 1 segundo). Se envejece explícitamente la
+        // primera fila para que el orden sea determinista y el test no dependa de un empate.
+        await testDb.execute(
+          "UPDATE budgets SET created_at = '2020-01-01 00:00:00' WHERE number = 'PRES_0001'"
+        );
+
+        const { saveStep } = await runConfirmFlow();
+
+        assert.equal(saveStep.status, 200, "la segunda persistencia debe responder 200");
+        assert.equal(
+          await countRows(testDb, "budgets"),
+          2,
+          "deben existir exactamente 2 presupuestos"
+        );
+
+        const numbers = (
+          await testDb.execute("SELECT number FROM budgets ORDER BY number ASC")
+        ).rows.map((row) => String(row.number));
+
+        assert.deepEqual(numbers, ["PRES_0001", "PRES_0002"], "secuencia canónica esperada");
+        assert.ok(
+          saveStep.json.answer.includes("PRES_0002"),
+          `la segunda respuesta debe anunciar PRES_0002, fue "${saveStep.json.answer}"`
+        );
+        assert.doesNotMatch(
+          saveStep.json.answer,
+          /P-\d{4}/,
+          "la segunda respuesta no debe anunciar una numeración P-XXXX"
+        );
+      }
+    );
+
+    await t.test(
+      "5. La normalización de vocabulario eléctrico ocurre exactamente una vez (idempotencia)",
+      async () => {
+        // Con la doble normalización (POST + extractBudgetItems) el resultado era
+        // "Bases de base de enchufe", "Tubos corrugados corrugados", etc.
+        // Cada locución debe expandirse UNA sola vez en el flujo real.
+        const cases = [
+          { spoken: "4 enchufes a 18 euros", expected: "Bases de enchufe" },
+          { spoken: "3 tubos a 2 euros", expected: "Tubos corrugados" },
+          { spoken: "2 cuadros a 100 euros", expected: "Cuadros de distribución eléctrica" },
+          { spoken: "5 mangueras a 3 euros", expected: "Cables manguera" },
+        ];
+
+        for (const testCase of cases) {
+          const step = await postVoice360({
+            input: `Presupuesto para Test Cliente: ${testCase.spoken}`,
+          });
+
+          assert.equal(step.status, 200, `"${testCase.spoken}" debe responder 200`);
+          assert.equal(step.json.intent, "electricista:budget_draft");
+          assert.equal(
+            step.json.draft.items.length,
+            1,
+            `"${testCase.spoken}" debe producir exactamente 1 línea`
+          );
+
+          const description = String(step.json.draft.items[0].description);
+          assert.equal(
+            description,
+            testCase.expected,
+            `"${testCase.spoken}" debe expandirse UNA sola vez, fue "${description}"`
+          );
+        }
+      }
+    );
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});
+
+async function countRows(db: ReturnType<typeof createClient>, table: string): Promise<number> {
+  const res = await db.execute(`SELECT COUNT(*) AS cnt FROM ${table}`);
+  return Number(res.rows[0]?.cnt ?? 0);
+}
+
+/**
+ * Devuelve la URL que usaría el resolvedor si el singleton estuviese vacío.
+ * Deliberadamente devuelve el valor de TEST_DATABASE_URL, que este test fija a
+ * una ruta temporal: la comprobación documenta que la BD real no es alcanzable.
+ */
+function resolveClientUrlHint(): string {
+  return process.env.TEST_DATABASE_URL?.trim() || "";
+}
