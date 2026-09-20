@@ -34,9 +34,17 @@ next-env.d.ts
 
 # database
 *.db
+*.db-shm
+*.db-wal
 
 # backups (local only, never commit)
 backups/
+
+# local runtime logs (do not commit)
+electricista-*.log
+
+# local QA screenshots from device testing (do not commit)
+/poco-*.png
 
 # local diagnostic files (do not commit)
 migration-production-report.txt
