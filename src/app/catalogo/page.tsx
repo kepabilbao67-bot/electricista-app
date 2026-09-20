@@ -15,6 +15,10 @@ interface CatalogItem {
   unit_price: number;
   cost_price: number;
   category: string | null;
+  supplier: string | null;
+  supplier_reference: string | null;
+  supplier_price_date: string | null;
+  sale_price_pending: number;
 }
 
 export default function CatalogoPage() {
@@ -239,19 +243,25 @@ export default function CatalogoPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {categoryItems.map((item) => {
-                      const margin = item.cost_price > 0 ? ((item.unit_price - item.cost_price) / item.cost_price * 100) : 0;
+                      const hasSalePrice = !item.sale_price_pending;
+                      const margin = hasSalePrice && item.cost_price > 0 ? ((item.unit_price - item.cost_price) / item.cost_price * 100) : 0;
                       return (
                         <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 py-2.5">
                             <p className="font-medium text-slate-900">{item.name}</p>
                             {item.description && <p className="text-xs text-slate-400">{item.description}</p>}
+                            {item.supplier && <p className="text-xs text-slate-500">Proveedor: {item.supplier}</p>}
+                            {item.supplier_reference && <p className="text-xs text-slate-500">Referencia: {item.supplier_reference}</p>}
+                            {item.supplier_price_date && <p className="text-xs text-slate-500">Fecha precio proveedor: {new Date(`${item.supplier_price_date}T00:00:00`).toLocaleDateString("es-ES")}</p>}
                           </td>
                           <td className="px-4 py-2.5 text-right text-red-600 font-medium">
                             {item.cost_price ? `${item.cost_price.toFixed(2)}€` : <span className="text-slate-300">-</span>}
                           </td>
-                          <td className="px-4 py-2.5 text-right text-emerald-700 font-bold">{item.unit_price.toFixed(2)}€</td>
+                          <td className="px-4 py-2.5 text-right text-emerald-700 font-bold">
+                            {hasSalePrice ? `${item.unit_price.toFixed(2)}€` : <span className="text-amber-700">Precio pendiente</span>}
+                          </td>
                           <td className="px-4 py-2.5 text-right">
-                            {item.cost_price > 0 ? (
+                            {hasSalePrice && item.cost_price > 0 ? (
                               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${margin > 50 ? "bg-emerald-100 text-emerald-700" : margin > 20 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
                                 {margin.toFixed(0)}%
                               </span>

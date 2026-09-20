@@ -11,7 +11,7 @@
 | Partes de trabajo | /partes-trabajo | REAL | Formulario, vista imprimible profesional optimizada (evita cortes de página), generar factura, colores por línea, persistencia, robustez offline. Plantilla /partes-trabajo/plantilla |
 | Gastos | /gastos | REAL | Categorías de electricista, descuentos, NIF proveedor |
 | Agenda | /agenda | REAL | Vista semanal, estados, Google Maps |
-| Catálogo | /catalogo | REAL | Materiales coste/venta, calculadora de márgenes |
+| Catálogo | /catalogo | REAL | Materiales coste/venta, proveedor y referencia, estado de precio de venta pendiente, calculadora de márgenes |
 | Pedido por voz | /pedidos-voz | REAL | Dictado móvil (puente nativo Android o Web Speech API), interpretación estructurada, revisión editable y guardado tras confirmación |
 | Asistente Voz 360 | /asistente | REAL | Conversación por voz/teclado, borrador multivuelta (crear, añadir, modificar cantidad/precio, fijar IVA), catálogo y consultas reales, confirmación previa a escrituras |
 | Comunicaciones | /comunicaciones | PARCIAL | Plantillas seguras y wa.me; registra preparación, no confirma envío |

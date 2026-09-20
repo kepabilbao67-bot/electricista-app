@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
     } catch { /* ignore */ }
 
     await db.execute({
-      sql: `INSERT INTO catalog_items (id, name, description, unit_price, cost_price, category, name_color, description_color, category_color)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, body.name, body.description || null, body.unit_price, body.cost_price || 0, body.category || null, body.name_color || null, body.description_color || null, body.category_color || null],
+      sql: `INSERT INTO catalog_items (id, name, description, unit_price, cost_price, category, name_color, description_color, category_color, sale_price_pending)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, body.name, body.description || null, body.unit_price, body.cost_price || 0, body.category || null, body.name_color || null, body.description_color || null, body.category_color || null, body.sale_price_pending ? 1 : 0],
     });
 
     const result = await db.execute({
@@ -69,8 +69,8 @@ export async function PUT(request: NextRequest) {
     } catch { /* ignore */ }
 
     await db.execute({
-      sql: `UPDATE catalog_items SET name = ?, description = ?, unit_price = ?, cost_price = ?, category = ?, name_color = ?, description_color = ?, category_color = ? WHERE id = ?`,
-      args: [body.name, body.description || null, body.unit_price, body.cost_price || 0, body.category || null, body.name_color || null, body.description_color || null, body.category_color || null, body.id],
+      sql: `UPDATE catalog_items SET name = ?, description = ?, unit_price = ?, cost_price = ?, category = ?, name_color = ?, description_color = ?, category_color = ?, sale_price_pending = ? WHERE id = ?`,
+      args: [body.name, body.description || null, body.unit_price, body.cost_price || 0, body.category || null, body.name_color || null, body.description_color || null, body.category_color || null, body.sale_price_pending && !body.unit_price ? 1 : 0, body.id],
     });
 
     const result = await db.execute({

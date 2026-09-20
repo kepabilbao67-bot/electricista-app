@@ -1,5 +1,10 @@
 # Changelog del Asistente
 
+## 2026-09-21-v31 — Catálogo: precio de venta pendiente persistente
+- `db.ts`: la columna `catalog_items.sale_price_pending` se declara en `ensureColumns()`, el mecanismo de migración que ya usaba la tabla. Antes no existía ni en `CREATE TABLE` ni en `ensureColumns()`, así que crear o editar un material fallaba en runtime (`no such column`); los registros existentes quedan en `0` (precio normal).
+- Materiales con precio de venta pendiente: se muestran como "Precio pendiente" en `/catalogo`, no calculan margen y **no se pueden añadir a un presupuesto** hasta fijarles precio.
+- Nuevo test `src/lib/__tests__/catalog-sale-price-pending.test.ts`: BD nueva, BD existente anterior a la migración (sin pérdida de datos), POST, PUT, lectura posterior por GET y bloqueo en presupuesto.
+
 ## 2026-09-21-v30 — Voz 360: edición de borrador e IVA, y dictado nativo en la APK Android
 - `/api/asistente/voice360`: nuevo intent `budget_set_tax` que fija el IVA del borrador sin crear líneas de IVA y sin persistir; `budget_modify_item` cambia cantidad o precio de una línea ya existente sin duplicarla; las confirmaciones naturales ("Confírmalo", "Guárdalo") abren el Human Gate y la cancelación mantiene prioridad sobre cualquier otra frase.
 - `VoiceDictation` resuelve el motor de dictado realmente disponible: puente nativo Android, Web Speech API en escritorio, o estado "sin motor" que avisa en pantalla en lugar de mostrar un botón silenciado o simular que escucha.

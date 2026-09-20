@@ -263,6 +263,9 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "supplier_reference", def: "TEXT" },
     { name: "price_date", def: "TEXT" },
     { name: "source_document", def: "TEXT" },
+    // 1 = material sin precio de venta decidido (no debe usarse en presupuestos).
+    // 0 por defecto: los registros existentes quedan como precio normal.
+    { name: "sale_price_pending", def: "INTEGER DEFAULT 0" },
   ]);
 
   await ensureColumns(db, "leads", [

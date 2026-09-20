@@ -8,6 +8,7 @@ import { autocorrectSpanishOnBoundary, autocorrectSpanishText } from "@/lib/auto
 import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
+import { canAddCatalogItem } from "@/lib/catalog-pricing";
 
 interface Client {
   id: string;
@@ -19,12 +20,14 @@ interface CatalogItem {
   name: string;
   unit_price: number;
   category: string;
+  sale_price_pending: number;
 }
 
 interface BudgetItem {
   description: string;
   quantity: number;
   unit_price: number;
+  catalog_item_id?: string;
 }
 
 interface Zone {
@@ -278,6 +281,10 @@ export default function NuevoPresupuestoPage() {
   };
 
   const addFromCatalog = (zoneIndex: number, catalogItem: CatalogItem) => {
+    if (!canAddCatalogItem(catalogItem)) {
+      showToast("error", "Este producto tiene el precio de venta pendiente");
+      return;
+    }
     const newZones = [...zones];
     const zoneItems = [...newZones[zoneIndex].items];
 
@@ -299,12 +306,14 @@ export default function NuevoPresupuestoPage() {
           description: catalogItem.name,
           quantity: 1,
           unit_price: catalogItem.unit_price,
+          catalog_item_id: catalogItem.id,
         };
       } else {
         zoneItems.push({
           description: catalogItem.name,
           quantity: 1,
           unit_price: catalogItem.unit_price,
+          catalog_item_id: catalogItem.id,
         });
       }
     }
@@ -490,7 +499,7 @@ export default function NuevoPresupuestoPage() {
                           onClick={() => addFromCatalog(zoneIndex, item)}
                           className="rounded-full border border-slate-200 px-2.5 py-0.5 text-xs hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
                         >
-                          {item.name} ({item.unit_price} EUR)
+                          {item.name} ({item.sale_price_pending ? "Precio pendiente" : `${item.unit_price} EUR`})
                         </button>
                       ))}
                     </div>

@@ -193,11 +193,16 @@ export const APP_MODULES: AppModule[] = [
     features: [
       "CRUD de materiales con nombre, precio de venta, categoría",
       "Precio de coste (compra) y cálculo automático de margen",
+      "Proveedor, referencia y fecha del precio de proveedor por material",
+      "Estado 'precio de venta pendiente' para materiales aún sin tarifa decidida",
       "Búsqueda y filtro por categoría",
       "Calculadora de márgenes (ruta /catalogo/calculadora)",
       "Alimenta presupuestos y facturas automáticamente",
     ],
-    limitations: [],
+    limitations: [
+      "Un material con el precio de venta pendiente no se puede añadir a un presupuesto hasta fijarle precio",
+      "Mientras el precio está pendiente no se calcula margen para ese material",
+    ],
     usage: "Ve a /catalogo para gestionar materiales. Usa la Calculadora (botón superior) para calcular precios de venta con margen.",
   },
   {
