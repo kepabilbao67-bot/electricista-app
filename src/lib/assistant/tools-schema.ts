@@ -22,7 +22,7 @@ export const ASSISTANT_TOOLS: OpenAITool[] = [
     type: "function",
     function: {
       name: "query_clients",
-      description: "Busca clientes por nombre o empresa (excluye teléfono, email o datos personales).",
+      description: "Busca clientes por nombre o empresa y devuelve candidatos sin seleccionar automáticamente coincidencias ambiguas (excluye teléfono, email y otros datos personales).",
       parameters: {
         type: "object",
         properties: {
@@ -45,6 +45,42 @@ export const ASSISTANT_TOOLS: OpenAITool[] = [
   {
     type: "function",
     function: {
+      name: "query_catalog",
+      description: "Busca materiales o conceptos existentes en el catálogo. Solo devuelve precios y datos almacenados; nunca inventa artículos ni importes.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Texto a buscar en nombre, descripción, categoría o referencia de proveedor",
+          },
+          name: {
+            type: "string",
+            description: "Texto contenido en el nombre del material o concepto",
+          },
+          description: {
+            type: "string",
+            description: "Texto contenido en la descripción",
+          },
+          category: {
+            type: "string",
+            description: "Categoría del catálogo",
+          },
+          supplier_reference: {
+            type: "string",
+            description: "Referencia del proveedor",
+          },
+          limit: {
+            type: "number",
+            description: "Número máximo de resultados (entre 1 y 10)",
+          },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "query_budgets",
       description: "Consulta presupuestos emitidos filtrando por estado o nombre de cliente.",
       parameters: {
@@ -52,7 +88,7 @@ export const ASSISTANT_TOOLS: OpenAITool[] = [
         properties: {
           status: {
             type: "string",
-            description: "Estado del presupuesto (ej: borrador, enviado, aceptado, rechazado, facturado)",
+            description: "Estado real del presupuesto (ej: draft, sent, accepted, rejected)",
           },
           client_name: {
             type: "string",
@@ -76,7 +112,7 @@ export const ASSISTANT_TOOLS: OpenAITool[] = [
         properties: {
           status: {
             type: "string",
-            description: "Estado de la factura (ej: borrador, pendiente, cobrada, rectificativa)",
+            description: "Estado real de la factura (ej: draft, sent, paid, pending_batuz)",
           },
           client_name: {
             type: "string",
@@ -84,7 +120,7 @@ export const ASSISTANT_TOOLS: OpenAITool[] = [
           },
           overdue_only: {
             type: "boolean",
-            description: "Si es true, sólo devuelve facturas pendientes o vencidas",
+            description: "Si es true, solo devuelve facturas no cobradas cuya fecha de vencimiento ya ha pasado",
           },
           limit: {
             type: "number",
@@ -104,7 +140,7 @@ export const ASSISTANT_TOOLS: OpenAITool[] = [
         properties: {
           status: {
             type: "string",
-            description: "Estado del parte (ej: borrador, pendiente, en_progreso, completado, firmado)",
+            description: "Estado real del parte (ej: borrador, pendiente, en_progreso, completado, firmado, facturado)",
           },
           client_name: {
             type: "string",

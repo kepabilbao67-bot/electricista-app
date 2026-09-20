@@ -12,8 +12,8 @@
 | Gastos | /gastos | REAL | Categorías de electricista, descuentos, NIF proveedor |
 | Agenda | /agenda | REAL | Vista semanal, estados, Google Maps |
 | Catálogo | /catalogo | REAL | Materiales coste/venta, calculadora de márgenes |
-| Pedido por voz | /pedidos-voz | REAL | Dictado móvil, interpretación estructurada, revisión editable y guardado tras confirmación |
-| Asistente Voz 360 | /asistente | REAL | Conversación por voz/teclado, borrador multivuelta, catálogo y consultas reales, confirmación previa a escrituras |
+| Pedido por voz | /pedidos-voz | REAL | Dictado móvil (puente nativo Android o Web Speech API), interpretación estructurada, revisión editable y guardado tras confirmación |
+| Asistente Voz 360 | /asistente | REAL | Conversación por voz/teclado, borrador multivuelta (crear, añadir, modificar cantidad/precio, fijar IVA), catálogo y consultas reales, confirmación previa a escrituras |
 | Comunicaciones | /comunicaciones | PARCIAL | Plantillas seguras y wa.me; registra preparación, no confirma envío |
 | Asistente/Normativa | /normativa | REAL | Chat IA + fallback offline, REBT, negocio |
 | Ayuda y Sugerencias | /ayuda | REAL | FAQs interactivas, dictado por voz, reporte de bugs y buzon de sugerencias protegido con anti-spam |
@@ -33,6 +33,7 @@
 - **Leads**: La acción de conversión crea cliente y oportunidad; el cambio manual de estado sigue siendo solo clasificatorio.
 - **Partes de trabajo**: Completamente funcional con persistencia en base de datos. Colores de texto por línea disponibles (6 opciones controladas).
 - **Comunicaciones**: WhatsApp abre la app externa. Email y SMS solo generan texto para copiar.
+- **Voz 360 — dictado en móvil**: El WebView de Android no expone la Web Speech API. En la APK el dictado usa el puente nativo (`window.AndroidSTT`) y el reconocedor del propio teléfono; si no hay ninguno instalado o el origen no es seguro, el botón muestra "Dictado no disponible aquí" en lugar de simular que escucha. La Web Speech API sigue usándose en escritorio.
 - **Facturas — TicketBAI**: TicketBAI es un sistema fiscal implantado en los territorios históricos de Euskadi. Su aplicación depende del territorio, actividad y situación fiscal. Batuz es la implementación de Bizkaia. Verificar con la Hacienda Foral correspondiente o con un asesor.
 
 ## Modo demostración (DEMO_MODE)

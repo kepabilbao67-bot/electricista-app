@@ -1,5 +1,13 @@
 # Changelog del Asistente
 
+## 2026-09-21-v30 — Voz 360: edición de borrador e IVA, y dictado nativo en la APK Android
+- `/api/asistente/voice360`: nuevo intent `budget_set_tax` que fija el IVA del borrador sin crear líneas de IVA y sin persistir; `budget_modify_item` cambia cantidad o precio de una línea ya existente sin duplicarla; las confirmaciones naturales ("Confírmalo", "Guárdalo") abren el Human Gate y la cancelación mantiene prioridad sobre cualquier otra frase.
+- `VoiceDictation` resuelve el motor de dictado realmente disponible: puente nativo Android, Web Speech API en escritorio, o estado "sin motor" que avisa en pantalla en lugar de mostrar un botón silenciado o simular que escucha.
+- APK Android: `NativeStt` + `MainActivity` registran el puente de dictado del sistema mediante `RecognizerIntent` (reconocedor del propio teléfono), sin claves ni servicios en la nube propios.
+- Desarrollo móvil en LAN: `allowedDevOrigins` en `next.config.ts` para que el teléfono cargue los chunks de `/_next/*` y el HMR; sin esto React no hidrataba y la app quedaba sin interactividad.
+- Conocimiento del asistente sincronizado (`app-knowledge.ts`, `MODULES.md`) con el estado real del dictado y el puerto 3110 de `capacitor.config.ts`.
+- `/asistente` pasa a tener una **única** entrada de conocimiento: se elimina la entrada duplicada y se fusionan solo los datos verificados contra `/api/asistente/voice360` (se corrige la caducidad de las confirmaciones a cinco minutos y se descartan capacidades no implementadas, como crear clientes por voz).
+
 ## 2026-09-18-v29 — Motor autónomo Voz 360, Aislamiento total y APK Android Debug
 - Integración del motor autónomo local Voz 360 en `/api/asistente/voice360` y UI táctil móvil adaptada en `/asistente`.
 - Adapter verticalizado `electricistaDomainAdapter` con normalización de jerga eléctrica, resolución contra catálogo SOKOEL y flujo de borrador con token seguro.

@@ -1,13 +1,13 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { createClient } from "@libsql/client";
-import { setDbClientForTesting, resetDbClient } from "@/lib/db";
+import { getDbClient, setDbClientForTesting, resetDbClient } from "@/lib/db";
 import { ASSISTANT_TOOLS, executeAssistantTool } from "../assistant";
 import { containsStrictPii } from "../sensitive-text-filter";
 
 describe("Assistant Tools: Schemas", () => {
-  test("contiene las 8 herramientas definidas", () => {
-    assert.equal(ASSISTANT_TOOLS.length, 8);
+  test("contiene las 9 herramientas definidas", () => {
+    assert.equal(ASSISTANT_TOOLS.length, 9);
   });
 
   test("todas las herramientas tienen tipo function y esquema de parámetros válido", () => {
@@ -16,6 +16,7 @@ describe("Assistant Tools: Schemas", () => {
     assert.ok(names.includes("query_budgets"));
     assert.ok(names.includes("query_invoices"));
     assert.ok(names.includes("query_partes"));
+    assert.ok(names.includes("query_catalog"));
     assert.ok(names.includes("query_schedule"));
     assert.ok(names.includes("draft_budget"));
     assert.ok(names.includes("draft_visit"));
@@ -63,6 +64,34 @@ describe("Assistant Tools: Minimización y Seguridad de Privacidad", () => {
     `);
 
     await testDb.execute(`
+      CREATE TABLE IF NOT EXISTS budgets (
+        id TEXT PRIMARY KEY, number TEXT, client_id TEXT, status TEXT,
+        total REAL, created_at TEXT
+      )
+    `);
+
+    await testDb.execute(`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id TEXT PRIMARY KEY, number TEXT, client_id TEXT, status TEXT,
+        total REAL, due_date TEXT, created_at TEXT
+      )
+    `);
+
+    await testDb.execute(`
+      CREATE TABLE IF NOT EXISTS partes_trabajo (
+        id TEXT PRIMARY KEY, numero TEXT, estado TEXT, client_id TEXT,
+        cliente TEXT, fecha TEXT, created_at TEXT
+      )
+    `);
+
+    await testDb.execute(`
+      CREATE TABLE IF NOT EXISTS catalog_items (
+        id TEXT PRIMARY KEY, name TEXT, description TEXT, unit_price REAL,
+        cost_price REAL, category TEXT, supplier TEXT, supplier_reference TEXT
+      )
+    `);
+
+    await testDb.execute(`
       INSERT INTO clients (id, name, company, phone, email, status, city, notes)
       VALUES ('cli-1', 'Juan Pérez', 'Instalaciones S.L.', '600111222', 'juan@test.com', 'activo', 'Bilbao', 'Nota privada reservada')
     `);
@@ -71,6 +100,11 @@ describe("Assistant Tools: Minimización y Seguridad de Privacidad", () => {
       INSERT INTO visits (id, client_id, title, date, time, status, address, notes)
       VALUES ('vis-1', 'cli-1', 'Revisión técnica', '2026-09-05', '10:00', 'scheduled', 'Calle Mayor 12', 'Llave debajo del felpudo')
     `);
+
+    await testDb.execute("INSERT INTO budgets VALUES ('bud-1', 'PRES-001', 'cli-1', 'draft', 121, '2026-09-05')");
+    await testDb.execute("INSERT INTO invoices VALUES ('inv-1', 'FAC-001', 'cli-1', 'draft', 242, '2026-10-05', '2026-09-05')");
+    await testDb.execute("INSERT INTO partes_trabajo VALUES ('par-1', 'PT-001', 'pendiente', 'cli-1', 'Juan Pérez', '2026-09-06', '2026-09-05')");
+    await testDb.execute("INSERT INTO catalog_items VALUES ('cat-1', 'Cable 2,5 mm²', 'Cable libre de halógenos', 1.5, 1, 'Cable', 'Sokoel', 'REF-25')");
   });
 
   after(() => {
@@ -80,8 +114,10 @@ describe("Assistant Tools: Minimización y Seguridad de Privacidad", () => {
   test("query_clients NO devuelve phone, email, address, city ni notes", async () => {
     const res = await executeAssistantTool("query_clients", { query: "Juan" });
     assert.equal(res.success, true);
-    assert.ok(Array.isArray(res.result));
-    const row = (res.result as any[])[0];
+    const result = res.result as { match_count: number; ambiguous: boolean; candidates: any[] };
+    assert.equal(result.match_count, 1);
+    assert.equal(result.ambiguous, false);
+    const row = result.candidates[0];
 
     assert.ok("id" in row);
     assert.ok("name" in row);
@@ -91,6 +127,49 @@ describe("Assistant Tools: Minimización y Seguridad de Privacidad", () => {
     assert.equal("city" in row, false, "city no debe ser devuelta");
     assert.equal("address" in row, false, "address no debe ser devuelta");
     assert.equal("notes" in row, false, "notes no debe ser devuelta");
+  });
+
+  test("query_clients devuelve candidatos y marca coincidencias ambiguas", async () => {
+    const currentDb = getDbClient();
+    await currentDb.execute("INSERT INTO clients (id, name, company, status) VALUES ('cli-2', 'Juan García', 'Otra S.L.', 'activo')");
+
+    const res = await executeAssistantTool("query_clients", { query: "Juan" });
+    const result = res.result as { match_count: number; ambiguous: boolean; candidates: any[] };
+    assert.equal(result.match_count, 2);
+    assert.equal(result.ambiguous, true);
+    assert.equal(result.candidates.length, 2);
+  });
+
+  test("consultas usan las columnas reales de presupuestos, facturas y partes", async () => {
+    const budget = await executeAssistantTool("query_budgets", { client_name: "Juan" });
+    const invoice = await executeAssistantTool("query_invoices", { client_name: "Juan" });
+    const parte = await executeAssistantTool("query_partes", { client_name: "Juan", status: "pendiente" });
+
+    assert.equal(budget.success, true);
+    assert.equal((budget.result as any[])[0].number, "PRES-001");
+    assert.equal((budget.result as any[])[0].total, 121);
+    assert.equal(invoice.success, true);
+    assert.equal((invoice.result as any[])[0].number, "FAC-001");
+    assert.equal((invoice.result as any[])[0].total, 242);
+    assert.equal(parte.success, true);
+    assert.equal((parte.result as any[])[0].numero, "PT-001");
+    assert.equal((parte.result as any[])[0].estado, "pendiente");
+  });
+
+  test("query_catalog busca datos existentes y solo devuelve campos seguros", async () => {
+    const res = await executeAssistantTool("query_catalog", { query: "REF-25" });
+    assert.equal(res.success, true);
+    const rows = res.result as any[];
+    assert.equal(rows.length, 1);
+    assert.deepEqual(Object.keys(rows[0]).sort(), [
+      "category", "cost_price", "description", "id", "name", "supplier",
+      "supplier_reference", "unit_price",
+    ]);
+    assert.equal(rows[0].name, "Cable 2,5 mm²");
+
+    const missing = await executeAssistantTool("query_catalog", { query: "material inexistente" });
+    assert.equal(missing.success, true);
+    assert.deepEqual(missing.result, []);
   });
 
   test("query_schedule NO devuelve address, phone ni notes", async () => {

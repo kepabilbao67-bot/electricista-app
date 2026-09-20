@@ -1,4 +1,4 @@
-import { getDbClient, initializeDatabase } from "@/lib/db";
+import { getDbClient } from "@/lib/db";
 import { z } from "zod";
 
 export interface ToolExecutionResult {
@@ -35,6 +35,15 @@ const QueryPartesSchema = z.object({
   client_name: z.string().max(100).optional(),
   status: z.string().max(50).optional(),
   limit: z.number().int().min(1).max(10).optional().default(5),
+});
+
+const QueryCatalogSchema = z.object({
+  query: z.string().max(150).optional(),
+  name: z.string().max(150).optional(),
+  description: z.string().max(200).optional(),
+  category: z.string().max(100).optional(),
+  supplier_reference: z.string().max(100).optional(),
+  limit: z.number().int().min(1).max(10).optional().default(10),
 });
 
 const QueryScheduleSchema = z.object({
@@ -75,7 +84,6 @@ export async function executeAssistantTool(
   rawArgs: Record<string, any>
 ): Promise<ToolExecutionResult> {
   try {
-    await initializeDatabase();
     const db = getDbClient();
 
     switch (name) {
@@ -104,7 +112,16 @@ export async function executeAssistantTool(
         sqlArgs.push(limit);
 
         const res = await db.execute({ sql, args: sqlArgs });
-        return { tool_name: name, success: true, result: res.rows };
+        const candidates = Array.from(res.rows);
+        return {
+          tool_name: name,
+          success: true,
+          result: {
+            match_count: candidates.length,
+            ambiguous: candidates.length > 1,
+            candidates,
+          },
+        };
       }
 
       case "query_budgets": {
@@ -115,7 +132,8 @@ export async function executeAssistantTool(
         const { client_name, status, limit } = parsed.data;
 
         let sql = `
-          SELECT b.id, b.budget_number, b.total_amount, b.status, b.created_at, c.name as client_name
+          SELECT b.id, b.number, b.total, b.status, b.client_id, b.created_at,
+                 c.name AS client_name
           FROM budgets b
           LEFT JOIN clients c ON c.id = b.client_id
           WHERE 1=1
@@ -147,7 +165,8 @@ export async function executeAssistantTool(
         const { client_name, status, overdue_only, limit } = parsed.data;
 
         let sql = `
-          SELECT i.id, i.invoice_number, i.total_amount, i.status, i.due_date, i.created_at, c.name as client_name
+          SELECT i.id, i.number, i.total, i.status, i.client_id, i.due_date,
+                 i.created_at, c.name AS client_name
           FROM invoices i
           LEFT JOIN clients c ON c.id = i.client_id
           WHERE 1=1
@@ -160,7 +179,7 @@ export async function executeAssistantTool(
         }
 
         if (overdue_only) {
-          sql += " AND i.status IN ('pendiente', 'borrador', 'enviada')";
+          sql += " AND i.status IN ('draft', 'sent', 'pending_batuz') AND i.due_date IS NOT NULL AND date(i.due_date) < date('now')";
         } else if (status && status.trim()) {
           sql += " AND i.status = ?";
           sqlArgs.push(status.trim());
@@ -181,7 +200,8 @@ export async function executeAssistantTool(
         const { client_name, status, limit } = parsed.data;
 
         let sql = `
-          SELECT p.id, p.parte_number, p.status, p.created_at, c.name as client_name
+          SELECT p.id, p.numero, p.estado, p.client_id, p.cliente, p.fecha,
+                 p.created_at, COALESCE(c.name, p.cliente) AS client_name
           FROM partes_trabajo p
           LEFT JOIN clients c ON c.id = p.client_id
           WHERE 1=1
@@ -189,16 +209,63 @@ export async function executeAssistantTool(
         const sqlArgs: any[] = [];
 
         if (client_name && client_name.trim()) {
-          sql += " AND c.name LIKE ?";
-          sqlArgs.push(`%${client_name.trim()}%`);
+          sql += " AND (c.name LIKE ? OR p.cliente LIKE ?)";
+          const clientTerm = `%${client_name.trim()}%`;
+          sqlArgs.push(clientTerm, clientTerm);
         }
 
         if (status && status.trim()) {
-          sql += " AND p.status = ?";
+          sql += " AND p.estado = ?";
           sqlArgs.push(status.trim());
         }
 
-        sql += " ORDER BY p.created_at DESC LIMIT ?";
+        sql += " ORDER BY p.fecha DESC, p.created_at DESC LIMIT ?";
+        sqlArgs.push(limit);
+
+        const res = await db.execute({ sql, args: sqlArgs });
+        return { tool_name: name, success: true, result: res.rows };
+      }
+
+      case "query_catalog": {
+        const parsed = QueryCatalogSchema.safeParse(rawArgs);
+        if (!parsed.success) {
+          return { tool_name: name, success: false, error: "Argumentos no válidos para query_catalog" };
+        }
+
+        const { query, name: itemName, description, category, supplier_reference, limit } = parsed.data;
+        let sql = `
+          SELECT id, name, description, unit_price, cost_price, category,
+                 supplier, supplier_reference
+          FROM catalog_items
+          WHERE 1=1
+        `;
+        const sqlArgs: Array<string | number> = [];
+
+        if (query?.trim()) {
+          const term = `%${query.trim()}%`;
+          sql += ` AND (
+            name LIKE ? OR description LIKE ? OR category LIKE ? OR supplier_reference LIKE ?
+          )`;
+          sqlArgs.push(term, term, term, term);
+        }
+        if (itemName?.trim()) {
+          sql += " AND name LIKE ?";
+          sqlArgs.push(`%${itemName.trim()}%`);
+        }
+        if (description?.trim()) {
+          sql += " AND description LIKE ?";
+          sqlArgs.push(`%${description.trim()}%`);
+        }
+        if (category?.trim()) {
+          sql += " AND category LIKE ?";
+          sqlArgs.push(`%${category.trim()}%`);
+        }
+        if (supplier_reference?.trim()) {
+          sql += " AND supplier_reference LIKE ?";
+          sqlArgs.push(`%${supplier_reference.trim()}%`);
+        }
+
+        sql += " ORDER BY category, name LIMIT ?";
         sqlArgs.push(limit);
 
         const res = await db.execute({ sql, args: sqlArgs });
