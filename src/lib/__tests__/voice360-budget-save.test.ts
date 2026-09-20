@@ -627,3 +627,367 @@ test("VOZ 360 — P1.3: confirmación natural con Human Gate intacto", async (t)
     }
   }
 });
+
+/**
+ * P1.1 — budget_set_tax: IVA del borrador sin líneas IVA y sin persistencia.
+ *
+ * El nuevo intent modifica EXCLUSIVAMENTE draft.tax_rate. No crea líneas, no
+ * emite token y no escribe en la base de datos: la persistencia sigue pasando
+ * por el Human Gate existente ("confirmar" -> token -> executeBudgetSave).
+ *
+ * AISLAMIENTO: idéntico al resto del fichero — cliente libsql en memoria y
+ * TEST_DATABASE_URL apuntando a una ruta temporal.
+ */
+test("VOZ 360 — P1.1: budget_set_tax (IVA del borrador, 0 líneas IVA)", async (t) => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-p11-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+
+  const DRAFT_INPUT = "Presupuesto para Test Cliente: 4 enchufes a 18 euros";
+  const SUBTOTAL = 72; // 4 x 18
+
+  /** Borrador base real: handleBudgetCreate siempre parte de tax_rate 21. */
+  async function baseDraft(): Promise<any> {
+    const step = await postVoice360({ input: DRAFT_INPUT });
+    assert.equal(step.status, 200, "el borrador base debe responder 200");
+    assert.equal(step.json.intent, "electricista:budget_draft");
+    assert.ok(step.json.draft, "debe devolverse un draft");
+    return step.json.draft;
+  }
+
+  /** Aplica una frase de IVA sobre un borrador base nuevo. */
+  async function setTax(phrase: string): Promise<any> {
+    return postVoice360({ input: phrase, draft: await baseDraft() });
+  }
+
+  try {
+    await t.test("1. 'Añade IVA' se reconoce como budget_set_tax", async () => {
+      const step = await setTax("Añade IVA");
+      assert.equal(step.status, 200);
+      assert.equal(step.json.intent, "electricista:budget_set_tax");
+    });
+
+    await t.test("2. Ninguna frase de IVA crea una línea IVA", async () => {
+      const frases = [
+        "Añade IVA",
+        "Añade el IVA",
+        "Añade IVA del 10%",
+        "Añade un IVA del 10%",
+        "Añade un 10% de IVA",
+        "Pon IVA al 10%",
+        "Cambia el IVA al 10%",
+        "Quita el IVA",
+        "Sin IVA",
+        "IVA 0%",
+      ];
+      for (const frase of frases) {
+        const step = await setTax(frase);
+        assert.equal(
+          step.json.intent,
+          "electricista:budget_set_tax",
+          `"${frase}" debe ser budget_set_tax`
+        );
+        assert.equal(
+          step.json.draft.items.length,
+          1,
+          `"${frase}" no debe alterar el número de líneas`
+        );
+        for (const item of step.json.draft.items) {
+          assert.doesNotMatch(
+            String(item.description),
+            /iva|%/i,
+            `"${frase}" creó una línea de IVA: "${item.description}"`
+          );
+        }
+      }
+    });
+
+    await t.test("3. Sin porcentaje y tax_rate=21 → conserva 21", async () => {
+      const step = await setTax("Añade IVA");
+      assert.equal(step.json.draft.tax_rate, 21);
+      assert.equal(
+        step.json.draft.revision,
+        1,
+        "sin cambio real no debe incrementar la revisión"
+      );
+      assert.match(String(step.json.answer), /21%/, "la respuesta declara el porcentaje");
+    });
+
+    await t.test("4. Sin porcentaje y tax_rate=10 → conserva 10", async () => {
+      const d10 = (await setTax("Añade el IVA del 10%")).json.draft;
+      assert.equal(d10.tax_rate, 10, "requiere partir de 10%");
+
+      const step = await postVoice360({ input: "Añade IVA", draft: d10 });
+      assert.equal(step.json.intent, "electricista:budget_set_tax");
+      assert.equal(
+        step.json.draft.tax_rate,
+        10,
+        "no debe sobrescribir una tasa ya fijada"
+      );
+      assert.match(String(step.json.answer), /10%/, "la respuesta declara el porcentaje");
+    });
+
+    await t.test("5. Sin porcentaje y tax_rate=0 → aplica 21", async () => {
+      const d0 = (await setTax("Quita el IVA")).json.draft;
+      assert.equal(d0.tax_rate, 0, "requiere partir de 0%");
+
+      const step = await postVoice360({ input: "Añade el IVA", draft: d0 });
+      assert.equal(step.json.intent, "electricista:budget_set_tax");
+      assert.equal(step.json.draft.tax_rate, 21, "con el borrador a 0 aplica el 21");
+      assert.match(String(step.json.answer), /21%/, "la respuesta declara el porcentaje");
+    });
+
+    await t.test("6-8. Tasa explícita 10% en sus tres formas", async () => {
+      for (const frase of [
+        "Añade IVA del 10%",
+        "Pon IVA al 10%",
+        "Cambia el IVA al 10%",
+      ]) {
+        const step = await setTax(frase);
+        assert.equal(step.json.intent, "electricista:budget_set_tax", frase);
+        assert.equal(step.json.draft.tax_rate, 10, frase);
+      }
+    });
+
+    await t.test("9-10. 'Quita el IVA' e 'IVA 0%' dejan el borrador al 0%", async () => {
+      for (const frase of ["Quita el IVA", "IVA 0%"]) {
+        const step = await setTax(frase);
+        assert.equal(step.json.intent, "electricista:budget_set_tax", frase);
+        assert.equal(step.json.draft.tax_rate, 0, frase);
+      }
+    });
+
+    await t.test("11-12. Líneas invariantes y totales recalculados", async () => {
+      const base = await baseDraft();
+      const casos: Array<[string, number]> = [
+        ["Añade el IVA del 10%", 10],
+        ["Cambia el IVA al 4%", 4],
+        ["IVA 0%", 0],
+        ["Añade el IVA del 21%", 21],
+      ];
+
+      for (const [frase, tasa] of casos) {
+        const step = await postVoice360({ input: frase, draft: base });
+        const draft = step.json.draft;
+        const totals = step.json.totals;
+
+        assert.equal(draft.items.length, base.items.length, `${frase}: líneas invariantes`);
+        assert.deepEqual(
+          draft.items.map((i: any) => i.description),
+          base.items.map((i: any) => i.description),
+          `${frase}: descripciones intactas`
+        );
+        assert.equal(draft.tax_rate, tasa, `${frase}: tax_rate`);
+        assert.equal(totals.subtotal, SUBTOTAL, `${frase}: subtotal`);
+        assert.equal(
+          totals.tax_amount,
+          Math.round(SUBTOTAL * (tasa / 100) * 100) / 100,
+          `${frase}: tax_amount`
+        );
+        assert.equal(
+          totals.total,
+          Math.round((totals.subtotal + totals.tax_amount) * 100) / 100,
+          `${frase}: total`
+        );
+      }
+    });
+
+    await t.test("13. revision aumenta exactamente +1 en cambio válido", async () => {
+      const base = await baseDraft();
+      const step = await postVoice360({ input: "Añade el IVA del 10%", draft: base });
+      assert.equal(step.json.draft.revision, base.revision + 1);
+
+      const repetido = await postVoice360({
+        input: "Añade el IVA del 10%",
+        draft: step.json.draft,
+      });
+      assert.equal(
+        repetido.json.draft.revision,
+        step.json.draft.revision,
+        "repetir la misma tasa no es un cambio válido"
+      );
+    });
+
+    await t.test("14. 150% se rechaza y el borrador queda intacto", async () => {
+      const base = await baseDraft();
+      for (const frase of ["Añade el IVA del 150%", "IVA 200%"]) {
+        const step = await postVoice360({ input: frase, draft: base });
+        assert.equal(step.json.intent, "electricista:budget_set_tax", frase);
+        assert.match(String(step.json.answer), /entre 0 y 100/, `${frase}: rechazo explícito`);
+        assert.equal(step.json.draft.tax_rate, base.tax_rate, `${frase}: tax_rate intacto`);
+        assert.equal(step.json.draft.revision, base.revision, `${frase}: revision intacta`);
+        assert.equal(step.json.draft.items.length, base.items.length, `${frase}: líneas intactas`);
+      }
+    });
+
+    await t.test("15. Sin borrador activo → mensaje seguro y 0 persistencia", async () => {
+      const before = await countRows(testDb, "budgets");
+
+      const sinDraft = await postVoice360({ input: "Añade IVA" });
+      assert.equal(sinDraft.status, 200);
+      assert.equal(sinDraft.json.intent, "electricista:budget_set_tax");
+      assert.match(String(sinDraft.json.answer), /No hay borrador activo/);
+      assert.equal(sinDraft.json.draft ?? null, null);
+
+      const vacio = await postVoice360({
+        input: "Añade IVA",
+        draft: { revision: 1, client_name: "", client_candidates: [], tax_rate: 21, notes: [], items: [] },
+      });
+      assert.match(String(vacio.json.answer), /No hay borrador activo/);
+
+      assert.equal(await countRows(testDb, "budgets"), before, "0 persistencia");
+      assert.equal(await countRows(testDb, "budget_items"), 0, "0 líneas persistidas");
+    });
+
+    await t.test("16. Antes de confirmar: budgets=0 y budget_items=0", async () => {
+      assert.equal(await countRows(testDb, "budgets"), 0, "0 presupuestos antes del token");
+      assert.equal(await countRows(testDb, "budget_items"), 0, "0 líneas antes del token");
+    });
+
+    await t.test("17. 'confirmar' emite pending_action/token sin persistir", async () => {
+      const draft = (await setTax("Añade el IVA del 10%")).json.draft;
+      assert.equal(draft.tax_rate, 10);
+
+      const step = await postVoice360({ input: "confirmar", draft });
+      assert.equal(step.json.intent, "electricista:budget_confirm");
+      assert.ok(step.json.pending_action, "debe emitir pending_action");
+      assert.equal(step.json.pending_action.action, "create_budget");
+      assert.ok(
+        typeof step.json.pending_action.token === "string" &&
+          step.json.pending_action.token.length > 0,
+        "debe emitir token"
+      );
+      assert.match(String(step.json.answer), /Revisa el presupuesto/);
+
+      assert.equal(await countRows(testDb, "budgets"), 0, "confirmar no persiste");
+      assert.equal(await countRows(testDb, "budget_items"), 0, "confirmar no persiste líneas");
+    });
+
+    await t.test("18. El token guarda una sola vez con el tax_rate correcto", async () => {
+      const draft = (await setTax("Pon IVA al 10%")).json.draft;
+      assert.equal(draft.tax_rate, 10);
+
+      const confirm = await postVoice360({ input: "confirmar", draft });
+      const token = confirm.json.pending_action?.token;
+      assert.ok(token, "requiere token");
+
+      const save = await postVoice360({ confirm_token: token });
+      assert.equal(save.status, 200, "el guardado debe responder 200");
+      assert.match(String(save.json.answer), /PRES_\d{4}/, "numeración canónica");
+
+      assert.equal(await countRows(testDb, "budgets"), 1, "exactamente 1 presupuesto");
+      const row = (
+        await testDb.execute(
+          "SELECT number, subtotal, tax_rate, tax_amount, total FROM budgets"
+        )
+      ).rows[0] as unknown as Record<string, unknown>;
+
+      assert.equal(Number(row.tax_rate), 10, "tax_rate persistido por el Human Gate");
+      assert.equal(Number(row.subtotal), SUBTOTAL, "subtotal persistido");
+      assert.equal(
+        Number(row.tax_amount),
+        Math.round(SUBTOTAL * 0.1 * 100) / 100,
+        "IVA 10% de 72 = 7.20 persistido"
+      );
+      assert.equal(Number(row.total), 79.2, "total persistido");
+
+      const second = await postVoice360({ confirm_token: token });
+      assert.equal(second.status, 400, "el token es de un solo uso");
+      assert.equal(await countRows(testDb, "budgets"), 1, "el segundo uso no persiste");
+    });
+
+    await t.test("19-20. Las consultas de precio con IVA NO son budget_set_tax", async () => {
+      for (const frase of [
+        "¿Cuánto cuesta un cuadro con IVA?",
+        "Precio de un magneto con IVA",
+      ]) {
+        const step = await postVoice360({ input: frase });
+        assert.notEqual(
+          step.json.intent,
+          "electricista:budget_set_tax",
+          `"${frase}" no puede ser budget_set_tax`
+        );
+        assert.equal(
+          step.json.intent,
+          "electricista:catalog_query",
+          `"${frase}" debe seguir siendo consulta de catálogo`
+        );
+      }
+    });
+
+    await t.test(
+      "21-22. 'Añade un IVA del 10%' y 'Añade un 10% de IVA' no crean artículo",
+      async () => {
+        const base = await baseDraft();
+        for (const frase of ["Añade un IVA del 10%", "Añade un 10% de IVA"]) {
+          const step = await postVoice360({ input: frase, draft: base });
+          assert.equal(step.json.intent, "electricista:budget_set_tax", frase);
+          assert.equal(step.json.draft.items.length, 1, `${frase}: no añade línea`);
+          assert.equal(step.json.draft.tax_rate, 10, `${frase}: aplica el 10%`);
+          assert.doesNotMatch(
+            String(step.json.draft.items[0].description),
+            /iva|%/i,
+            `${frase}: la línea original queda intacta`
+          );
+        }
+      }
+    );
+
+    await t.test(
+      "23. Regresión: 'Añade 3 enchufes a 12 euros' sigue su flujo anterior",
+      async () => {
+        const base = await baseDraft();
+        const step = await postVoice360({
+          input: "Añade 3 enchufes a 12 euros",
+          draft: base,
+        });
+        assert.equal(step.json.intent, "electricista:budget_add_item");
+        assert.equal(
+          step.json.draft.items.length,
+          base.items.length + 1,
+          "sigue añadiendo su línea"
+        );
+        assert.equal(step.json.draft.tax_rate, base.tax_rate, "no toca el IVA");
+      }
+    );
+
+    await t.test(
+      "24. P1.2 intacto: 'Cambia las horas a 10' y 'Pon el precio del cable a 8 euros'",
+      async () => {
+        const base = await baseDraft();
+
+        const horas = await postVoice360({ input: "Cambia las horas a 10", draft: base });
+        assert.equal(
+          horas.json.intent,
+          "electricista:general",
+          "P1.2 sigue sin reconocerse: NO se arregla aquí"
+        );
+        assert.notEqual(horas.json.intent, "electricista:budget_set_tax");
+
+        const cable = await postVoice360({
+          input: "Pon el precio del cable a 8 euros",
+          draft: base,
+        });
+        assert.equal(
+          cable.json.intent,
+          "electricista:budget_add_item",
+          "comportamiento previo intacto: NO se arregla aquí"
+        );
+        assert.notEqual(cable.json.intent, "electricista:budget_set_tax");
+      }
+    );
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});

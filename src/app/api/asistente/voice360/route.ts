@@ -48,6 +48,7 @@ type Intent =
   | "budget_create"
   | "budget_add_item"
   | "budget_modify_item"
+  | "budget_set_tax"
   | "budget_set_client"
   | "budget_confirm"
   | "budget_cancel"
@@ -72,6 +73,29 @@ function detectIntent(text: string): Intent {
   // Formas naturales inequívocas: confirma / confirmar / confírmalo / guárdalo / guardar.
   // El grupo se cierra con \b para que "confirmación" o "guardarropa" no disparen.
   if (/\b(?:si|confirma(?:r|lo)?|guarda(?:r|lo)?|acepto|ok)\b/.test(t)) return "budget_confirm";
+
+  // IVA / impuesto del borrador activo.
+  // Se reconoce SÓLO con un verbo fiscal cuyo objeto sea el IVA ("añade IVA",
+  // "pon IVA al 10%", "quita el IVA"), con una retirada explícita ("sin IVA") o
+  // con una tasa explícita ligada al IVA ("IVA 0%").
+  // Se excluyen las consultas de precios ("¿Cuánto cuesta un cuadro con IVA?")
+  // y las peticiones explícitas de creación ("Crea un presupuesto sin IVA").
+  // Debe resolverse ANTES de add_item/modify_item: una frase cuyo sujeto es el IVA
+  // jamás puede interpretarse como artículo ni como modificación de línea.
+  const isCreationRequest =
+    /\b(hazme|crea|nuevo|hacer|prepara|genera)\b.*(presupuesto|presupu|budget)/.test(t) ||
+    /\b(presupuesto|presupu|budget)\b.*(de|para)\b/.test(t);
+  const isPriceQuery =
+    /\b(cuanto\s+cuesta|cuanto\s+vale|que\s+precio|precio\s+de|busca|consulta|consultar|informacion)\b/.test(t);
+  if (/\b(?:iva|impuesto)\b/.test(t) && !isCreationRequest && !isPriceQuery) {
+    const fiscalVerbOnTax =
+      /\b(?:a[ñn]ade|anade|agrega|incluye|pon|aplica|aplicar|cambia|modifica|actualiza|corrige|sube|baja|quita|quitar|elimina|eliminar)\s+(?:el\s+|la\s+|un\s+|una\s+|los\s+|las\s+)?(?:iva|impuesto)\b/.test(t);
+    const taxRemoval = /\bsin\s+(?:el\s+|la\s+)?(?:iva|impuesto)\b/.test(t);
+    const explicitRate = /\d+(?:[.,]\d+)?\s*(?:%|por\s+ciento)/.test(t);
+    if (fiscalVerbOnTax || taxRemoval || (explicitRate && /\b(?:iva|impuesto)\b/.test(t))) {
+      return "budget_set_tax";
+    }
+  }
 
   // Presupuesto
   if (/\b(hazme|crea|nuevo|hacer|prepara|genera)\b.*(presupuesto|presupu|budget)/.test(t)) return "budget_create";
@@ -410,6 +434,63 @@ async function handleModifyItem(
   };
 }
 
+/**
+ * IVA del borrador — modifica EXCLUSIVAMENTE draft.tax_rate.
+ *
+ * No toca las líneas, no accede a la base de datos, no emite token ni
+ * pending_action y no persiste nada: la escritura sigue ocurriendo SÓLO a través
+ * del Human Gate ya existente (handleBudgetConfirm -> createConfirmToken ->
+ * executeBudgetSave, que ya persiste draft.tax_rate).
+ */
+async function handleSetTax(
+  text: string,
+  currentDraft: Voice360Draft | null
+): Promise<HandlerResult> {
+  if (!currentDraft || currentDraft.items.length === 0) {
+    return {
+      answer:
+        "No hay borrador activo para cambiar el IVA. Empieza diciendo: \"Hazme un presupuesto de...\"",
+    };
+  }
+
+  const t = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const rateMatch = t.match(/(\d+(?:[.,]\d+)?)\s*(?:%|por\s+ciento)/);
+  const isRemoval = /\b(?:quita|quitar|elimina|eliminar|sin)\b/.test(t);
+
+  let newRate: number;
+  if (rateMatch) {
+    newRate = Number(rateMatch[1].replace(",", "."));
+  } else if (isRemoval) {
+    newRate = 0;
+  } else {
+    // Sin porcentaje: conservar la tasa vigente si ya es positiva; si el borrador
+    // está a 0, aplicar el valor que Electricista360 ya usa en todo presupuesto nuevo.
+    const current = Number(currentDraft.tax_rate);
+    newRate = current > 0 ? current : 21;
+  }
+
+  if (!Number.isFinite(newRate) || newRate < 0 || newRate > 100) {
+    return {
+      answer: `⚠️ El IVA debe estar entre 0 y 100 (recibido: ${rateMatch?.[1] ?? "?"}). No se ha modificado el borrador.`,
+      draft: currentDraft,
+      totals: computeTotals(currentDraft),
+    };
+  }
+
+  const changed = newRate !== Number(currentDraft.tax_rate);
+  const draft: Voice360Draft = changed
+    ? { ...currentDraft, revision: currentDraft.revision + 1, tax_rate: newRate }
+    : currentDraft;
+  const totals = computeTotals(draft);
+
+  const answer = changed
+    ? `✅ IVA actualizado al ${newRate}% (base ${totals.subtotal.toFixed(2)} € + IVA ${totals.tax_amount.toFixed(2)} €). Total: **${totals.total.toFixed(2)} €**\n\nDi "confirmar" para guardar.`
+    : `ℹ️ El IVA ya está al ${newRate}%. Total: **${totals.total.toFixed(2)} €**\n\nDi "confirmar" para guardar.`;
+
+  return { answer, draft, totals };
+}
+
 async function handleBudgetConfirm(
   currentDraft: Voice360Draft | null
 ): Promise<HandlerResult> {
@@ -735,6 +816,9 @@ export async function POST(req: NextRequest) {
     switch (intent) {
       case "budget_create":
         result = await handleBudgetCreate(normalizedInput, currentDraft);
+        break;
+      case "budget_set_tax":
+        result = await handleSetTax(normalizedInput, currentDraft);
         break;
       case "budget_add_item":
         result = await handleAddItem(normalizedInput, currentDraft);
