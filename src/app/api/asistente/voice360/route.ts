@@ -65,9 +65,13 @@ function detectIntent(text: string): Intent {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  // Confirmación / cancelación
-  if (/\b(si\b|confirma|confirmar|guarda|guardar|acepto|ok)\b/.test(t)) return "budget_confirm";
+  // Cancelación / confirmación.
+  // La cancelación se evalúa PRIMERO: una frase negativa ("no, confírmalo") nunca
+  // puede convertirse en una confirmación que abra el Human Gate.
   if (/\b(no\b|cancela|cancelar|descarta|descartar|borra|borrar el borrador)\b/.test(t)) return "budget_cancel";
+  // Formas naturales inequívocas: confirma / confirmar / confírmalo / guárdalo / guardar.
+  // El grupo se cierra con \b para que "confirmación" o "guardarropa" no disparen.
+  if (/\b(?:si|confirma(?:r|lo)?|guarda(?:r|lo)?|acepto|ok)\b/.test(t)) return "budget_confirm";
 
   // Presupuesto
   if (/\b(hazme|crea|nuevo|hacer|prepara|genera)\b.*(presupuesto|presupu|budget)/.test(t)) return "budget_create";

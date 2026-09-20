@@ -427,3 +427,203 @@ async function countRows(db: ReturnType<typeof createClient>, table: string): Pr
 function resolveClientUrlHint(): string {
   return process.env.TEST_DATABASE_URL?.trim() || "";
 }
+
+/**
+ * P1.3 — Reconocimiento de formas naturales de confirmación.
+ *
+ * "Confírmalo" / "Confirmalo" / "Guárdalo" deben entrar en el MISMO flujo seguro
+ * que "confirmar": resumen -> pending_action -> confirm_token, sin persistir nada
+ * por sí solas. El mecanismo del Human Gate NO se rediseña: sólo se amplía el
+ * vocabulario de la detección y se da prioridad a la cancelación.
+ *
+ * AISLAMIENTO: idéntico al resto del fichero — cliente libsql en memoria y
+ * TEST_DATABASE_URL apuntando a una ruta temporal.
+ */
+test("VOZ 360 — P1.3: confirmación natural con Human Gate intacto", async (t) => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-p13-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+
+  const DRAFT_INPUT = "Presupuesto para Test Cliente: 4 enchufes a 18 euros";
+
+  /** Crea un borrador limpio y devuelve su draft. No persiste nada. */
+  async function newDraft(): Promise<any> {
+    const step = await postVoice360({ input: DRAFT_INPUT });
+    assert.equal(step.status, 200, "el borrador debe responder 200");
+    assert.equal(
+      step.json.intent,
+      "electricista:budget_draft",
+      "la locución base debe crear borrador"
+    );
+    assert.ok(step.json.draft, "debe devolverse un draft");
+    return step.json.draft;
+  }
+
+  try {
+    await t.test("1. 'Confírmalo' reconoce budget_confirm", async () => {
+      const step = await postVoice360({ input: "Confírmalo", draft: await newDraft() });
+      assert.equal(step.status, 200);
+      assert.equal(step.json.intent, "electricista:budget_confirm");
+    });
+
+    await t.test("2. 'Confirmalo' (sin tilde) reconoce budget_confirm", async () => {
+      const step = await postVoice360({ input: "Confirmalo", draft: await newDraft() });
+      assert.equal(step.status, 200);
+      assert.equal(step.json.intent, "electricista:budget_confirm");
+    });
+
+    await t.test("3. 'Guárdalo' reconoce budget_confirm", async () => {
+      const step = await postVoice360({ input: "Guárdalo", draft: await newDraft() });
+      assert.equal(step.status, 200);
+      assert.equal(step.json.intent, "electricista:budget_confirm");
+    });
+
+    await t.test("4. 'Cancela' sigue siendo budget_cancel", async () => {
+      const step = await postVoice360({ input: "Cancela", draft: await newDraft() });
+      assert.equal(step.status, 200);
+      assert.equal(step.json.intent, "electricista:budget_cancel");
+      assert.equal(step.json.pending_action ?? null, null, "cancelar no emite token");
+    });
+
+    await t.test(
+      "5. Frases negativas/de cancelación NO pueden convertirse en confirmación",
+      async () => {
+        const negativas = [
+          "No lo confirmes",
+          "No, cancela",
+          "No lo guardes",
+          "No guardes nada",
+        ];
+        for (const frase of negativas) {
+          const step = await postVoice360({ input: frase, draft: await newDraft() });
+          assert.equal(step.status, 200, `"${frase}" debe responder 200`);
+          assert.notEqual(
+            step.json.intent,
+            "electricista:budget_confirm",
+            `"${frase}" no puede convertirse en confirmación`
+          );
+          assert.equal(
+            step.json.intent,
+            "electricista:budget_cancel",
+            `"${frase}" debe cancelar (cancelación prioritaria), fue "${step.json.intent}"`
+          );
+          assert.equal(
+            step.json.pending_action ?? null,
+            null,
+            `"${frase}" no debe emitir token`
+          );
+        }
+      }
+    );
+
+    await t.test(
+      "6. La confirmación emite pending_action y NO persiste por sí sola",
+      async () => {
+        const budgetsBefore = await countRows(testDb, "budgets");
+        const itemsBefore = await countRows(testDb, "budget_items");
+
+        const step = await postVoice360({ input: "Confírmalo", draft: await newDraft() });
+
+        assert.equal(step.json.intent, "electricista:budget_confirm");
+        assert.ok(step.json.pending_action, "debe emitir pending_action");
+        assert.equal(step.json.pending_action.action, "create_budget");
+        assert.ok(
+          typeof step.json.pending_action.token === "string" &&
+            step.json.pending_action.token.length > 0,
+          "debe emitir confirm_token"
+        );
+        assert.match(
+          String(step.json.answer),
+          /Revisa el presupuesto/,
+          "debe mostrar el resumen para revisión humana"
+        );
+
+        assert.equal(
+          await countRows(testDb, "budgets"),
+          budgetsBefore,
+          "NO debe persistir sin token"
+        );
+        assert.equal(
+          await countRows(testDb, "budget_items"),
+          itemsBefore,
+          "NO debe persistir ninguna línea"
+        );
+      }
+    );
+
+    await t.test("7. Primer uso del token guarda exactamente una vez", async () => {
+      const budgetsBefore = await countRows(testDb, "budgets");
+      const itemsBefore = await countRows(testDb, "budget_items");
+
+      const confirm = await postVoice360({ input: "Confírmalo", draft: await newDraft() });
+      const token = confirm.json.pending_action?.token;
+      assert.ok(token, "requiere token");
+
+      const save = await postVoice360({ confirm_token: token });
+      assert.equal(save.status, 200, "el guardado debe responder 200");
+      assert.doesNotMatch(
+        String(save.json.answer),
+        /No se ha guardado/,
+        "el guardado no debe fallar"
+      );
+      assert.match(
+        String(save.json.answer),
+        /PRES_\d{4}/,
+        "debe anunciar la numeración canónica"
+      );
+
+      assert.equal(
+        await countRows(testDb, "budgets"),
+        budgetsBefore + 1,
+        "exactamente 1 presupuesto"
+      );
+      assert.equal(
+        await countRows(testDb, "budget_items"),
+        itemsBefore + 1,
+        "exactamente 1 línea"
+      );
+    });
+
+    await t.test(
+      "8. Segundo uso del mismo token es rechazado y no persiste nada",
+      async () => {
+        const budgetsBefore = await countRows(testDb, "budgets");
+
+        const confirm = await postVoice360({ input: "Guárdalo", draft: await newDraft() });
+        const token = confirm.json.pending_action?.token;
+        assert.ok(token, "requiere token");
+
+        const first = await postVoice360({ confirm_token: token });
+        assert.equal(first.status, 200, "el primer uso debe guardar");
+        const afterFirst = await countRows(testDb, "budgets");
+        assert.equal(afterFirst, budgetsBefore + 1, "el primer uso guarda una sola vez");
+
+        const second = await postVoice360({ confirm_token: token });
+        assert.equal(second.status, 400, "el segundo uso debe ser rechazado");
+        assert.match(
+          String(second.json.error),
+          /inválido o expirado/,
+          "debe explicar el rechazo"
+        );
+        assert.equal(
+          await countRows(testDb, "budgets"),
+          afterFirst,
+          "el segundo uso no persiste nada"
+        );
+      }
+    );
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});
