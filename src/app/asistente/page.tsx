@@ -1,329 +1,563 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
   Bot,
+  Check,
+  RefreshCw,
   Send,
   Sparkles,
-  RefreshCw,
-  FileText,
-  Calendar,
-  UserPlus,
-  ArrowRight,
-  CheckCircle2,
+  Volume2,
+  VolumeX,
+  Wifi,
+  WifiOff,
+  Mic,
+  X,
 } from "lucide-react";
+import VoiceDictation from "@/components/VoiceDictation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { Button } from "@/components/ui/Button";
-import { showToast } from "@/components/Toast";
+import type { Voice360Draft, Voice360PendingAction } from "@/lib/assistant/types";
 
-interface DraftPayload {
-  type: "budget" | "visit" | "client";
-  payload: Record<string, any>;
+interface Totals {
+  subtotal: number;
+  tax_amount: number;
+  total: number;
+  incomplete: string[];
 }
 
-interface ChatMessage {
+interface Message {
   id: string;
   role: "user" | "assistant";
-  content: string;
-  source?: string;
-  draft?: DraftPayload;
-  timestamp: string;
+  text: string;
+  result?: unknown;
 }
 
-const QUICK_CHIPS = [
-  "¿A quién tengo que llamar hoy?",
-  "¿Qué oportunidades están más calientes?",
-  "¿Qué reuniones tengo esta semana?",
-  "Facturas pendientes o vencidas",
-  "Borrador de presupuesto para cambiar diferencial a Juan Pérez",
-  "Agendar visita con María García para mañana a las 10:00",
+const SUGGESTIONS = [
+  "Hazme un presupuesto de 4 enchufes a 18 euros",
+  "¿Qué partes de trabajo tengo?",
+  "Busca el cliente García",
+  "¿Qué facturas tengo pendientes?",
 ];
 
-export default function AsistenteCopilotPage() {
-  const router = useRouter();
-  const [messages, setMessages] = useState<ChatMessage[]>([
+export default function Voice360Page() {
+  const [messages, setMessages] = useState<Message[]>([
     {
-      id: "welcome-1",
+      id: "welcome",
       role: "assistant",
-      content:
-        "**¡Hola!** Soy tu **Asistente IA Autónomo360**.\n\nEstoy conectado a tus clientes, presupuestos, partes de trabajo, facturas y agenda en tiempo real. Puedo responder tus consultas de negocio y ayudarte a **preparar borradores de presupuestos, citas o clientes** para confirmarlos con un clic.\n\n¿Qué necesitas revisar hoy?",
-      timestamp: "Ahora",
+      text: "Soy Voz 360 para Electricista360. Habla o escribe. Preparo los cambios como borrador y pido confirmación antes de guardar.",
     },
   ]);
   const [input, setInput] = useState("");
+  const [draft, setDraft] = useState<Voice360Draft | null>(null);
+  const [totals, setTotals] = useState<Totals | null>(null);
+  const [pending, setPending] = useState<Voice360PendingAction | null>(null);
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState("");
+  const [speak, setSpeak] = useState(false);
+  const [online, setOnline] = useState(true);
+  const [showDraft, setShowDraft] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Online / Offline detection
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    setOnline(navigator.onLine);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, draft]);
 
-  const handleSendMessage = async (queryText: string) => {
-    const text = queryText.trim();
-    if (!text || loading) return;
+  // Mostrar panel de borrador automáticamente cuando hay un draft
+  useEffect(() => {
+    if (draft && draft.items.length > 0) setShowDraft(true);
+  }, [draft]);
 
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: text,
-      timestamp: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-    };
+  function readAloud(text: string) {
+    if (!speak || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(
+      text.replace(/[*#_`]/g, "").replace(/\n+/g, ". ")
+    );
+    utterance.lang = "es-ES";
+    utterance.rate = 0.95;
+    window.speechSynthesis.speak(utterance);
+  }
 
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setLoading(true);
+  async function send(textValue = input) {
+    const text = textValue.trim();
+    console.log("[SEND_CLICK] click recibido, texto:", text);
+    if (!text || loading) {
+      console.log("[SEND_SKIP] ignorado porque text vacio o loading", { text, loading });
+      return;
+    }
+    console.log("[DIAG_APIS]", {
+      isSecureContext: typeof window !== "undefined" ? window.isSecureContext : false,
+      cryptoRandomUUID: typeof crypto !== "undefined" ? typeof crypto.randomUUID : "no crypto",
+      SpeechRecognition: typeof window !== "undefined" ? typeof (window as any).SpeechRecognition : "undefined",
+      webkitSpeechRecognition: typeof window !== "undefined" ? typeof (window as any).webkitSpeechRecognition : "undefined",
+      getUserMedia: typeof navigator !== "undefined" && navigator.mediaDevices ? typeof navigator.mediaDevices.getUserMedia : "undefined",
+      speechSynthesis: typeof window !== "undefined" ? typeof window.speechSynthesis : "undefined",
+    });
 
     try {
-      const res = await fetch("/api/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: text,
-          history: messages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
+      const msgId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : "msg-" + Date.now() + "-" + Math.random().toString(36).slice(2);
 
-      if (res.ok) {
-        const data = await res.json();
-        const assistantMsg: ChatMessage = {
-          id: `asst-${Date.now()}`,
+      setMessages((current) => [
+        ...current,
+        { id: msgId, role: "user", text },
+      ]);
+      setInput("");
+      setLoading(true);
+      setError("");
+      setPending(null);
+
+      console.log("[FETCH_INIT] POST /api/asistente/voice360");
+      const response = await fetch("/api/asistente/voice360", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ input: text, draft }),
+      });
+      console.log("[FETCH_RES] status:", response.status);
+      const data = await response.json();
+      console.log("[FETCH_DATA]", data);
+
+      if (!response.ok)
+        throw new Error(data.error || "No se pudo procesar la orden");
+      setDraft(data.draft ?? null);
+      setTotals(data.totals ?? null);
+      setPending(data.pending_action ?? null);
+
+      const assistantId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : "msg-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: assistantId,
           role: "assistant",
-          content: data.answer || "No se obtuvo respuesta para esta consulta.",
-          source: data.source,
-          draft: data.draft,
-          timestamp: new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
-      } else {
-        showToast("error", "Error al consultar al Asistente");
-      }
-    } catch {
-      showToast("error", "Error de conexión con el asistente");
+          text: data.answer,
+          result: data.result,
+        },
+      ]);
+      readAloud(data.answer);
+    } catch (cause) {
+      console.error("[SEND_ERROR] error exacto:", cause);
+      setError(
+        cause instanceof Error ? `[DIAG] ${cause.name}: ${cause.message}` : "Error de conexión"
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  async function confirmAction() {
+    if (!pending || loading) return;
+    const action = pending;
+    setPending(null);
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/asistente/voice360", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ confirm_token: action.token }),
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "No se pudo confirmar la acción");
+      setDraft(null);
+      setTotals(null);
+      setShowDraft(false);
+      setMessages((current) => [
+        ...current,
+        {
+          id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "msg-" + Date.now(),
+          role: "assistant",
+          text: data.answer,
+          result: data.result,
+        },
+      ]);
+      readAloud(data.answer);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Error al confirmar"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function reset() {
+    window.speechSynthesis?.cancel();
+    setDraft(null);
+    setTotals(null);
+    setPending(null);
+    setInput("");
+    setError("");
+    setShowDraft(false);
+    setMessages([
+      {
+        id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "msg-welcome",
+        role: "assistant",
+        text: "Nueva conversación. ¿Qué necesitas?",
+      },
+    ]);
+  }
+
+  // Panel de borrador (overlay en móvil, columna en desktop)
+  const draftPanel = (
+    <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4 space-y-3">
+      {/* Header del borrador */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-bold text-white text-sm">📋 Borrador activo</h2>
+        <div className="flex items-center gap-2">
+          {draft && (
+            <span className="text-xs text-slate-400">v{draft.revision}</span>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowDraft(false)}
+            className="lg:hidden rounded-lg border border-slate-700 p-1 text-slate-400"
+            aria-label="Cerrar borrador"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {!draft ? (
+        <p className="text-sm text-slate-400">
+          Aún no hay borrador. Las consultas no modifican datos.
+        </p>
+      ) : (
+        <>
+          {/* Cliente */}
+          <div className="rounded-xl bg-slate-950 p-3 text-sm text-slate-300">
+            <p>
+              <strong>Cliente:</strong>{" "}
+              {draft.client_name || (
+                <span className="text-amber-300">Sin indicar</span>
+              )}
+            </p>
+            {draft.client_candidates.length > 1 && (
+              <p className="mt-1 text-xs text-amber-300">
+                Posibles coincidencias:{" "}
+                {draft.client_candidates
+                  .map((c, i) => `${i + 1}. ${c.name}`)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+
+          {/* Líneas */}
+          <div className="space-y-2">
+            {draft.items.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-xl border border-slate-700 p-3 text-sm"
+              >
+                <p className="font-medium text-white leading-snug">
+                  {item.quantity} {item.unit} · {item.description}
+                </p>
+                <p
+                  className={
+                    item.unit_price === null
+                      ? "text-amber-300 text-xs mt-0.5"
+                      : "text-emerald-300 text-xs mt-0.5"
+                  }
+                >
+                  {item.unit_price === null
+                    ? "Precio pendiente"
+                    : `${item.unit_price.toFixed(2)} €/ud · Subtotal: ${(item.unit_price * item.quantity).toFixed(2)} €`}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Totales */}
+          {totals && (
+            <div className="rounded-xl bg-slate-950 p-3 text-sm text-slate-300 space-y-0.5">
+              <p>Base imponible: {totals.subtotal.toFixed(2)} €</p>
+              <p>
+                IVA ({draft.tax_rate}%): {totals.tax_amount.toFixed(2)} €
+              </p>
+              {totals.incomplete.length > 0 && (
+                <p className="text-amber-300 text-xs">
+                  ⚠️ Precio pendiente: {totals.incomplete.join(", ")}
+                </p>
+              )}
+              <p className="mt-1 text-xl font-black text-white">
+                Total: {totals.total.toFixed(2)} €
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Acción de confirmación */}
+      {pending && (
+        <div className="rounded-xl border border-amber-600 bg-amber-950/40 p-3">
+          <p className="text-xs font-bold uppercase text-amber-300 mb-1">
+            ⚠️ Confirmación requerida
+          </p>
+          <p className="text-sm text-white mb-3 whitespace-pre-line">
+            {pending.label}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              disabled={loading}
+              onClick={() => void confirmAction()}
+              className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-sm font-bold text-white disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              <Check className="h-4 w-4" />
+              Confirmar
+            </button>
+            <button
+              onClick={() => setPending(null)}
+              className="min-h-[48px] rounded-xl border border-slate-600 px-3 text-sm text-slate-200 active:scale-95 transition-transform"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-16">
+    <div className="mx-auto max-w-5xl space-y-3 pb-24">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="flex items-start justify-between gap-3">
         <div>
-          <Breadcrumbs items={[{ label: "Asistente IA Autónomo360" }]} />
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-100 mt-1 tracking-tight flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-slate-900 border border-emerald-500/30 text-white shadow-md">
-              <Sparkles className="h-5 w-5 text-emerald-300" />
-            </div>
-            <span>Asistente IA Autónomo360</span>
+          <Breadcrumbs items={[{ label: "Asistente Voz 360" }]} />
+          <h1 className="mt-1 flex items-center gap-2 text-2xl font-black text-white sm:text-3xl">
+            <Sparkles className="text-emerald-400" />
+            Voz 360
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Asistente virtual conectado a tus datos reales de clientes, presupuestos, facturas y agenda.
+          <p className="mt-0.5 text-xs text-slate-400">
+            Electricista360 · Nada se guarda sin tu confirmación
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          {/* Estado online/offline */}
+          <span
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
+              online
+                ? "bg-emerald-900/50 text-emerald-300"
+                : "bg-rose-900/50 text-rose-300"
+            }`}
+          >
+            {online ? (
+              <Wifi className="h-3 w-3" />
+            ) : (
+              <WifiOff className="h-3 w-3" />
+            )}
+            <span className="hidden sm:inline">
+              {online ? "Online" : "Sin conexión"}
+            </span>
+          </span>
 
-        <button
-          onClick={() =>
-            setMessages([
-              {
-                id: "welcome-reset",
-                role: "assistant",
-                content:
-                  "**¡Hola de nuevo!** ¿Qué aspecto de tus clientes, presupuestos o agenda deseas consultar?",
-                timestamp: "Ahora",
-              },
-            ])
-          }
-          className="btn-secondary text-xs flex items-center gap-1.5 self-start sm:self-auto"
-        >
-          <RefreshCw className="h-3.5 w-3.5" /> Nueva Conversación
-        </button>
-      </div>
+          {/* TTS toggle */}
+          <button
+            type="button"
+            onClick={() => setSpeak((v) => !v)}
+            className="rounded-xl border border-slate-700 p-2.5 text-slate-300 hover:border-slate-500 transition-colors"
+            aria-label="Respuesta por voz"
+          >
+            {speak ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
+          </button>
 
-      {/* Suggested Chips */}
-      <div className="card p-4 bg-slate-900/90 border border-slate-700/80 space-y-2">
-        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 text-emerald-400" /> Consultas directas sugeridas:
-        </p>
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-          {QUICK_CHIPS.map((chip, idx) => (
+          {/* Nueva conversación */}
+          <button
+            type="button"
+            onClick={reset}
+            className="rounded-xl border border-slate-700 p-2.5 text-slate-300 hover:border-slate-500 transition-colors"
+            aria-label="Nueva conversación"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+
+          {/* Mostrar borrador en móvil */}
+          {draft && (
             <button
-              key={idx}
-              disabled={loading}
-              onClick={() => handleSendMessage(chip)}
-              className="px-3 py-1.5 rounded-xl font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/70 transition-all shrink-0 active:scale-95 disabled:opacity-50"
+              type="button"
+              onClick={() => setShowDraft((v) => !v)}
+              className="lg:hidden rounded-xl border border-emerald-700 bg-emerald-900/40 px-3 py-2 text-xs font-medium text-emerald-300"
             >
-              {chip}
+              Borrador
             </button>
-          ))}
+          )}
         </div>
+      </header>
+
+      {/* Sugerencias rápidas */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {SUGGESTIONS.map((s) => (
+          <button
+            key={s}
+            disabled={loading}
+            onClick={() => void send(s)}
+            className="shrink-0 rounded-full border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-300 hover:border-emerald-600 hover:text-emerald-300 transition-colors disabled:opacity-40"
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
-      {/* Chat Window Container */}
-      <div className="card p-6 bg-slate-900/90 border border-slate-700/80 shadow-2xl flex flex-col h-[580px]">
-        {/* Messages List */}
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-          {messages.map((m) => {
-            const isUser = m.role === "user";
-            return (
+      {/* Layout principal */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+        {/* Panel de chat */}
+        <section className="flex min-h-[32rem] flex-col rounded-2xl border border-slate-700 bg-slate-900/90 p-3 sm:p-5">
+          {/* Mensajes */}
+          <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+            {messages.map((message) => (
               <div
-                key={m.id}
-                className={`flex gap-3 text-xs leading-relaxed ${
-                  isUser ? "justify-end" : "justify-start"
+                key={message.id}
+                className={`flex gap-2 ${
+                  message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                {!isUser && (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-slate-900 border border-emerald-500/30 text-white shrink-0 mt-0.5 shadow-sm">
-                    <Bot className="h-4 w-4 text-emerald-300" />
-                  </div>
+                {message.role === "assistant" && (
+                  <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-700">
+                    <Bot className="h-4 w-4" />
+                  </span>
                 )}
-
-                <div className="space-y-3 max-w-2xl">
-                  <div
-                    className={`rounded-2xl p-4 shadow-md space-y-2 ${
-                      isUser
-                        ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white"
-                        : "bg-slate-800/90 border border-slate-700 text-slate-200"
-                    }`}
-                  >
-                    <div className="whitespace-pre-wrap">{m.content}</div>
-                    <div
-                      className={`text-[10px] text-right ${
-                        isUser ? "text-emerald-100" : "text-slate-400"
-                      }`}
-                    >
-                      {m.timestamp}
-                    </div>
-                  </div>
-
-                  {/* Interactive Action Card Draft */}
-                  {m.draft && (
-                    <div className="bg-slate-950/90 border border-emerald-500/40 rounded-2xl p-4 text-slate-200 space-y-3 shadow-lg">
-                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                        <span className="font-bold text-emerald-400 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                          {m.draft.type === "budget" && <FileText className="h-4 w-4" />}
-                          {m.draft.type === "visit" && <Calendar className="h-4 w-4" />}
-                          {m.draft.type === "client" && <UserPlus className="h-4 w-4" />}
-                          Borrador Generado: {m.draft.type === "budget" ? "Presupuesto" : m.draft.type === "visit" ? "Cita en Agenda" : "Ficha de Cliente"}
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium">
-                          Pendiente de Confirmación
-                        </span>
-                      </div>
-
-                      {/* Content details per type */}
-                      {m.draft.type === "budget" && (
-                        <div className="space-y-2 text-xs">
-                          <p><strong className="text-slate-300">Cliente:</strong> {m.draft.payload.client_name}</p>
-                          <p><strong className="text-slate-300">Concepto:</strong> {m.draft.payload.title}</p>
-                          {Array.isArray(m.draft.payload.items) && m.draft.payload.items.length > 0 && (
-                            <div className="bg-slate-900 rounded-lg p-2 space-y-1">
-                              <p className="text-[11px] text-slate-400 font-medium">Partidas:</p>
-                              {m.draft.payload.items.map((it: any, i: number) => (
-                                <div key={i} className="flex justify-between text-[11px] text-slate-300">
-                                  <span>{it.quantity}x {it.description}</span>
-                                  <span className="font-semibold text-emerald-300">{Number(it.unit_price * it.quantity).toFixed(2)} €</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <Button
-                            variant="primary"
-                            icon={ArrowRight}
-                            className="w-full text-xs mt-2"
-                            onClick={() => router.push(`/presupuestos/nuevo?client=${encodeURIComponent(m.draft?.payload.client_name || "")}&title=${encodeURIComponent(m.draft?.payload.title || "")}`)}
-                          >
-                            Ir a Formulario de Presupuesto
-                          </Button>
-                        </div>
-                      )}
-
-                      {m.draft.type === "visit" && (
-                        <div className="space-y-2 text-xs">
-                          <p><strong className="text-slate-300">Cliente:</strong> {m.draft.payload.client_name}</p>
-                          <p><strong className="text-slate-300">Motivo:</strong> {m.draft.payload.title}</p>
-                          <p><strong className="text-slate-300">Fecha y Hora:</strong> {m.draft.payload.date} a las {m.draft.payload.time}</p>
-                          {m.draft.payload.address && <p><strong className="text-slate-300">Lugar:</strong> {m.draft.payload.address}</p>}
-                          <Button
-                            variant="primary"
-                            icon={Calendar}
-                            className="w-full text-xs mt-2"
-                            onClick={() => router.push("/agenda")}
-                          >
-                            Ir a la Agenda
-                          </Button>
-                        </div>
-                      )}
-
-                      {m.draft.type === "client" && (
-                        <div className="space-y-2 text-xs">
-                          <p><strong className="text-slate-300">Nombre:</strong> {m.draft.payload.name}</p>
-                          {m.draft.payload.phone && <p><strong className="text-slate-300">Teléfono:</strong> {m.draft.payload.phone}</p>}
-                          {m.draft.payload.email && <p><strong className="text-slate-300">Email:</strong> {m.draft.payload.email}</p>}
-                          {m.draft.payload.company && <p><strong className="text-slate-300">Empresa:</strong> {m.draft.payload.company}</p>}
-                          <Button
-                            variant="primary"
-                            icon={CheckCircle2}
-                            className="w-full text-xs mt-2"
-                            onClick={() => router.push("/clientes")}
-                          >
-                            Ver Cartera de Clientes
-                          </Button>
-                        </div>
+                <div
+                  className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
+                    message.role === "user"
+                      ? "bg-emerald-700 text-white"
+                      : "border border-slate-700 bg-slate-800 text-slate-200"
+                  }`}
+                >
+                  {message.text}
+                  {Array.isArray(message.result) && (
+                    <div className="mt-2 space-y-1 border-t border-slate-600 pt-2 text-xs">
+                      {(message.result as Record<string, unknown>[]).map(
+                        (row, i) => (
+                          <div key={i}>
+                            {Object.entries(row)
+                              .filter(([, v]) => v !== null)
+                              .map(([k, v]) => `${k}: ${String(v)}`)
+                              .join(" · ")}
+                          </div>
+                        )
                       )}
                     </div>
                   )}
                 </div>
               </div>
-            );
-          })}
+            ))}
 
-          {loading && (
-            <div className="flex gap-3 text-xs justify-start">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-slate-900 border border-emerald-500/30 text-white shrink-0 shadow-sm">
-                <Bot className="h-4 w-4 text-emerald-300" />
+            {loading && (
+              <div className="flex gap-2 justify-start">
+                <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-700">
+                  <Bot className="h-4 w-4" />
+                </span>
+                <div className="rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3">
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="h-2 w-2 rounded-full bg-emerald-400 animate-bounce"
+                        style={{ animationDelay: `${i * 120}ms` }}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="bg-slate-800/90 border border-slate-700 text-slate-400 p-3.5 rounded-2xl flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>Consultando datos del negocio y ejecutando herramientas seguras...</span>
-              </div>
-            </div>
+            )}
+            <div ref={endRef} />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <p
+              role="alert"
+              className="mt-3 rounded-xl bg-rose-950 p-3 text-sm text-rose-200"
+            >
+              ⚠️ {error}
+            </p>
           )}
 
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Bar */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSendMessage(input);
-          }}
-          className="pt-4 border-t border-slate-800 flex items-center gap-2"
-        >
-          <input
-            type="text"
-            placeholder="Pregunta sobre clientes, facturas, presupuestos o solicita crear un borrador..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={loading}
-            className="input-field text-xs flex-1"
-          />
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={loading || !input.trim()}
-            icon={Send}
-            className="shrink-0 text-xs px-4"
+          {/* Formulario */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void send();
+            }}
+            className="mt-4 border-t border-slate-700 pt-3"
           >
-            Enviar
-          </Button>
-        </form>
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+              disabled={loading}
+              rows={2}
+              placeholder="Habla o escribe tu orden…"
+              className="w-full rounded-xl border border-slate-600 bg-slate-950 p-3 text-base text-white outline-none focus:border-emerald-500 resize-none"
+            />
+            <div className="mt-2 flex gap-2">
+              {/* Botón de voz — grande para móvil */}
+              <VoiceDictation
+                onTranscriptComplete={(transcript) => {
+                  setInput(transcript);
+                  // Auto-enviar en móvil si hay transcripción
+                  void send(transcript);
+                }}
+                disabled={loading}
+                className="min-h-[52px] px-5 text-sm flex-shrink-0"
+              />
+              <button
+                disabled={loading || !input.trim()}
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 font-bold text-white disabled:opacity-50 active:scale-95 transition-transform"
+              >
+                <Send className="h-4 w-4" />
+                Enviar
+              </button>
+            </div>
+          </form>
+        </section>
+
+        {/* Panel de borrador — visible en desktop siempre, en móvil sólo cuando showDraft */}
+        <div className={`${showDraft ? "block" : "hidden"} lg:block`}>
+          {draftPanel}
+        </div>
       </div>
+
+      {/* Nota de estado offline */}
+      {!online && (
+        <div className="rounded-xl border border-rose-800 bg-rose-950/40 p-3 text-sm text-rose-300">
+          <WifiOff className="inline h-4 w-4 mr-1" />
+          Sin conexión. El asistente no puede procesar órdenes hasta que se restablezca la conexión.
+        </div>
+      )}
+
+      {/* Indicador de proyecto */}
+      <p className="text-center text-xs text-slate-600">
+        Electricista360 · Voz 360 · Motor autónomo local
+      </p>
     </div>
   );
 }

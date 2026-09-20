@@ -12,6 +12,8 @@
 | Gastos | /gastos | REAL | Categorías de electricista, descuentos, NIF proveedor |
 | Agenda | /agenda | REAL | Vista semanal, estados, Google Maps |
 | Catálogo | /catalogo | REAL | Materiales coste/venta, calculadora de márgenes |
+| Pedido por voz | /pedidos-voz | REAL | Dictado móvil, interpretación estructurada, revisión editable y guardado tras confirmación |
+| Asistente Voz 360 | /asistente | REAL | Conversación por voz/teclado, borrador multivuelta, catálogo y consultas reales, confirmación previa a escrituras |
 | Comunicaciones | /comunicaciones | PARCIAL | Plantillas seguras y wa.me; registra preparación, no confirma envío |
 | Asistente/Normativa | /normativa | REAL | Chat IA + fallback offline, REBT, negocio |
 | Ayuda y Sugerencias | /ayuda | REAL | FAQs interactivas, dictado por voz, reporte de bugs y buzon de sugerencias protegido con anti-spam |

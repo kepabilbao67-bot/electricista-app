@@ -1,5 +1,21 @@
 # Changelog del Asistente
 
+## 2026-09-18-v29 — Motor autónomo Voz 360, Aislamiento total y APK Android Debug
+- Integración del motor autónomo local Voz 360 en `/api/asistente/voice360` y UI táctil móvil adaptada en `/asistente`.
+- Adapter verticalizado `electricistaDomainAdapter` con normalización de jerga eléctrica, resolución contra catálogo SOKOEL y flujo de borrador con token seguro.
+- Aislamiento completo verificado entre Electricista360 y otros repositorios/sistemas (`src/lib/__tests__/electricista-isolation.test.ts`).
+- Configuración de toolchain Android con JDK 17/21 y compilación exitosa de APK debug (`app-debug.apk`).
+
+## 2026-09-14-v28 — Asistente Voz 360 (PR pendiente)
+- `/asistente` integra dictado móvil, teclado, respuesta hablada opcional y borrador conversacional de presupuesto.
+- Añade consultas reales de clientes, presupuestos, facturas, trabajos y catálogo sin inventar precios ni resolver ambigüedades automáticamente.
+- Toda persistencia y conversión exige un ticket de confirmación de un solo uso; los documentos se crean como borrador y no se envían automáticamente.
+
+## 2026-09-11-v27 — MVP móvil de Pedido por voz
+- Nueva pantalla `/pedidos-voz` con dictado Web Speech API, interpretación estructurada y revisión editable.
+- Acciones Confirmar, Modificar y Cancelar; la persistencia SQLite/Turso ocurre de forma atómica solo al confirmar.
+- PWA identificada como Electricista 360 y acceso directo al flujo desde la navegación.
+
 ## 2026-09-02-v26 — Estabilización del Flujo Comercial Completo
 - Verificación e integración del flujo comercial end-to-end: Cliente → Presupuesto → Parte de Trabajo → Factura → Cobro.
 - Endpoints de conversión atómica: `POST /api/budgets/[id]/create-parte` y `POST /api/partes-trabajo/[id]/convert` con control de duplicidad por `source_part_id` y transacciones en base de datos.
