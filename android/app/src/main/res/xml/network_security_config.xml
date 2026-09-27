@@ -2,45 +2,36 @@
 <!--
   Configuración de seguridad de red — Electricista 360
 
-  POLÍTICA: el tráfico HTTP en claro queda BLOQUEADO por defecto para toda la
-  aplicación, incluida cualquier conexión a Internet. Solo se abre HTTP a los
-  hosts de desarrollo enumerados más abajo, que es exactamente lo que la APK
-  necesita para cargar el servidor Next.js de la LAN y del emulador.
-  El acceso de producción es HTTPS (Vercel) y NO depende de estas excepciones.
+  ESTE FICHERO SE GENERA AUTOMÁTICAMENTE. No lo edites a mano: lo reescribe
+  scripts/mobile/sync-lan-config.mjs según el modo de compilación del APK.
+  MODO EXTERNO: el APK carga una URL HTTPS PÚBLICA (túnel de Cloudflare). No
+  usa la red local, ni el puerto de desarrollo, ni el loopback: todo el tráfico va
+  por HTTPS con certificado válido, que Android permite por defecto.
 
-  IMPORTANTE sobre <domain>: admite nombres de host e IP literales, pero NO
-  rangos ni notación CIDR (192.168.1.0/24 no es válido) ni comodines. Cada host
-  debe enumerarse literalmente. Por eso 192.168.1.141 está listado de forma
-  explícita: una entrada como "192.168.1.0" NO cubre esa IP.
-  Si cambia la IP del PC de desarrollo (capacitor.config.ts), hay que
-  actualizar aquí la entrada correspondiente.
+  Por eso aquí NO hay bloque <domain-config>: no se abre NINGUNA excepción de
+  tráfico en claro. El APK resultante no contiene ninguna referencia de red a la
+  red local, al equipo anfitrión ni al loopback, y si alguien descubriera la URL
+  no encontraría ninguna vía sin cifrar abierta.
+
+  NOTA: este comentario tampoco nombra esas direcciones a propósito, para que el
+  propio fichero generado pueda verificarse buscando cualquier literal de red
+  local en TODO su contenido (no sólo en los elementos XML).
 -->
-<network-security-config>
-    <!-- Por defecto: nada de HTTP en claro, ni en la LAN ni en Internet -->
+  <network-security-config>
+    <!-- Por defecto: NADA de HTTP en claro, ni en la LAN ni en Internet. -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
 
-    <!-- Solo en compilaciones depurables: aceptar además CAs instaladas por el
-         usuario (inspección con proxy). Esto afecta únicamente a la confianza
-         en certificados; NO habilita tráfico en claro. -->
+    <!-- Sólo en compilaciones depurables: aceptar además CAs instaladas por el
+         usuario (inspección con proxy). Afecta sólo a la confianza en
+         certificados; NO habilita tráfico en claro. -->
     <debug-overrides>
         <trust-anchors>
             <certificates src="system" />
             <certificates src="user" />
         </trust-anchors>
     </debug-overrides>
-
-    <!-- Excepciones de desarrollo: HTTP permitido SOLO hacia estos hosts -->
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- Servidor Next.js de desarrollo en la LAN (ver capacitor.config.ts) -->
-        <domain includeSubdomains="false">192.168.1.141</domain>
-        <!-- Emulador de Android -> equipo anfitrión -->
-        <domain includeSubdomains="false">10.0.2.2</domain>
-        <!-- Loopback del propio dispositivo -->
-        <domain includeSubdomains="false">localhost</domain>
-        <domain includeSubdomains="false">127.0.0.1</domain>
-    </domain-config>
 </network-security-config>

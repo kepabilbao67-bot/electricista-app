@@ -47,6 +47,31 @@
         </provider>
     </application>
 
+    <!--
+      VISIBILIDAD DE PAQUETES (P0 real en POCO: "no tiene reconocedor de voz instalado")
+
+      La app compila con targetSdkVersion 36. Desde Android 11 (API 30) el
+      PackageManager FILTRA los resultados de las consultas: si la app no declara
+      aquí los intents que le interesan, `SpeechRecognizer.isRecognitionAvailable()`
+      y `Intent.resolveActivity()` devuelven vacío/null AUNQUE el dispositivo SÍ
+      tenga dictado de voz instalado. Ese falso negativo es lo que bloqueaba el
+      botón Dictar.
+
+      Se declaran los DOS intents implicados, porque son cosas distintas:
+      - "android.speech.RecognitionService": SERVICIO que consulta
+        SpeechRecognizer.isRecognitionAvailable().
+      - "android.speech.action.RECOGNIZE_SPEECH": ACTIVITY que resuelve el
+        RecognizerIntent que realmente lanza NativeStt.start().
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+    </queries>
+
     <!-- Permisos de red -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

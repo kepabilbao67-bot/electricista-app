@@ -112,9 +112,40 @@ function cleanProduct(value: string): string {
   return cleaned ? cleaned.charAt(0).toLocaleUpperCase("es") + cleaned.slice(1) : "Producto sin identificar";
 }
 
-function splitItemSegments(text: string): string[] {
-  const quantity = "(?:\\d+(?:[.,]\\d+)?|un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|veinte)";
-  const separator = new RegExp(`\\s*(?:,\\s+|;\\s*|\\by\\b)\\s*(?=${quantity}\\b)`, "gi");
+/**
+ * Divide una locución en partidas.
+ *
+ * El separador solo corta cuando le sigue una CANTIDAD nueva ("... y dos horas
+ * ..."), de modo que "tubo de PVC y cobre" sigue siendo una sola partida.
+ *
+ * Se exporta porque el motor de Voz 360 lo reutiliza para los presupuestos: es
+ * la misma segmentación, no una lógica paralela.
+ */
+/**
+ * Decenas que forman NÚMEROS COMPUESTOS con "y" ("treinta y cinco", "cuarenta y
+ * cinco"). El separador de partidas corta ante "\by\b" seguido de una cantidad,
+ * así que sin esta guarda partía el propio número por la mitad:
+ *
+ *   "treinta y cinco metros de cable a dos euros"
+ *      -> ["treinta", "cinco metros de cable a dos euros"]
+ *
+ * y la partida salía con cantidad 5 en vez de 35. No es un error de formato: el
+ * importe equivocado llegaba a GUARDARSE (menos de una novena parte de lo
+ * dictado). Por eso el "y" de un compuesto nunca puede ser un separador.
+ */
+const DECENAS_COMPUESTAS = "treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa";
+
+export function splitItemSegments(text: string): string[] {
+  const quantity =
+    "(?:\\d+(?:[.,]\\d+)?|un|uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|" +
+    "dieciseis|diecis[eé]is|diecisiete|dieciocho|diecinueve|veinte|veintiuno|veintiun|veintiuna|veintidos|veintid[oó]s|" +
+    "veintitres|veintitr[eé]s|veinticuatro|veinticinco|veintiseis|veintis[eé]is|veintisiete|veintiocho|veintinueve|" +
+    "treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa|cien)";
+  // El lookbehind negativo retira el "y" que pertenece a una decena compuesta.
+  const separator = new RegExp(
+    `\\s*(?:,\\s+|;\\s*|(?<!\\b(?:${DECENAS_COMPUESTAS})\\s)\\by\\b)\\s*(?=${quantity}\\b)`,
+    "gi"
+  );
   return text
     .replace(/^(?:necesito|quiero|pide|pedir|añade|agrega|hace falta|me hacen falta)\s+/i, "")
     .split(separator)

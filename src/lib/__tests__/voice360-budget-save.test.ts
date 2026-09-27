@@ -36,6 +36,9 @@ import {
   setDbClientForTesting,
 } from "@/lib/db";
 import { POST as handleVoice360Route } from "@/app/api/asistente/voice360/route";
+import { GET as listBudgets } from "@/app/api/budgets/route";
+import { GET as getBudget } from "@/app/api/budgets/[id]/route";
+import { applyTenantSchema } from "@/lib/tenant/schema";
 
 const ROUTE_URL = "http://localhost:3000/api/asistente/voice360";
 
@@ -53,10 +56,13 @@ const EXPECTED = {
   total: 87.12,
 };
 
-async function postVoice360(body: unknown): Promise<{ status: number; json: any }> {
+async function postVoice360(
+  body: unknown,
+  extraHeaders: Record<string, string> = {}
+): Promise<{ status: number; json: any }> {
   const request = new NextRequest(ROUTE_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
     body: JSON.stringify(body),
   });
   const response = await handleVoice360Route(request);
@@ -591,7 +597,7 @@ test("VOZ 360 — P1.3: confirmación natural con Human Gate intacto", async (t)
     });
 
     await t.test(
-      "8. Segundo uso del mismo token es rechazado y no persiste nada",
+      "8. Segundo uso del mismo token es idempotente y no persiste nada más",
       async () => {
         const budgetsBefore = await countRows(testDb, "budgets");
 
@@ -604,12 +610,16 @@ test("VOZ 360 — P1.3: confirmación natural con Human Gate intacto", async (t)
         const afterFirst = await countRows(testDb, "budgets");
         assert.equal(afterFirst, budgetsBefore + 1, "el primer uso guarda una sola vez");
 
+        // Doble click / reintento / reconexión: la misma confirmación NO vuelve a
+        // escribir. Se responde IGUAL que la primera vez (idempotente) en lugar de
+        // fallar, que es lo que espera un reintento automático del navegador.
         const second = await postVoice360({ confirm_token: token });
-        assert.equal(second.status, 400, "el segundo uso debe ser rechazado");
-        assert.match(
-          String(second.json.error),
-          /inválido o expirado/,
-          "debe explicar el rechazo"
+        assert.equal(second.status, 200, "el segundo uso se responde sin error");
+        assert.equal(second.json.idempotent, true, "se reconoce como repetición idempotente");
+        assert.equal(
+          String(second.json.answer),
+          String(first.json.answer),
+          "devuelve exactamente la misma respuesta"
         );
         assert.equal(
           await countRows(testDb, "budgets"),
@@ -898,7 +908,8 @@ test("VOZ 360 — P1.1: budget_set_tax (IVA del borrador, 0 líneas IVA)", async
       assert.equal(Number(row.total), 79.2, "total persistido");
 
       const second = await postVoice360({ confirm_token: token });
-      assert.equal(second.status, 400, "el token es de un solo uso");
+      assert.equal(second.status, 200, "el reuso se responde de forma idempotente");
+      assert.equal(second.json.idempotent, true, "se reconoce como repetición");
       assert.equal(await countRows(testDb, "budgets"), 1, "el segundo uso no persiste");
     });
 
@@ -1256,10 +1267,347 @@ test("VOZ 360 — P1.2: modificar cantidad/precio sin duplicar líneas", async (
         assert.equal(Number(horasRow!.unit_price), 40, "precio preservado");
 
         const second = await postVoice360({ confirm_token: token });
-        assert.equal(second.status, 400, "el token es de un solo uso");
+        assert.equal(second.status, 200, "el reuso se responde de forma idempotente");
+        assert.equal(second.json.idempotent, true, "se reconoce como repetición");
         assert.equal(await countRows(testDb, "budgets"), 1, "el reuso no persiste nada");
       }
     );
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * D5 — CANCELAR EXIGE UNA ORDEN DE CANCELACIÓN
+ *
+ * Antes bastaba con que apareciera la palabra "no" en cualquier parte de la
+ * frase, así que una locución tan normal como
+ *   "Presupuesto para Juan, no sé cuántos enchufes"
+ * DESCARTABA el borrador en curso (la respuesta iba sin `draft` y la pantalla lo
+ * limpiaba). Es una pérdida de trabajo silenciosa.
+ *
+ * Sigue sin poder debilitarse la cancelación de verdad: "cancela",
+ * "cancela el borrador", "descarta", "borra el borrador" y las negaciones de una
+ * confirmación ("no lo guardes") siguen cancelando.
+ * ════════════════════════════════════════════════════════════════════════════
+ */
+test("VOZ 360 — D5: cancelar exige una orden real (un 'no' suelto no descarta el borrador)", async () => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-cancel-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+
+  const DRAFT_INPUT = "Presupuesto para Test Cliente: 4 enchufes a 18 euros";
+
+  async function newDraft(): Promise<any> {
+    const step = await postVoice360({ input: DRAFT_INPUT });
+    assert.equal(step.json.intent, "electricista:budget_draft");
+    return step.json.draft;
+  }
+
+  try {
+    // ── ÓRDENES DE CANCELACIÓN REALES: siguen cancelando ────────────────
+    for (const frase of [
+      "Cancela",
+      "cancela el borrador",
+      "Cancélalo",
+      "Descarta",
+      "descarta el borrador",
+      "borra el borrador",
+      "No lo confirmes",
+      "No, cancela",
+      "No lo guardes",
+      "No guardes nada",
+    ]) {
+      const step = await postVoice360({ input: frase, draft: await newDraft() });
+      assert.equal(step.status, 200, `"${frase}" debe responder 200`);
+      assert.equal(
+        step.json.intent,
+        "electricista:budget_cancel",
+        `"${frase}" es una orden de cancelación y debe seguir cancelando`
+      );
+      assert.equal(step.json.draft ?? null, null, `"${frase}" descarta el borrador`);
+      assert.equal(step.json.pending_action ?? null, null, `"${frase}" no emite token`);
+    }
+
+    // ── NEGACIÓN QUE NO ES UNA CANCELACIÓN: NO puede descartar nada ─────
+    const neutras = [
+      "Presupuesto para Juan, no sé cuántos enchufes",
+      "no sé cuántos enchufes",
+      "Presupuesto para Juan de 2 enchufes, no estoy seguro del precio",
+    ];
+    for (const frase of neutras) {
+      const step = await postVoice360({ input: frase, draft: await newDraft() });
+      assert.notEqual(
+        step.json.intent,
+        "electricista:budget_cancel",
+        `"${frase}" NO es una orden de cancelación`
+      );
+    }
+
+    // La frase clave: el borrador NO se pierde (antes se descartaba).
+    const antes = await newDraft();
+    const conNegacion = await postVoice360({
+      input: "Presupuesto para Juan, no sé cuántos enchufes",
+      draft: antes,
+    });
+    assert.equal(
+      conNegacion.json.intent,
+      "electricista:budget_draft",
+      "es una orden de presupuesto, no una cancelación"
+    );
+    assert.ok(conNegacion.json.draft, "el borrador sigue vivo");
+    assert.equal(await countRows(testDb, "budgets"), 0, "y no se ha escrito nada");
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * D6 — ¿EL PRESUPUESTO GUARDADO POR VOZ SE PUEDE LEER DESPUÉS?
+ *
+ * La misión exige poder CONSULTAR el presupuesto guardado. `budgets` y
+ * `budget_items` son tablas de negocio con `tenant_id` (Fase 2A), pero el
+ * guardado por voz escribía con `getDbClient()` sin declarar el tenant, así que
+ * la fila quedaba SIN PROPIETARIO (`tenant_id NULL`); con la semántica aprobada
+ * ("NULL = sin propietario demostrable, invisible en cuanto la lectura filtre")
+ * ésa es justo la fila que desaparecería el día que la lectura se acote.
+ *
+ * Este bloque comprueba las dos cosas por el camino REAL:
+ *   (a) lo guardado se lee por las MISMAS APIs que usa la página de Presupuestos
+ *       (GET /api/budgets y GET /api/budgets/[id]);
+ *   (b) la fila queda en el tenant de la sesión (cabecera que inyecta el proxy).
+ * ════════════════════════════════════════════════════════════════════════════
+ */
+test("VOZ 360 — D6: el presupuesto guardado por voz se lee después y queda en su tenant", async () => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-tenant-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+  // La migración de tenant (Fase 2A) NO la aplica initializeDatabase(); en la
+  // prueba se aplica igual que en producción (script autorizado).
+  await applyTenantSchema(testDb);
+
+  const TENANT = "tenant-voz-presupuesto";
+  const SESION = { "x-auth-tenant-id": TENANT, "x-auth-user-id": "user-voz" };
+
+  try {
+    // 1. Flujo real de voz: borrador → "confirmar" → token.
+    const draftStep = await postVoice360(
+      { input: "Presupuesto para Test Cliente: 4 enchufes a 18 euros" },
+      SESION
+    );
+    assert.equal(draftStep.json.intent, "electricista:budget_draft");
+    const draft = draftStep.json.draft;
+
+    const confirmStep = await postVoice360({ input: "confirmar", draft }, SESION);
+    const token = confirmStep.json.pending_action?.token;
+    assert.ok(token, "debe emitirse el token del Human Gate");
+
+    const saveStep = await postVoice360({ confirm_token: token, draft }, SESION);
+    assert.equal(saveStep.status, 200, "el guardado debe responder 200");
+    assert.match(String(saveStep.json.answer), /guardado/i);
+
+    // 2. La fila guardada por voz pertenece al tenant de la sesión.
+    const budgetRows = (await testDb.execute("SELECT id, number, tenant_id FROM budgets"))
+      .rows as unknown as Record<string, unknown>[];
+    assert.equal(budgetRows.length, 1, "un presupuesto persistido");
+    assert.equal(
+      String(budgetRows[0].tenant_id),
+      TENANT,
+      "P0: la fila debe quedar en el tenant de la sesión, no sin propietario (NULL)"
+    );
+    const budgetId = String(budgetRows[0].id);
+    const budgetNumber = String(budgetRows[0].number);
+
+    const itemRows = (await testDb.execute("SELECT tenant_id FROM budget_items"))
+      .rows as unknown as Record<string, unknown>[];
+    assert.equal(itemRows.length, 1, "una línea persistida");
+    assert.equal(String(itemRows[0].tenant_id), TENANT, "las líneas también son del tenant");
+
+    // 3. LEGIBLE por la MISMA API que usa la página de Presupuestos.
+    const listResponse = await listBudgets(
+      new NextRequest("http://localhost:3000/api/budgets", { headers: SESION })
+    );
+    assert.equal(listResponse.status, 200, "GET /api/budgets debe responder 200");
+    const list = (await listResponse.json()) as Array<Record<string, unknown>>;
+    assert.ok(
+      list.some((row) => String(row.id) === budgetId),
+      "el presupuesto guardado por voz aparece en el listado que ve el usuario"
+    );
+
+    const detailResponse = await getBudget(
+      new NextRequest(`http://localhost:3000/api/budgets/${budgetId}`, { headers: SESION }),
+      { params: Promise.resolve({ id: budgetId }) }
+    );
+    assert.equal(detailResponse.status, 200, "GET /api/budgets/[id] debe responder 200");
+    const detalle = (await detailResponse.json()) as Record<string, any>;
+    assert.equal(String(detalle.number), budgetNumber, "el número coincide");
+    assert.equal(Number(detalle.total), 87.12, "4x18 + IVA 21 % = 87,12 €");
+    assert.equal((detalle.items as unknown[]).length, 1, "con su línea");
+
+    // 4. El mismo presupuesto es legible TAMBIÉN sin identidad de tenant: la
+    //    lectura actual no filtra, así que el defecto estaba en la ESCRITURA, no
+    //    en la lectura (se documenta para que quede claro qué se ha comprobado).
+    const sinSesion = await listBudgets(new NextRequest("http://localhost:3000/api/budgets"));
+    const listSinSesion = (await sinSesion.json()) as Array<Record<string, unknown>>;
+    assert.ok(
+      listSinSesion.some((row) => String(row.id) === budgetId),
+      "la lectura no está filtrada por tenant: hoy no hay invisibilidad"
+    );
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});
+
+/**
+ * D6b — la escritura con tenant es CONDICIONAL a que la columna exista.
+ *
+ * La migración de tenant (Fase 2A) es un script aparte que `initializeDatabase()`
+ * NO aplica. Si el proxy inyecta identidad pero la columna `tenant_id` todavía no
+ * existe, el guardado por voz NO puede romperse con "no such column": debe seguir
+ * funcionando como antes. Esto se comprueba aquí (el resto de la suite cubre el
+ * caso sin identidad de sesión, pero no el de identidad SIN columna).
+ */
+test("VOZ 360 — D6b: con identidad de sesión pero sin columna tenant_id, el guardado no se rompe", async () => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-tenant-nomig-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+  // A PROPÓSITO: NO se aplica applyTenantSchema().
+
+  const columnas = (
+    await testDb.execute(`PRAGMA table_info("budgets")`)
+  ).rows.map((r) => String((r as unknown as Record<string, unknown>).name));
+  assert.equal(columnas.includes("tenant_id"), false, "la BD de esta prueba no está migrada");
+
+  const SESION = { "x-auth-tenant-id": "tenant-sin-migrar", "x-auth-user-id": "user-voz" };
+
+  try {
+    const draftStep = await postVoice360(
+      { input: "Presupuesto para Test Cliente: 4 enchufes a 18 euros" },
+      SESION
+    );
+    const draft = draftStep.json.draft;
+    const confirmStep = await postVoice360({ input: "confirmar", draft }, SESION);
+    const token = confirmStep.json.pending_action?.token;
+
+    const saveStep = await postVoice360({ confirm_token: token, draft }, SESION);
+    assert.equal(saveStep.status, 200, "el guardado no puede fallar por la columna ausente");
+    assert.match(String(saveStep.json.answer), /guardado/i, "el presupuesto se guarda igual");
+    assert.equal(await countRows(testDb, "budgets"), 1, "1 presupuesto persistido");
+    assert.equal(await countRows(testDb, "budget_items"), 1, "con su línea");
+  } finally {
+    resetDbClient();
+    if (previousTestDatabaseUrl === undefined) {
+      delete process.env.TEST_DATABASE_URL;
+    } else {
+      process.env.TEST_DATABASE_URL = previousTestDatabaseUrl;
+    }
+  }
+});
+
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * D7 — DOBLE CLICK REAL (CONCURRENTE), NO SECUENCIAL
+ *
+ * El token ya era de un solo uso frente a repeticiones SECUENCIALES, pero entre
+ * `consumeToken()` y el registro de la confirmación consumida hay un `await` de
+ * escritura. Un duplicado que llegue JUSTO en ese hueco ya no encuentra el token
+ * pendiente: no duplicaba el presupuesto, pero recibía un 400 confuso.
+ *
+ * Ahora la confirmación se marca EN VUELO antes de esperar a la BD, así que el
+ * duplicado espera el MISMO guardado y recibe la misma respuesta idempotente.
+ * ════════════════════════════════════════════════════════════════════════════
+ */
+test("VOZ 360 — D7: dos confirmaciones concurrentes del mismo token guardan UN solo presupuesto", async () => {
+  const previousTestDatabaseUrl = process.env.TEST_DATABASE_URL;
+  process.env.TEST_DATABASE_URL = `file:${join(
+    tmpdir(),
+    `electricista360-race-${process.pid}.db`
+  )}`;
+
+  const testDb = createClient({ url: "file::memory:" });
+  setDbClientForTesting(testDb);
+  await initializeDatabase();
+
+  try {
+    const draftStep = await postVoice360({
+      input: "Presupuesto para Test Cliente: 4 enchufes a 18 euros",
+    });
+    const draft = draftStep.json.draft;
+    const confirmStep = await postVoice360({ input: "confirmar", draft });
+    const token = confirmStep.json.pending_action?.token;
+    assert.ok(token, "debe emitirse el token del Human Gate");
+
+    const antes = await countRows(testDb, "budgets");
+    assert.equal(antes, 0, "0 presupuestos antes de confirmar");
+
+    // Doble click REAL: cinco peticiones con el MISMO token, lanzadas a la vez.
+    const respuestas = await Promise.all([
+      postVoice360({ confirm_token: token, draft }),
+      postVoice360({ confirm_token: token, draft }),
+      postVoice360({ confirm_token: token, draft }),
+      postVoice360({ confirm_token: token, draft }),
+      postVoice360({ confirm_token: token, draft }),
+    ]);
+
+    for (const [indice, respuesta] of respuestas.entries()) {
+      assert.equal(
+        respuesta.status,
+        200,
+        `la petición concurrente ${indice + 1} debe resolverse de forma idempotente, no con un 400`
+      );
+      assert.match(
+        String(respuesta.json.answer),
+        /guardado/i,
+        `la petición concurrente ${indice + 1} debe devolver la respuesta del guardado`
+      );
+    }
+
+    // Todas las respuestas cuentan el MISMO guardado.
+    const respuestasUnicas = new Set(respuestas.map((r) => String(r.json.answer)));
+    assert.equal(respuestasUnicas.size, 1, "todas las respuestas son la misma (idempotencia)");
+
+    // Exactamente UNA solicitud hizo la escritura; las demás se reconocen como
+    // repetición (ninguna puede quedar a medias, ninguna escribe otra vez).
+    const escrituras = respuestas.filter((r) => r.json.idempotent === false).length;
+    assert.equal(escrituras, 1, "exactamente 1 de las 5 peticiones ejecuta la escritura");
+
+    assert.equal(await countRows(testDb, "budgets"), 1, "EXACTAMENTE 1 presupuesto persistido");
+    assert.equal(await countRows(testDb, "budget_items"), 1, "y 1 línea, no 5");
   } finally {
     resetDbClient();
     if (previousTestDatabaseUrl === undefined) {

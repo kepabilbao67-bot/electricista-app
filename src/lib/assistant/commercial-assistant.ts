@@ -1,5 +1,5 @@
 /**
- * AUTÓNOMO360 - Asistente Comercial Barymont / CRM
+ * AUTÓNOMO360 - Asistente Comercial Electricista 360 / CRM
  *
  * Resuelve consultas comerciales consultando datos REALES de la base de datos:
  * - Llamadas y tareas pendientes de hoy

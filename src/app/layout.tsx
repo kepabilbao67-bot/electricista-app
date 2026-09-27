@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import LogoutButton from "@/components/LogoutButton";
+import { PUBLIC_ROUTE_HEADER } from "@/lib/auth/config";
 import { MobileNav } from "@/components/MobileNav";
 import { ToastContainer } from "@/components/Toast";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -64,11 +67,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // El proxy marca las rutas públicas (la página de login). Sin esta marca, un
+  // visitante SIN sesión vería el chasis de navegación completo de la app.
+  // Efecto secundario deseable: el layout pasa a renderizarse por petición, de
+  // modo que no se sirve HTML cacheado que pudiera filtrar datos entre sesiones.
+  const requestHeaders = await headers();
+  const isPublicRoute = requestHeaders.get(PUBLIC_ROUTE_HEADER) === "1";
+
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
@@ -79,7 +89,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var stored = localStorage.getItem('autonomo360_theme');
+                  var stored = localStorage.getItem('electricista360_theme') || localStorage.getItem('autonomo360_theme');
                   var isDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches);
                   if (isDark) {
                     document.documentElement.classList.add('dark');
@@ -169,23 +179,28 @@ export default function RootLayout({
         `}</style>
       </head>
       <body className="bg-[#070d17] text-slate-100 antialiased transition-colors duration-200">
-        <div className="app-shell flex h-[100dvh] overflow-hidden bg-transparent">
-          <Sidebar navItems={navItems} brand={sidebarBrand} />
-          <div className="app-content flex min-w-0 flex-1 flex-col overflow-hidden">
-            <header className="hidden h-16 items-center justify-end border-b border-slate-700/80 bg-slate-950/60 px-6 backdrop-blur-md md:flex">
-              <ThemeToggle />
-            </header>
-            <MobileNav navItems={navItems} brand={mobileNavBrand} />
-            <main className="app-main flex-1 overflow-y-auto overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.5),_transparent_28%)] p-3 md:p-6 lg:p-8">
-              {children}
-            </main>
+        {isPublicRoute ? (
+          <div className="app-public min-h-[100dvh]">{children}</div>
+        ) : (
+          <div className="app-shell flex h-[100dvh] overflow-hidden bg-transparent">
+            <Sidebar navItems={navItems} brand={sidebarBrand} />
+            <div className="app-content flex min-w-0 flex-1 flex-col overflow-hidden">
+              <header className="hidden h-16 items-center justify-end gap-3 border-b border-slate-700/80 bg-slate-950/60 px-6 backdrop-blur-md md:flex">
+                <LogoutButton />
+                <ThemeToggle />
+              </header>
+              <MobileNav navItems={navItems} brand={mobileNavBrand} />
+              <main className="app-main flex-1 overflow-y-auto overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.5),_transparent_28%)] p-3 md:p-6 lg:p-8">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        )}
         <ToastContainer />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+              if (${isPublicRoute ? "false" : "true"} && 'serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').catch(function(err) {
                     console.debug('SW registration skipped:', err);

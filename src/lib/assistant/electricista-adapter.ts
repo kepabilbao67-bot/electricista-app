@@ -22,13 +22,109 @@ const ELECTRIC_SYNONYMS: Record<string, string> = {
   "foco led": "downlight led empotrable",
 };
 
+/** Escapa un literal para poder usarlo dentro de un RegExp. */
+const escaparRegex = (texto: string): string => texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Palabra que casa con o SIN tilde.
+ *
+ * El dictado llega a menudo sin acentos ("distribucion" en vez de "distribución"),
+ * así que la guarda tiene que ser tolerante o no reconocería su propia forma
+ * canónica y volvería a expandir.
+ */
+const VOCAL_FLEXIBLE: Record<string, string> = {
+  a: "[aá]", e: "[eé]", i: "[ií]", o: "[oó]", u: "[uú]",
+};
+const flexible = (palabra: string): string =>
+  escaparRegex(palabra).replace(/[aeiou]/gi, (c) => VOCAL_FLEXIBLE[c.toLowerCase()]);
+
+/** Palabra flexible y con plural opcional: "base" -> "bases?". */
+const palabraFlexible = (palabra: string): string =>
+  palabra.endsWith("s") ? flexible(palabra) : `${flexible(palabra)}(?:es|s)?`;
+
+/** Artículos y preposiciones que puede llevar delante un sufijo. */
+const NEXO = "(?:(?:de|del|la|el|los|las)\\s+)*";
+
+/**
+ * Construye el patrón de UN sinónimo, con las guardas que evitan la DOBLE EXPANSIÓN.
+ *
+ * EL FALLO QUE ESTO CORRIGE (visible para el cliente)
+ * `normalizeInput` reescribía la clave aunque el texto YA dijera la forma
+ * canónica, porque `\benchufe\b` también casa dentro de "bases de enchufe":
+ *
+ *   "hazme un presupuesto de seis bases de enchufe a dieciocho euros"
+ *     -> "seis bases de base de enchufe ..."
+ *
+ * Esa descripción se guarda en `budget_items` y sale IMPRESA en el presupuesto,
+ * así que el cliente leía "Bases de base de enchufe". Lo mismo ocurría con
+ * "tubos corrugados" -> "tubos corrugados corrugados" o "cable manguera" ->
+ * "cable cable manguera". La función no era idempotente ni en la primera pasada.
+ *
+ * La guarda se deduce del propio valor canónico:
+ *  - si AÑADE un SUFIJO ("tubos" -> "tubos corrugados"), se comprueba DESPUÉS de
+ *    la clave con un lookahead (ponerlo antes no casaría nunca, porque el
+ *    lookahead se evalúa en la posición donde empieza la clave);
+ *  - si AÑADE un PREFIJO ("enchufe" -> "base de enchufe"), se comprueba ANTES con
+ *    un lookbehind.
+ * Ambas toleran plural y falta de tildes.
+ */
+function construirPatronSinonimo(clave: string, canonico: string): RegExp {
+  const k = clave.toLowerCase();
+  const v = canonico.toLowerCase();
+  const singular = k.endsWith("s") ? k.slice(0, -1) : k;
+
+  let antes = "";
+  let despues = "";
+
+  // ¿La forma canónica empieza por la clave? -> añade SUFIJO.
+  if (v.startsWith(k) && v.length > k.length) {
+    const primera = v.slice(k.length).trim().split(/\s+/)[0];
+    if (primera) despues = `(?!\\s+${NEXO}${palabraFlexible(primera)}\\b)`;
+  }
+
+  // ¿La forma canónica termina por la clave (o su singular)? -> añade PREFIJO.
+  const prefijo = v.endsWith(k)
+    ? v.slice(0, v.length - k.length).trim()
+    : v.endsWith(singular)
+      ? v.slice(0, v.length - singular.length).trim()
+      : "";
+  if (prefijo) {
+    const mirarAtras = prefijo.split(/\s+/).map(palabraFlexible).join("\\s+");
+    antes = `(?<!${mirarAtras}\\s+)`;
+  }
+
+  // Si la forma canónica NO es una extensión de la clave, no hay prefijo ni sufijo
+  // que deducir ("foco led" -> "downlight led empotrable"). La guarda se ancla
+  // entonces a su última palabra distintiva: si el texto ya dice "empotrable"
+  // detrás, ya está en forma canónica y no se toca. Sin esto salía
+  // "downlight led empotrable empotrable".
+  if (!antes && !despues) {
+    const ultima = v.split(/\s+/).pop() ?? "";
+    if (ultima && ultima !== k && ultima !== singular) {
+      despues = `(?!\\s+${NEXO}${palabraFlexible(ultima)}\\b)`;
+    }
+  }
+
+  return new RegExp(`${antes}\\b(${escaparRegex(clave)})\\b${despues}`, "gi");
+}
+
+/** Patrones precalculados: claves largas primero para que "focos led" gane a "led". */
+const PATRONES_SINONIMO: Array<{ patron: RegExp; canonico: string }> = Object.entries(ELECTRIC_SYNONYMS)
+  .sort(([a], [b]) => b.length - a.length)
+  .map(([clave, canonico]) => ({
+    patron: construirPatronSinonimo(clave, canonico),
+    canonico,
+  }));
+
 export const electricistaDomainAdapter: Voice360DomainAdapter = {
   domainName: "electricista",
 
   normalizeInput(input: string) {
-    const keys = Object.keys(ELECTRIC_SYNONYMS).sort((a, b) => b.length - a.length);
-    const pattern = new RegExp(`\\b(${keys.join("|")})\\b`, "gi");
-    return input.replace(pattern, (match) => ELECTRIC_SYNONYMS[match.toLowerCase()] ?? match);
+    let salida = input;
+    for (const { patron, canonico } of PATRONES_SINONIMO) {
+      salida = salida.replace(patron, canonico);
+    }
+    return salida;
   },
 
   async enrichContext(tenantId: string, input: string) {

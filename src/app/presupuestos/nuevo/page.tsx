@@ -386,7 +386,7 @@ export default function NuevoPresupuestoPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-slate-900">Datos generales</h2>
+            <h2 className="text-base font-semibold text-slate-100">Datos generales</h2>
             <button
               type="button"
               onClick={() => setShowAutoModal(true)}
@@ -397,7 +397,7 @@ export default function NuevoPresupuestoPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente</label>
+              <label className="block text-sm font-medium text-slate-200 mb-1.5">Cliente</label>
               <select
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
@@ -410,7 +410,7 @@ export default function NuevoPresupuestoPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Fecha</label>
+              <label className="block text-sm font-medium text-slate-200 mb-1.5">Fecha</label>
               <input
                 type="date"
                 value={date}
@@ -419,7 +419,7 @@ export default function NuevoPresupuestoPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Valido hasta</label>
+              <label className="block text-sm font-medium text-slate-200 mb-1.5">Valido hasta</label>
               <input
                 type="date"
                 value={validUntil}
@@ -429,7 +429,7 @@ export default function NuevoPresupuestoPage() {
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-slate-700">Notas</label>
+                <label className="block text-sm font-medium text-slate-200">Notas</label>
                 <ColorSelect value={notesColor} onChange={setNotesColor} />
               </div>
               <textarea
@@ -457,13 +457,13 @@ export default function NuevoPresupuestoPage() {
                 ) : (
                   <ChevronDown className="h-4 w-4 text-slate-400" />
                 )}
-                <h2 className="text-base font-semibold text-slate-900">{zone.name}</h2>
-                <span className="text-sm text-slate-500 ml-2">
+                <h2 className="text-base font-semibold text-slate-100">{zone.name}</h2>
+                <span className="text-sm text-slate-400 ml-2">
                   ({zone.items.filter((i) => i.description).length} items)
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-blue-600">
+                <span className="text-sm font-medium text-blue-300">
                   {getZoneSubtotal(zone).toFixed(2)} EUR
                 </span>
                 <button
@@ -490,7 +490,7 @@ export default function NuevoPresupuestoPage() {
                 {/* Catalog for this zone */}
                 {catalog.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs font-medium text-slate-500 mb-2">Agregar desde catalogo:</p>
+                    <p className="text-xs font-medium text-slate-400 mb-2">Agregar desde catalogo:</p>
                     <div className="flex flex-wrap gap-1.5">
                       {catalog.map((item) => (
                         <button
@@ -541,7 +541,7 @@ export default function NuevoPresupuestoPage() {
                           className="input-field"
                         />
                       </div>
-                      <div className="w-24 text-right py-2 text-sm font-medium text-slate-700">
+                      <div className="w-24 text-right py-2 text-sm font-medium text-slate-200">
                         {(item.quantity * item.unit_price).toFixed(2)} EUR
                       </div>
                       <button
@@ -579,7 +579,7 @@ export default function NuevoPresupuestoPage() {
             </button>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-700">Seleccionar estancia predefinida:</p>
+              <p className="text-sm font-medium text-slate-200">Seleccionar estancia predefinida:</p>
               <div className="flex flex-wrap gap-2">
                 {availableZones.map((z) => (
                   <button
@@ -628,9 +628,9 @@ export default function NuevoPresupuestoPage() {
         {/* Totals */}
         <div className="card">
           <div className="text-right space-y-1">
-            <p className="text-sm text-slate-500">Subtotal: {subtotal.toFixed(2)} EUR</p>
-            <p className="text-sm text-slate-500">IVA 21%: {taxAmount.toFixed(2)} EUR</p>
-            <p className="text-xl font-bold text-slate-900">Total: {total.toFixed(2)} EUR</p>
+            <p className="text-sm text-slate-400">Subtotal: {subtotal.toFixed(2)} EUR</p>
+            <p className="text-sm text-slate-400">IVA 21%: {taxAmount.toFixed(2)} EUR</p>
+            <p className="text-xl font-bold text-slate-100">Total: {total.toFixed(2)} EUR</p>
           </div>
         </div>
 
@@ -659,7 +659,7 @@ export default function NuevoPresupuestoPage() {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <Wand2 className="h-5 w-5 text-amber-600" />
-                <h3 className="text-lg font-bold text-slate-900">Presupuesto automatico</h3>
+                <h3 className="text-lg font-bold text-slate-100">Presupuesto automatico</h3>
               </div>
               <button
                 onClick={() => setShowAutoModal(false)}
@@ -669,13 +669,13 @@ export default function NuevoPresupuestoPage() {
               </button>
             </div>
 
-            <p className="text-sm text-slate-600 mb-5">
+            <p className="text-sm text-slate-300 mb-5">
               Genera automaticamente todas las estancias con materiales y precios segun el tipo de vivienda.
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Tipo de vivienda</label>
+                <label className="block text-sm font-medium text-slate-200 mb-1.5">Tipo de vivienda</label>
                 <select
                   value={autoType}
                   onChange={(e) => setAutoType(e.target.value as "piso" | "chalet" | "local")}
@@ -688,7 +688,7 @@ export default function NuevoPresupuestoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-200 mb-1.5">
                   Numero de habitaciones: {autoRooms}
                 </label>
                 <input
@@ -705,7 +705,7 @@ export default function NuevoPresupuestoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label className="block text-sm font-medium text-slate-200 mb-1.5">
                   Numero de banos: {autoBathrooms}
                 </label>
                 <input
@@ -729,7 +729,7 @@ export default function NuevoPresupuestoPage() {
                     onChange={(e) => setAutoKitchen(e.target.checked)}
                     className="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-600"
                   />
-                  <span className="text-sm font-medium text-slate-700">Cocina independiente</span>
+                  <span className="text-sm font-medium text-slate-200">Cocina independiente</span>
                 </label>
               </div>
             </div>

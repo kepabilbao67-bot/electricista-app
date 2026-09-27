@@ -173,13 +173,21 @@ export default function PresupuestoDetailPage() {
 
   const markSent = async () => {
     if (!budget) return;
-    await fetch(`/api/budgets/${budget.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "sent" }),
-    });
-    setBudget({ ...budget, status: "sent" });
-    showToast("success", "Presupuesto marcado como enviado");
+    try {
+      const res = await fetch(`/api/budgets/${budget.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "sent" }),
+      });
+      if (!res.ok) {
+        showToast("error", "No se pudo marcar el presupuesto como enviado");
+        return;
+      }
+      setBudget({ ...budget, status: "sent" });
+      showToast("success", "Presupuesto marcado como enviado");
+    } catch {
+      showToast("error", "Error de conexión al marcar el presupuesto como enviado");
+    }
   };
 
   const sendByEmail = () => {
@@ -304,20 +312,24 @@ export default function PresupuestoDetailPage() {
         </div>
       </div>
 
-      <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none relative overflow-hidden">
+      {/* El tema global oscuro define `color: var(--brand-text)` (#e5edf8) en html/body.
+          Esta tarjeta es blanca, así que debe RESTABLECER el color de texto: sin
+          `text-slate-800`, todo descendiente sin color propio heredaba #e5edf8 y
+          resultaba invisible sobre blanco (filas, precios, base/IVA/TOTAL). */}
+      <div className="budget-print rounded-xl border border-gray-200 bg-white p-8 shadow-sm print:shadow-none print:border-none relative overflow-hidden text-slate-800">
         {/* Marca de agua PRESUPUESTO */}
-        <div className="print-watermark text-gray-400">PRESUPUESTO</div>
+        <div className="print-watermark text-slate-500">PRESUPUESTO</div>
 
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-8">
             <div>
               <h2 className="text-xl font-bold text-gray-900">{company.legalName}</h2>
-              <p className="text-sm text-gray-500">NIF: {company.nif}</p>
-              {company.addressLine1 && <p className="text-sm text-gray-500">{company.addressLine1}</p>}
-              {company.addressLine2 && <p className="text-sm text-gray-500">{company.addressLine2}</p>}
-              <p className="text-sm text-gray-500">Teléfono: {company.phone}</p>
-              <p className="text-sm text-gray-500">Email: {company.email}</p>
-              {company.iban && <p className="text-xs text-gray-400 mt-0.5">IBAN: {company.iban}</p>}
+              <p className="text-sm text-slate-600">NIF: {company.nif}</p>
+              {company.addressLine1 && <p className="text-sm text-slate-600">{company.addressLine1}</p>}
+              {company.addressLine2 && <p className="text-sm text-slate-600">{company.addressLine2}</p>}
+              <p className="text-sm text-slate-600">Teléfono: {company.phone}</p>
+              <p className="text-sm text-slate-600">Email: {company.email}</p>
+              {company.iban && <p className="text-xs text-slate-600 mt-0.5">IBAN: {company.iban}</p>}
             </div>
 
             {/* Logo de empresa */}
@@ -329,17 +341,22 @@ export default function PresupuestoDetailPage() {
             </div>
 
             <div className="text-right">
-              <p className="text-2xl font-bold text-yellow-600">PRESUPUESTO</p>
+              {/* Contraste MEDIDO con Chrome real (verificar-contraste-presupuesto.cjs):
+                  `text-yellow-600` (#d08700) daba 2,94:1 sobre el blanco de la tarjeta,
+                  por debajo del mínimo AA tanto en pantalla (24 px -> 3,0) como en
+                  impresión/PDF (18 px -> 4,5). `text-yellow-700` (#a16207) pasa AA
+                  en los dos casos y conserva el dorado de la marca. */}
+              <p className="text-2xl font-bold text-yellow-700">PRESUPUESTO</p>
               <p className="text-lg font-medium">{budget.number}</p>
-              <p className="text-sm text-gray-500 mt-2">Fecha: {budget.date}</p>
+              <p className="text-sm text-slate-600 mt-2">Fecha: {budget.date}</p>
               {budget.valid_until && (
-                <p className="text-sm text-gray-500">Válido hasta: {budget.valid_until}</p>
+                <p className="text-sm text-slate-600">Válido hasta: {budget.valid_until}</p>
               )}
             </div>
           </div>
 
           <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-500 mb-1">Cliente:</p>
+            <p className="text-sm font-medium text-slate-600 mb-1">Cliente:</p>
             <p className="font-medium">{budget.client_name}</p>
             {budget.client_nif && <p className="text-sm text-gray-600">NIF: {budget.client_nif}</p>}
             {budget.client_address && <p className="text-sm text-gray-600">{budget.client_address}</p>}
@@ -361,10 +378,10 @@ export default function PresupuestoDetailPage() {
                   <table className="w-full text-sm">
                     <thead className="border-b border-gray-100">
                       <tr>
-                        <th className="pb-1 text-left font-medium text-gray-500 text-xs">Descripción</th>
-                        <th className="pb-1 text-right font-medium text-gray-500 text-xs w-16">Cant.</th>
-                        <th className="pb-1 text-right font-medium text-gray-500 text-xs w-24">Precio</th>
-                        <th className="pb-1 text-right font-medium text-gray-500 text-xs w-24">Importe</th>
+                        <th className="pb-1 text-left font-medium text-slate-600 text-xs">Descripción</th>
+                        <th className="pb-1 text-right font-medium text-slate-600 text-xs w-16">Cant.</th>
+                        <th className="pb-1 text-right font-medium text-slate-600 text-xs w-24">Precio</th>
+                        <th className="pb-1 text-right font-medium text-slate-600 text-xs w-24">Importe</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -388,10 +405,10 @@ export default function PresupuestoDetailPage() {
             <table className="w-full text-sm mb-6">
               <thead className="border-b-2 border-gray-200">
                 <tr>
-                  <th className="pb-2 text-left font-medium">Descripción</th>
-                  <th className="pb-2 text-right font-medium w-20">Cant.</th>
-                  <th className="pb-2 text-right font-medium w-28">Precio</th>
-                  <th className="pb-2 text-right font-medium w-28">Importe</th>
+                  <th className="pb-2 text-left font-medium text-slate-600">Descripción</th>
+                  <th className="pb-2 text-right font-medium text-slate-600 w-20">Cant.</th>
+                  <th className="pb-2 text-right font-medium text-slate-600 w-28">Precio</th>
+                  <th className="pb-2 text-right font-medium text-slate-600 w-28">Importe</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -408,14 +425,14 @@ export default function PresupuestoDetailPage() {
           )}
 
           <div className="budget-totals border-t-2 border-gray-200 pt-4 text-right space-y-1">
-            <p className="text-sm">Base imponible: {budget.subtotal.toFixed(2)} EUR</p>
-            <p className="text-sm">IVA {budget.tax_rate}%: {budget.tax_amount.toFixed(2)} EUR</p>
-            <p className="text-xl font-bold">Total: {budget.total.toFixed(2)} EUR</p>
+            <p className="text-sm text-slate-700">Base imponible: {budget.subtotal.toFixed(2)} EUR</p>
+            <p className="text-sm text-slate-700">IVA {budget.tax_rate}%: {budget.tax_amount.toFixed(2)} EUR</p>
+            <p className="text-xl font-bold text-slate-900">Total: {budget.total.toFixed(2)} EUR</p>
           </div>
 
           {budget.notes && (
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500">{budget.notes}</p>
+              <p className="text-sm text-slate-600">{budget.notes}</p>
             </div>
           )}
         </div>

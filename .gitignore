@@ -40,8 +40,20 @@ next-env.d.ts
 # backups (local only, never commit)
 backups/
 
+# Copias de la base de datos con DATOS REALES (nunca commitear).
+# `*.db` no cubre los backups con sufijo: "electricista.db.bak-2026-09-22T21-54-22"
+# no termina en .db y por eso se coló en el commit 1ee5f41, que llevaba 448 filas
+# reales (cuentas de usuario, 57 sesiones, presupuestos y feedback).
+*.db.bak-*
+
 # local runtime logs (do not commit)
 electricista-*.log
+# Log del túnel de Cloudflare (URLs de la máquina, no del producto).
+cloudflared.log
+
+# Estado local del servicio externo (URLs de túnel caducadas y rutas de esta
+# máquina): es estado de operación, no código de la aplicación.
+.electricista-externo.json
 
 # local QA screenshots from device testing (do not commit)
 /poco-*.png
@@ -51,3 +63,4 @@ migration-production-report.txt
 scripts/check-env.mjs
 scripts/debug-env.mjs
 scripts/debug-env2.mjs
+.env*

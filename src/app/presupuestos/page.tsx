@@ -168,8 +168,16 @@ export default function PresupuestosPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Presupuestos</h1>
-          <p className="text-sm text-slate-500 mt-1">{budgets.length} presupuestos registrados</p>
+          {/* CONTRASTE (medido con Chrome real, verificar-ui-movil-393.cjs):
+              esta pantalla vive sobre el fondo oscuro de la marca
+              (`--brand-bg: #070d17`, definido en globals.css), pero el texto
+              estaba en colores de tema CLARO. Resultado medido: "Presupuestos"
+              (text-slate-900 sobre #070d17) daba 1,09:1 — es decir, ILEGIBLE — y
+              el subtítulo 4,09:1, por debajo de AA.
+              Se corrigen SÓLO los textos que van sobre el fondo oscuro. La tabla
+              de escritorio tiene su propio fondo blanco y NO se toca. */}
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight">Presupuestos</h1>
+          <p className="text-sm text-slate-400 mt-1">{budgets.length} presupuestos registrados</p>
         </div>
         <Link href="/presupuestos/nuevo">
           <Button variant="primary" size="md" icon={Plus}>
@@ -197,21 +205,21 @@ export default function PresupuestosPage() {
                 <Card key={budget.id} variant="default" className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="text-base font-extrabold text-blue-900">{budget.number}</span>
-                      <p className="text-xs text-slate-600 font-medium mt-0.5">{budget.client_name || "Sin cliente"}</p>
+                      <span className="text-base font-extrabold text-blue-300">{budget.number}</span>
+                      <p className="text-xs text-slate-300 font-medium mt-0.5">{budget.client_name || "Sin cliente"}</p>
                     </div>
                     <Badge variant={statusVariant} size="sm">
                       {statusLabels[budget.status] || budget.status}
                     </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-700">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5 text-slate-400" />
                       <span>{formatDate(budget.date)}</span>
                     </div>
                     <div>
-                      <span className="text-sm font-extrabold text-slate-900">{budget.total.toFixed(2)} €</span>
+                      <span className="text-sm font-extrabold text-slate-100">{budget.total.toFixed(2)} €</span>
                     </div>
                   </div>
 
@@ -222,7 +230,7 @@ export default function PresupuestosPage() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-end gap-1 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-end gap-1 pt-2 border-t border-slate-700">
                     <Link href={`/presupuestos/${budget.id}`}>
                       <Button variant="ghost" size="sm" icon={Eye}>Ver</Button>
                     </Link>
