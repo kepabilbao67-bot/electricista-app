@@ -114,18 +114,31 @@ async function borrarVariableDePreview(key: string): Promise<boolean> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // El token se acepta por cabecera O por cuerpo. El cuerpo es necesario porque
+  // `vercel curl` (beta) parte el argumento `-H "clave: valor"` en dos y curl
+  // nunca recibe una cabecera válida (comprobado con --debug).
+  let tokenCuerpo = "";
+  try {
+    const cuerpo = (await request.clone().json()) as { token?: unknown };
+    if (typeof cuerpo?.token === "string") tokenCuerpo = cuerpo.token;
+  } catch {
+    tokenCuerpo = "";
+  }
+
   const diag = {
     vercelEnv: process.env.VERCEL_ENV ?? null,
     tokenConfigurado: Boolean(process.env.E360_BOOTSTRAP_TOKEN?.trim()),
     tokenLongitud: (process.env.E360_BOOTSTRAP_TOKEN ?? "").trim().length,
     tokenRecibidoLongitud: (request.headers.get("x-bootstrap-token") ?? "").length,
+    tokenCuerpoLongitud: tokenCuerpo.length,
   };
 
   if (process.env.VERCEL_ENV !== "preview") return notFound(diag);
 
   const esperado = process.env.E360_BOOTSTRAP_TOKEN?.trim();
   if (!esperado) return notFound(diag);
-  if (request.headers.get("x-bootstrap-token") !== esperado) return notFound(diag);
+  const recibido = tokenCuerpo || (request.headers.get("x-bootstrap-token") ?? "");
+  if (recibido !== esperado) return notFound(diag);
 
   const db = getDbClient();
 
