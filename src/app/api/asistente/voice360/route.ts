@@ -232,7 +232,7 @@ function detectIntent(text: string, hayBorrador = false): Intent {
   // IVA (ver arriba), así que aquí NO se amplía la lista de verbos: hacerlo dejaba
   // sin efecto las órdenes de cambiar la tasa.
   const isCreationRequest =
-    /\b(hazme|crea|nuevo|hacer|prepara|genera)\b.*(presupuesto|presupu|budget)/.test(t) ||
+    /\b(hazme|crea|creame|crealo|nuevo|hacer|prepara|preparame|genera|generame)\b.*(presupuesto|presupu|budget)/.test(t) ||
     /\b(presupuesto|presupu|budget)\b.*(de|para)\b/.test(t);
   const isPriceQuery =
     /\b(cuanto\s+cuesta|cuanto\s+vale|que\s+precio|precio\s+de|busca|consulta|consultar|informacion)\b/.test(t);
@@ -284,8 +284,14 @@ function detectIntent(text: string, hayBorrador = false): Intent {
     return "general";
   }
 
-  // Presupuesto
-  if (/\b(hazme|crea|nuevo|hacer|prepara|genera)\b.*(presupuesto|presupu|budget)/.test(t)) return "budget_create";
+  // Presupuesto.
+  //
+  // DEFECTO REAL corregido: la lista de verbos no incluía las formas con enclítico
+  // ("créame", "prepárame", "genérame"), así que «Créame un presupuesto» no se
+  // reconocía como orden de creación y el asistente respondía con la guía de la
+  // app («**Presupuestos** (/presupuestos) — Cómo usarlo…») en vez de empezar el
+  // borrador. Se añaden las formas que faltaban, sin tocar el resto de la lista.
+  if (/\b(hazme|crea|creame|crealo|nuevo|hacer|prepara|preparame|genera|generame)\b.*(presupuesto|presupu|budget)/.test(t)) return "budget_create";
   // "dame/quiero UN presupuesto" (con artículo) es CREAR. Se exige el artículo para
   // no confundirlo con "dame 2 presupuestos", que es una consulta de listado.
   if (/\b(?:dame|quiero|necesito|haz)\s+(?:un|el|otro|nuevo)\s+presupuesto\b/.test(t)) return "budget_create";
@@ -1359,26 +1365,95 @@ async function handleAddItem(
     return { answer: "No he podido identificar el artículo o cantidad. Intenta con: \"Añade 3 enchufes a 12 euros\".", draft: currentDraft ?? undefined };
   }
 
-  const newItems: Voice360Item[] = parsed.map((p) => ({
-    id: crypto.randomUUID(),
-    description: p.description,
-    quantity: p.quantity,
-    unit: p.unit,
-    unit_price: p.unit_price,
-  }));
-  // La línea recién añadida es la última tocada del borrador.
-  newItems.forEach(marcarLineaTocada);
+  /**
+   * COMPLETAR EL PRECIO DE UNA LÍNEA PENDIENTE EN VEZ DE DUPLICARLA.
+   *
+   * DEFECTO REAL corregido (bloqueaba el guardado por voz): al dictar primero el
+   * concepto sin precio ("Añade 30 enchufes") y después el precio en su forma
+   * natural ("Añade 30 enchufes a 12 euros"), esto creaba SIEMPRE una línea nueva
+   * y dejaba la anterior SIN precio:
+   *
+   *     ["25 x Bases de enchufe @null", "30 x Bases de enchufe @12"]
+   *
+   * El Human Gate exige precios antes de guardar, así que el borrador quedaba
+   * IMPOSIBLE DE GUARDAR por más que el usuario dijera el precio: el asistente se
+   * quedaba pidiendo el precio de una línea que él mismo acababa de duplicar.
+   *
+   * Regla: si ya existe una línea del MISMO concepto y SIN precio (está esperando
+   * tarifa), se COMPLETA con lo que el usuario acaba de dictar. Una línea que YA
+   * tiene precio no se toca: volver a añadir el mismo material sigue creando una
+   * línea aparte, como antes.
+   */
+  const normalizarDescripcion = (valor: string) =>
+    valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const itemsPrevios: Voice360Item[] = (currentDraft?.items ?? []).map((item) => ({ ...item }));
+  const newItems: Voice360Item[] = [];
+  const completadas: Voice360Item[] = [];
+
+  for (const p of parsed) {
+    const sinPrecioNuevo = p.unit_price === null || p.unit_price === undefined;
+    const clave = normalizarDescripcion(p.description);
+    const indicePendiente = sinPrecioNuevo
+      ? -1
+      : itemsPrevios.findIndex(
+          (item) =>
+            normalizarDescripcion(item.description) === clave &&
+            (item.unit_price === null || item.unit_price === undefined)
+        );
+
+    if (indicePendiente >= 0) {
+      const completada: Voice360Item = {
+        ...itemsPrevios[indicePendiente],
+        quantity: p.quantity,
+        unit: p.unit,
+        unit_price: p.unit_price,
+      };
+      itemsPrevios[indicePendiente] = completada;
+      marcarLineaTocada(completada);
+      completadas.push(completada);
+      continue;
+    }
+
+    const item: Voice360Item = {
+      id: crypto.randomUUID(),
+      description: p.description,
+      quantity: p.quantity,
+      unit: p.unit,
+      unit_price: p.unit_price,
+    };
+    // La línea recién añadida es la última tocada del borrador.
+    marcarLineaTocada(item);
+    newItems.push(item);
+  }
 
   const draft: Voice360Draft = {
     ...(currentDraft ?? { client_name: "", client_candidates: [], tax_rate: 21, notes: [], items: [] }),
     revision: (currentDraft?.revision ?? 0) + 1,
-    items: [...(currentDraft?.items ?? []), ...newItems],
+    items: [...itemsPrevios, ...newItems],
   };
 
   const totals = computeTotals(draft);
-  const addedSummary = newItems.map((i) => `• ${i.quantity} ${i.unit} de ${i.description}`).join("\n");
+  const partes: string[] = [];
+  if (completadas.length > 0) {
+    partes.push(
+      `✅ Precio completado en la línea que ya tenías:\n${completadas
+        .map((i) => `• ${i.quantity} ${i.unit} de ${i.description} — ${i.unit_price?.toFixed(2)} €/ud`)
+        .join("\n")}`
+    );
+  }
+  if (newItems.length > 0) {
+    partes.push(
+      `✅ Añadido al borrador:\n${newItems.map((i) => `• ${i.quantity} ${i.unit} de ${i.description}`).join("\n")}`
+    );
+  }
   return {
-    answer: `✅ Añadido al borrador:\n${addedSummary}\n\nTotal actual: **${totals.total.toFixed(2)} €**`,
+    answer: `${partes.join("\n\n")}\n\nTotal actual: **${totals.total.toFixed(2)} €**`,
     draft,
     totals,
   };
@@ -2368,10 +2443,42 @@ async function handleQuery(intent: Intent, text: string): Promise<HandlerResult>
       }
 
       case "catalog_query": {
+        // DEFECTO REAL corregido (P1 de voz): cuando la frase no casaba con los
+        // patrones de búsqueda, se usaba LA FRASE ENTERA como término, así que
+        // "¿Qué materiales tengo?" buscaba el literal "¿qué materiales tengo?" y
+        // respondía «No encontré materiales»… con 57 materiales en el catálogo.
+        // Es la pregunta más natural del usuario y contestaba que no hay nada.
+        // Ahora: si la frase NOMBRA algo, se busca; si es una pregunta genérica,
+        // se LISTA el catálogo.
         const qMatch = text.match(
-          /(?:precio\s+(?:de|del?)\s+|cuanto\s+(?:cuesta|vale)\s+(?:el?\s+|la\s+)?|catalogo\s+de\s+|materiales?\s+de\s+)(.{2,60})/i
+          /(?:precio\s+(?:de|del?)\s+|cuanto\s+(?:cuesta|vale)\s+(?:el?\s+|la\s+)?|catalogo\s+de\s+|materiales?\s+de\s+|(?:busca|buscar|buscame|muestrame|ensename|dame|lista|listame|ver)\s+(?:el|la|los|las|un|una|unos|unas)?\s*)(.{2,60})/i
         );
-        const term = qMatch?.[1]?.trim() ?? text.slice(0, 60);
+        const termBruto = (qMatch?.[1] ?? "").trim();
+        // Genérica = no hay término, o el "término" es la propia pregunta
+        // ("materiales", "2 materiales", "qué materiales tengo").
+        const esGenerica =
+          termBruto === "" ||
+          /^(?:\d+\s+)?(?:material(?:es)?|productos?|articulos?|catalogo)\b/.test(termBruto) ||
+          /^(?:que|cuantos|cuantas|tengo|hay|tienes|disponibles?)\b/.test(termBruto);
+
+        if (esGenerica) {
+          const total = await db.execute("SELECT COUNT(*) AS n FROM catalog_items");
+          const muestra = await db.execute(
+            "SELECT name, unit_price, category FROM catalog_items ORDER BY category, name LIMIT 12"
+          );
+          const items = Number(total.rows[0]?.n ?? 0);
+          if (items === 0) {
+            return { answer: "El catálogo está vacío todavía. Puedes añadir materiales en la sección Catálogo." };
+          }
+          const listado = muestra.rows
+            .map((r) => `• **${r.name}** — ${Number(r.unit_price ?? 0).toFixed(2)} €/ud — *${r.category}*`)
+            .join("\n");
+          return {
+            answer: `📦 Tienes **${items}** materiales en el catálogo. Estos son ${muestra.rows.length}:\n\n${listado}\n\nDime cuál te interesa y te doy su precio.`,
+          };
+        }
+
+        const term = termBruto;
 
         const res = await db.execute({
           sql: `SELECT name, unit_price, category FROM catalog_items

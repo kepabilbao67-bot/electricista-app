@@ -243,7 +243,14 @@ export default function CatalogoPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {categoryItems.map((item) => {
-                      const hasSalePrice = !item.sale_price_pending;
+                      // DEFECTO REAL corregido: el "precio pendiente" dependía SOLO
+                      // de la bandera `sale_price_pending`, que está a 0 en los 57
+                      // materiales importados de SOKOEL. Los 32 que NO tienen precio
+                      // de venta (`unit_price = 0`) se mostraban como "0.00€", es
+                      // decir, como si fueran gratis, y además se ofrecían para
+                      // presupuestar. Un material SIN precio de venta ES un precio
+                      // pendiente, tenga la bandera o no.
+                      const hasSalePrice = !item.sale_price_pending && Number(item.unit_price) > 0;
                       const margin = hasSalePrice && item.cost_price > 0 ? ((item.unit_price - item.cost_price) / item.cost_price * 100) : 0;
                       return (
                         <tr key={item.id} className="hover:bg-slate-50 transition-colors">

@@ -67,6 +67,30 @@ export async function PUT(
 
     // Edición completa del presupuesto (con items)
     if (body.items) {
+      // VALIDACION MINIMA: sin esto, una linea sin campos hacia que libsql
+      // intentase enlazar `undefined` y la respuesta fuese un 500 opaco.
+      if (!Array.isArray(body.items) || body.items.length === 0) {
+        return NextResponse.json(
+          { error: "El presupuesto debe incluir al menos un concepto." },
+          { status: 400 }
+        );
+      }
+      for (const item of body.items) {
+        if (
+          typeof item?.description !== "string" ||
+          item.description.trim().length < 2 ||
+          !Number.isFinite(Number(item?.quantity)) ||
+          Number(item.quantity) <= 0 ||
+          !Number.isFinite(Number(item?.unit_price)) ||
+          Number(item.unit_price) < 0
+        ) {
+          return NextResponse.json(
+            { error: "Concepto inválido: revisa descripción, cantidad y precio." },
+            { status: 400 }
+          );
+        }
+      }
+
       const subtotal = body.items.reduce(
         (acc: number, item: { quantity: number; unit_price: number }) =>
           acc + item.quantity * item.unit_price,
@@ -76,16 +100,25 @@ export async function PUT(
       const taxAmount = subtotal * (taxRate / 100);
       const total = subtotal + taxAmount;
 
-      // Actualizar datos del presupuesto
+      // Actualizar datos del presupuesto.
+      //
+      // P0 corregido: `date` es NOT NULL en la tabla y aquí se enlazaba
+      // `body.date` TAL CUAL. Si el cliente no la enviaba, libsql recibía
+      // `undefined` y la edición entera fallaba con un 500 ("Error al actualizar
+      // presupuesto"), sin poder ni cambiar una cantidad ni borrar una línea.
+      // Un PUT parcial no puede dejar la fila sin fecha: con COALESCE se
+      // CONSERVA la que ya tenía (y lo mismo con el cliente).
       await db.execute({
         sql: `UPDATE budgets SET 
-          client_id = ?, date = ?, valid_until = ?, notes = ?, notes_color = ?,
+          client_id = COALESCE(?, client_id),
+          date = COALESCE(?, date),
+          valid_until = ?, notes = ?, notes_color = ?,
           subtotal = ?, tax_rate = ?, tax_amount = ?, total = ?,
           updated_at = datetime('now')
           WHERE id = ?`,
         args: [
-          body.client_id,
-          body.date,
+          body.client_id ?? null,
+          body.date ?? null,
           body.valid_until || null,
           body.notes || null,
           body.notes_color || null,

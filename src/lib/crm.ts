@@ -219,3 +219,75 @@ export const CRM_ACTIVITY_LABELS: Record<CrmActivityType, string> = {
   nota: "Nota comercial",
   documento: "Documentación",
 };
+
+/**
+ * Métricas escalares que consume el Centro Comercial (home y /crm).
+ *
+ * GET /api/comercial entrega colecciones (`pendingDocs`, `todayTasks`,
+ * `upcomingMeetings`, ...) y KPIs agrupados en `kpis`. Las páginas necesitan
+ * números: convertir la respuesta con `normalizeCommercialMetrics()` es
+ * obligatorio, porque React no puede renderizar un objeto ni un array de
+ * objetos como hijo (provocaba el error de boundary en la home).
+ */
+export interface CommercialMetrics {
+  totalClients: number;
+  openOpportunities: number;
+  pipelineValue: number;
+  pendingTasks: number;
+  todayTasks: number;
+  overdueFollowUps: number;
+  hotOpportunities: number;
+  pendingDocs: number;
+  upcomingMeetings: number;
+  closedWonCount: number;
+}
+
+function toCount(value: unknown): number {
+  if (Array.isArray(value)) return value.length;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+/**
+ * Convierte la respuesta cruda de GET /api/comercial en `CommercialMetrics`.
+ * Es tolerante a payloads inesperados: nunca devuelve objetos ni arrays, así
+ * que ninguna vista puede romper el render por un cambio de forma de la API.
+ */
+export function normalizeCommercialMetrics(raw: unknown): CommercialMetrics {
+  const source = (raw ?? {}) as Record<string, unknown>;
+  const kpis = (source.kpis ?? {}) as Record<string, unknown>;
+  const pendingDocs = (source.pendingDocs ?? {}) as Record<string, unknown>;
+
+  return {
+    totalClients: toCount(kpis.totalClients),
+    openOpportunities: toCount(kpis.openOpportunities),
+    pipelineValue: toCount(kpis.openOpportunitiesValue),
+    pendingTasks: toCount(source.todayTasks),
+    todayTasks: toCount(source.todayTasks),
+    overdueFollowUps: toCount(source.overdueFollowUps),
+    hotOpportunities: toCount(source.hotOpportunities),
+    pendingDocs: toCount(pendingDocs.clients) + toCount(pendingDocs.opportunities),
+    upcomingMeetings: toCount(source.upcomingMeetings),
+    closedWonCount: toCount(kpis.closedWonCount),
+  };
+}
+
+/**
+ * Valor ponderado del pipeline usando la probabilidad real de cada
+ * oportunidad y, si no la trae, la probabilidad por defecto de su etapa.
+ */
+export function weightedPipelineValue(
+  opportunities: ReadonlyArray<{
+    stage?: string | null;
+    estimated_value?: unknown;
+    probability?: unknown;
+  }>
+): number {
+  return opportunities.reduce((acc, opportunity) => {
+    const value = Number(opportunity?.estimated_value ?? 0) || 0;
+    const explicit = Number(opportunity?.probability);
+    const fallback = STAGE_PROBABILITIES[opportunity?.stage as CrmStage] ?? 0;
+    const probability = Number.isFinite(explicit) && explicit > 0 ? explicit : fallback;
+    return acc + value * (probability / 100);
+  }, 0);
+}

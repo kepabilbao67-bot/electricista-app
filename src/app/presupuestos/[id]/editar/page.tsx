@@ -8,7 +8,7 @@ import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client { id: string; name: string; }
-interface CatalogItem { id: string; name: string; unit_price: number; category: string; }
+interface CatalogItem { id: string; name: string; unit_price: number; category: string; sale_price_pending: number; }
 interface BudgetItem { description: string; quantity: number; unit_price: number; }
 interface Zone { name: string; items: BudgetItem[]; collapsed: boolean; }
 
@@ -43,7 +43,7 @@ export default function EditarPresupuestoPage() {
       fetch(`/api/budgets/${params.id}`)
         .then((r) => r.json())
         .then((data) => {
-          setClientId(data.client_id);
+          setClientId(data.client_id ?? "");
           setDate(data.date);
           setValidUntil(data.valid_until || "");
           setNotes(data.notes || "");
@@ -152,6 +152,11 @@ export default function EditarPresupuestoPage() {
   };
 
   const getZoneSubtotal = (zone: Zone) => zone.items.reduce((acc, item) => acc + item.quantity * item.unit_price, 0);
+
+  /** Materiales ofrecibles: solo los que tienen precio de venta (ver pantalla de nuevo). */
+  const materialesVendibles = catalog.filter(
+    (item) => !item.sale_price_pending && Number(item.unit_price) > 0,
+  );
   const subtotal = zones.reduce((acc, zone) => acc + getZoneSubtotal(zone), 0);
   const taxAmount = subtotal * 0.21;
   const total = subtotal + taxAmount;
@@ -221,7 +226,8 @@ export default function EditarPresupuestoPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
-              <select required value={clientId} onChange={(e) => setClientId(e.target.value)} className="input-field">
+              {/* value nunca puede ser null: React convertiría el select en no controlado */}
+              <select required value={clientId ?? ""} onChange={(e) => setClientId(e.target.value)} className="input-field">
                 <option value="">Seleccionar</option>
                 {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -289,11 +295,14 @@ export default function EditarPresupuestoPage() {
 
               {!zone.collapsed && (
                 <>
-                  {/* Catalog buttons */}
-                  {catalog.length > 0 && (
+                  {/* Catalog buttons.
+                      Solo materiales VENDIBLES (con precio de venta): los que no
+                      lo tienen añadían líneas de 0 € a un presupuesto de cliente.
+                      Mismo criterio que la pantalla de presupuesto nuevo. */}
+                  {materialesVendibles.length > 0 && (
                     <div className="mb-3 p-2 rounded-lg bg-slate-50 border border-slate-100">
                       <div className="flex flex-wrap gap-1.5">
-                        {catalog.map((item) => (
+                        {materialesVendibles.map((item) => (
                           <button key={item.id} type="button" onClick={() => addFromCatalog(zoneIndex, item)} className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-600 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-all">
                             {item.name} ({item.unit_price}€)
                           </button>

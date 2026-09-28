@@ -330,6 +330,18 @@ export default function NuevoPresupuestoPage() {
   const taxAmount = subtotal * 0.21;
   const total = subtotal + taxAmount;
 
+  /**
+   * Materiales que se pueden OFRECER en un presupuesto.
+   *
+   * Un material sin precio de venta (`unit_price = 0`, o marcado como
+   * `sale_price_pending`) no es vendible: ofrecerlo añadía una línea de 0 € a un
+   * presupuesto que se manda al cliente. Se filtra aquí, en el punto donde se
+   * ofrece, sin tocar los datos del catálogo.
+   */
+  const materialesVendibles = catalog.filter(
+    (item) => !item.sale_price_pending && Number(item.unit_price) > 0,
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -487,22 +499,35 @@ export default function NuevoPresupuestoPage() {
 
             {!zone.collapsed && (
               <div className="mt-4">
-                {/* Catalog for this zone */}
+                {/* Catalog for this zone.
+                    DEFECTO REAL corregido: aquí se ofrecían TODOS los materiales,
+                    y 32 de los 57 importados no tienen precio de venta
+                    (`unit_price = 0`), así que aparecían como "(0 EUR)" y se
+                    añadían al presupuesto por 0 €. Al cliente solo se le pueden
+                    ofrecer materiales VENDIBLES: con precio de venta configurado.
+                    Los que están pendientes se siguen viendo y configurando en
+                    Catálogo, pero no se ofrecen para presupuestar. */}
                 {catalog.length > 0 && (
                   <div className="mb-4">
                     <p className="text-xs font-medium text-slate-400 mb-2">Agregar desde catalogo:</p>
+                    {materialesVendibles.length === 0 ? (
+                      <p className="text-xs text-amber-300">
+                        Ningún material tiene precio de venta configurado todavía. Configúralo en Catálogo.
+                      </p>
+                    ) : (
                     <div className="flex flex-wrap gap-1.5">
-                      {catalog.map((item) => (
+                      {materialesVendibles.map((item) => (
                         <button
                           key={item.id}
                           type="button"
                           onClick={() => addFromCatalog(zoneIndex, item)}
                           className="rounded-full border border-slate-200 px-2.5 py-0.5 text-xs hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
                         >
-                          {item.name} ({item.sale_price_pending ? "Precio pendiente" : `${item.unit_price} EUR`})
+                          {item.name} ({item.unit_price} EUR)
                         </button>
                       ))}
                     </div>
+                    )}
                   </div>
                 )}
 

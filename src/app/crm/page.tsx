@@ -35,6 +35,9 @@ import {
   CRM_STAGE_BADGES,
   CrmStage,
   STAGE_PROBABILITIES,
+  CommercialMetrics,
+  normalizeCommercialMetrics,
+  weightedPipelineValue,
 } from "@/lib/crm";
 
 interface Opportunity {
@@ -64,20 +67,6 @@ interface CrmTask {
   client_name?: string;
   client_phone?: string;
   notes?: string | null;
-}
-
-interface CommercialMetrics {
-  totalClients: number;
-  openOpportunities: number;
-  pipelineValue: number;
-  weightedPipelineValue: number;
-  pendingTasks: number;
-  todayTasks: number;
-  overdueFollowUps: number;
-  hotOpportunities: number;
-  pendingDocs: number;
-  upcomingMeetings: number;
-  closedWonCount: number;
 }
 
 // 6 Columnas Visuales del Pipeline Barymont
@@ -128,7 +117,7 @@ export default function CRMCommercialPage() {
       setOpportunities(Array.isArray(oppRes) ? oppRes : []);
       setTasks(Array.isArray(tasksRes) ? tasksRes : []);
       setClients(Array.isArray(clientsRes) ? clientsRes : []);
-      if (metRes) setMetrics(metRes);
+      if (metRes) setMetrics(normalizeCommercialMetrics(metRes));
     } catch {
       showToast("error", "Error al cargar datos comerciales");
     } finally {
@@ -223,6 +212,7 @@ export default function CRMCommercialPage() {
   const pendingDocsClients = clients.filter((c) => c.status === "doc_pendiente");
   const proposalWaitingOpps = opportunities.filter((o) => ["propuesta", "negociacion"].includes(o.stage));
   const pipelineValue = metrics?.pipelineValue || opportunities.reduce((acc, o) => acc + Number(o.estimated_value || 0), 0);
+  const weightedValue = weightedPipelineValue(opportunities);
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16">
       {/* Header */}
@@ -265,7 +255,7 @@ export default function CRMCommercialPage() {
             </p>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            Ponderado: <strong className="text-sky-400 font-mono">{(metrics?.weightedPipelineValue || 0).toLocaleString("es-ES", { minimumFractionDigits: 0 })} €</strong>
+            Ponderado: <strong className="text-sky-400 font-mono">{weightedValue.toLocaleString("es-ES", { minimumFractionDigits: 0 })} €</strong>
           </p>
         </div>
 

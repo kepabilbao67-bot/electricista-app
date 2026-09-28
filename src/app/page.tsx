@@ -29,21 +29,10 @@ import {
   CRM_STAGE_LABELS,
   CRM_STAGE_BADGES,
   CrmStage,
+  CommercialMetrics,
+  normalizeCommercialMetrics,
+  weightedPipelineValue,
 } from "@/lib/crm";
-
-interface CommercialMetrics {
-  totalClients: number;
-  openOpportunities: number;
-  pipelineValue: number;
-  weightedPipelineValue: number;
-  pendingTasks: number;
-  todayTasks: number;
-  overdueFollowUps: number;
-  hotOpportunities: number;
-  pendingDocs: number;
-  upcomingMeetings: number;
-  closedWonCount: number;
-}
 
 interface Opportunity {
   id: string;
@@ -92,7 +81,7 @@ export default function HomePage() {
         fetch("/api/crm-tasks").then((r) => (r.ok ? r.json() : [])),
       ]);
 
-      if (metRes) setMetrics(metRes);
+      if (metRes) setMetrics(normalizeCommercialMetrics(metRes));
       setOpportunities(Array.isArray(oppRes) ? oppRes : []);
       setTasks(Array.isArray(tasksRes) ? tasksRes : []);
     } catch {
@@ -128,7 +117,7 @@ export default function HomePage() {
     .slice(0, 5);
 
   const pipelineValue = metrics?.pipelineValue || opportunities.reduce((a, b) => a + Number(b.estimated_value || 0), 0);
-  const weightedValue = metrics?.weightedPipelineValue || (pipelineValue * 0.45);
+  const weightedValue = weightedPipelineValue(opportunities);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16">
