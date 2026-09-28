@@ -48,8 +48,11 @@ const MIN = "abcdefghijkmnopqrstuvwxyz";
 const NUM = "23456789";
 const ESP = "!@#$%^&*-_=+?";
 
-function notFound() {
-  return NextResponse.json({ error: "Not found" }, { status: 404, headers: { "Cache-Control": "no-store" } });
+function notFound(diag?: Record<string, unknown>) {
+  return NextResponse.json(
+    diag ? { error: "Not found", diag } : { error: "Not found" },
+    { status: 404, headers: { "Cache-Control": "no-store" } }
+  );
 }
 
 /** Contraseña aleatoria fuerte: >=20 caracteres, 4 clases, rechazo por módulo. */
@@ -111,11 +114,18 @@ async function borrarVariableDePreview(key: string): Promise<boolean> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (process.env.VERCEL_ENV !== "preview") return notFound();
+  const diag = {
+    vercelEnv: process.env.VERCEL_ENV ?? null,
+    tokenConfigurado: Boolean(process.env.E360_BOOTSTRAP_TOKEN?.trim()),
+    tokenLongitud: (process.env.E360_BOOTSTRAP_TOKEN ?? "").trim().length,
+    tokenRecibidoLongitud: (request.headers.get("x-bootstrap-token") ?? "").length,
+  };
+
+  if (process.env.VERCEL_ENV !== "preview") return notFound(diag);
 
   const esperado = process.env.E360_BOOTSTRAP_TOKEN?.trim();
-  if (!esperado) return notFound();
-  if (request.headers.get("x-bootstrap-token") !== esperado) return notFound();
+  if (!esperado) return notFound(diag);
+  if (request.headers.get("x-bootstrap-token") !== esperado) return notFound(diag);
 
   const db = getDbClient();
 
