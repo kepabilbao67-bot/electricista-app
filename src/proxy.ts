@@ -76,15 +76,6 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   "/api/auth/login",
   "/api/auth/logout",
   "/api/auth/session",
-  // ── TEMPORAL: siembra one-shot del primer OWNER ──────────────────────────
-  // Esta ruta se ejecuta ANTES de que exista ningún usuario, así que por
-  // definición no puede exigir sesión. Su propia guarda es equivalente o más
-  // estricta que la de aquí: solo responde en Preview, exige la cabecera
-  // `x-bootstrap-token`, aborta si `app_users` tiene cualquier fila y borra su
-  // propio secreto al terminar.
-  // ⚠️  Al eliminar `src/app/api/bootstrap-owner/route.ts` hay que quitar
-  //     también esta línea.
-  "/api/bootstrap-owner",
   "/favicon.ico",
   "/manifest.json",
   "/icon-192.png",
