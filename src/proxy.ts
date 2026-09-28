@@ -76,9 +76,6 @@ const PUBLIC_EXACT_PATHS = new Set<string>([
   "/api/auth/login",
   "/api/auth/logout",
   "/api/auth/session",
-  // ── TEMPORAL: reinicio one-shot de la contraseña del OWNER ───────────────
-  // ⚠️  Al eliminar `src/app/api/bootstrap-owner/route.ts` hay que quitar esta línea.
-  "/api/bootstrap-owner",
   "/favicon.ico",
   "/manifest.json",
   "/icon-192.png",
