@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
             stage,
             Number(body.estimated_value) || 0,
             probability,
-            body.assigned_to || body.responsable || "Pedro",
+            body.assigned_to || body.responsable || "Sin asignar",
             body.source || null,
             body.next_action || null,
             body.next_action_at || null,

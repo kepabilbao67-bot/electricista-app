@@ -1598,7 +1598,7 @@ async function handleRemoveItem(
 }
 
 /**
- * CLIENTE DEL BORRADOR — "el cliente es Pedro García".
+ * CLIENTE DEL BORRADOR — "el cliente es Juan Pérez".
  *
  * Sólo escribe `draft.client_name` (en memoria). Si el nombre coincide con un
  * cliente real se usa su nombre canónico; si no, se conserva lo dicho tal cual
@@ -1615,7 +1615,7 @@ async function handleSetClient(
 
   if (nombre.length < 2) {
     return {
-      answer: 'No he entendido el nombre. Dime por ejemplo: "El cliente es Pedro García".',
+      answer: 'No he entendido el nombre. Dime por ejemplo: "El cliente es Juan Pérez".',
       draft: currentDraft ?? undefined,
     };
   }

@@ -67,6 +67,8 @@ const UMBRAL_VOZ = 0.012;
  * que ya no responde.
  */
 const WATCHDOG_TURNO_MS = 45000;
+/** Reconexiones acotadas ante una caída del WebSocket Live (no un bucle infinito). */
+const MAX_RECONEXIONES = 2;
 
 /**
  * Diagnóstico de UN TURNO, punto por punto (A-O del encargo).
@@ -247,6 +249,25 @@ export class SesionLivePcm {
   private descartarAudioInterrumpido = false;
   /** Watchdog del turno en curso (ver WATCHDOG_TURNO_MS). */
   private watchdogTurno: number | null = null;
+  /**
+   * RECONEXIÓN DE LA CONEXIÓN LIVE (P0 medido en móvil).
+   *
+   * El WebSocket de Gemini Live se cae solo: cambio de red del teléfono, pantalla
+   * bloqueada, cierre del servidor... Antes, el ÚNICO `onclose` vivía dentro del
+   * arranque (`if (!this.setupCompleto) reject(...)`), así que una caída POSTERIOR
+   * era invisible: la sesión seguía diciendo LISTENING con el socket muerto, el
+   * micrófono seguía capturando al vacío y no se reconectaba nada. Al pulsar de
+   * nuevo el botón, el estado acababa en `STATE=DISCONNECTED` con `WS=SIN-SOCKET`,
+   * que es exactamente lo que se veía en el móvil.
+   *
+   * Ahora el cierre se vigila SIEMPRE y la sesión se rehace sola (con reanudación
+   * del hilo si el servidor dio handle), sin tocar el micrófono ni el AudioContext.
+   */
+  private handleResumen: string | null = null;
+  private reconexiones = 0;
+  private reconectando = false;
+  /** Un cierre pedido por el usuario NO es una caída: no se reconecta. */
+  private cerrandoPorUsuario = false;
   private t0 = 0;
   private setupCompleto = false;
   private secuenciaSalida = 0;
@@ -355,6 +376,11 @@ export class SesionLivePcm {
     this.secuenciaSalida = 0;
     this.audioStreamEndEnviado = false;
     this.soltadoElUsuario = false;
+    // Sesión NUEVA: la vigilancia de caídas parte de cero.
+    this.handleResumen = null;
+    this.reconexiones = 0;
+    this.reconectando = false;
+    this.cerrandoPorUsuario = false;
 
     try {
       await this.pedirTokenYAbrir();
@@ -399,6 +425,10 @@ export class SesionLivePcm {
               generationConfig: { responseModalities: ["AUDIO"] },
               inputAudioTranscription: {},
               outputAudioTranscription: {},
+              // REANUDACIÓN: el servidor manda handles y, al reconectar tras una
+              // caída, se reanuda el MISMO hilo de conversación en vez de empezar
+              // de cero (el usuario no repite lo que ya dijo).
+              sessionResumption: this.handleResumen ? { handle: this.handleResumen } : {},
             },
           })
         );
@@ -438,13 +468,65 @@ export class SesionLivePcm {
         if (!this.setupCompleto) {
           clearTimeout(temporizador);
           reject(new Error(`WS_CLOSE_${ev.code}`));
+          return;
         }
+        // CIERRE DESPUÉS DEL SETUP = CAÍDA DE LA CONEXIÓN (no un cierre del usuario).
+        // Antes esto no se atendía y la sesión se quedaba "LISTENING" con el socket
+        // muerto: el usuario hablaba y no pasaba absolutamente nada.
+        this.alCaerLaConexion(ev.code, ev.reason);
       };
     });
 
-    // Setup listo: ahora el micrófono.
-    await this.abrirMicrofono();
+    // Setup listo: ahora el micrófono (SI no estaba ya abierto: al reconectar se
+    // conserva el mismo micrófono y el mismo AudioContext).
+    if (!this.mediaStream) await this.abrirMicrofono();
     this.estados.ir("LISTENING");
+  }
+
+  /**
+   * CAÍDA DE LA CONEXIÓN LIVE: se informa, se rehace el socket y se sigue.
+   *
+   * No toca el micrófono ni el AudioContext (siguen vivos): sólo se reabre el
+   * WebSocket y se repite el setup, reanudando el hilo si hay handle.
+   */
+  private alCaerLaConexion(codigo: number, razon: string): void {
+    if (this.cerrandoPorUsuario) return;
+    if (this.reconectando) return;
+    // El socket muerto no sirve para nada: fuera, para que nada intente enviar.
+    this.socket = null;
+    this.desarmarWatchdogTurno();
+    this.diag.erroresReproduccion.push(
+      `WS caído (${codigo}${razon ? `: ${String(razon).slice(0, 40)}` : ""}) tras el setup: se reconecta`
+    );
+    this.estados.ir("CONNECTING");
+    void this.reconectar(codigo);
+  }
+
+  /** Reconexión acotada: si se agota, se limpia y se informa (nunca en silencio). */
+  private async reconectar(codigo: number): Promise<void> {
+    if (this.reconexiones >= MAX_RECONEXIONES) {
+      this.opciones.onError?.("WS_CAIDO", `sin reconexion (cierre ${codigo})`);
+      this.limpiar();
+      this.estados.reset();
+      this.alTerminar?.();
+      this.alTerminar = null;
+      return;
+    }
+    this.reconectando = true;
+    this.reconexiones += 1;
+    try {
+      await this.pedirTokenYAbrir();
+      if (this.estados.actual !== "SPEAKING") this.estados.ir("LISTENING");
+      this.opciones.onMetricas?.(this.metricasActuales);
+    } catch (causa) {
+      this.opciones.onError?.("WS_CAIDO", causa instanceof Error ? causa.message : String(causa));
+      this.limpiar();
+      this.estados.reset();
+      this.alTerminar?.();
+      this.alTerminar = null;
+    } finally {
+      this.reconectando = false;
+    }
   }
 
   /** Normaliza cualquier forma de mensaje a texto UTF-8. */
@@ -633,6 +715,10 @@ export class SesionLivePcm {
     // SÓLO se cierra estando en LISTENING. Durante SPEAKING el micrófono puede
     // estar oyendo el altavoz: cerrar ahí cortaría la respuesta del propio modelo.
     if (this.estados.actual !== "LISTENING") return;
+    // SIN SOCKET VIVO no se puede cerrar nada: cerrar un turno que no se puede
+    // enviar sólo servía para armar el watchdog de 45 s y acabar en el error del
+    // móvil. Mientras se reconecta, el turno simplemente sigue abierto.
+    if (!this.socket || this.socket.readyState !== 1) return;
     // No se cierra un turno en el que no se ha oído nada (evita responder a la nada).
     if (!this.soltadoElUsuario && !this.huboVozEnTurno) return;
 
@@ -761,6 +847,16 @@ export class SesionLivePcm {
   }
 
   private procesarServidor(msg: Record<string, unknown>): void {
+    // HANDLE DE REANUDACIÓN: el servidor lo ofrece para poder reconectar tras una
+    // caída sin perder el hilo. Antes se recibía y se tiraba a la basura.
+    const resumen = msg.sessionResumptionUpdate as
+      | { newHandle?: string; resumable?: boolean }
+      | undefined;
+    if (resumen) {
+      if (resumen.resumable && resumen.newHandle) this.handleResumen = resumen.newHandle;
+      return;
+    }
+
     const sc = msg.serverContent as
       | {
           inputTranscription?: { text?: string };
@@ -915,6 +1011,8 @@ export class SesionLivePcm {
   }
 
   private limpiar(): void {
+    // A partir de aquí cualquier cierre del socket es ESPERADO: no es una caída.
+    this.cerrandoPorUsuario = true;
     this.capturando = false;
     this.desarmarWatchdogTurno();
     this.fallar_(null);

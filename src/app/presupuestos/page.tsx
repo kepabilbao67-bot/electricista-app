@@ -170,9 +170,9 @@ export default function PresupuestosPage() {
         <div>
           {/* CONTRASTE (medido con Chrome real, verificar-ui-movil-393.cjs):
               esta pantalla vive sobre el fondo oscuro de la marca
-              (`--brand-bg: #070d17`, definido en globals.css), pero el texto
+              (`--brand-bg: #020617`, definido en globals.css), pero el texto
               estaba en colores de tema CLARO. Resultado medido: "Presupuestos"
-              (text-slate-900 sobre #070d17) daba 1,09:1 — es decir, ILEGIBLE — y
+              (text-slate-900 sobre #020617) daba 1,09:1 — es decir, ILEGIBLE — y
               el subtítulo 4,09:1, por debajo de AA.
               Se corrigen SÓLO los textos que van sobre el fondo oscuro. La tabla
               de escritorio tiene su propio fondo blanco y NO se toca. */}

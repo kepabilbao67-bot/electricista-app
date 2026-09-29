@@ -2,7 +2,7 @@
  * AUTÓNOMO360 - Core Types
  *
  * Contratos fundamentales del núcleo común.
- * Toda vertical (electricista, tecnología, general, barymont, pintor, administrador...)
+ * Toda vertical (electricista, tecnología, general, pintor, administrador...)
  * implementa estas interfaces para conectarse al sistema.
  *
  * Reglas:
@@ -21,7 +21,6 @@ export type Vertical =
   | "electricista"
   | "tecnologia"
   | "general"
-  | "barymont"
   | (string & {});
 
 // --- Company ---

@@ -68,9 +68,9 @@ describe("COM360-V2.1 — Electricista360 Voice360 Adapter & Client (Zero Core D
         JSON.stringify({
           success: true,
           action: "budget_draft",
-          summary: "Borrador de presupuesto para Pedro",
+          summary: "Borrador de presupuesto para Juan",
           intent: "budget_draft",
-          budget: { client_name: "Pedro", lines: [] },
+          budget: { client_name: "Juan", lines: [] },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
@@ -83,7 +83,7 @@ describe("COM360-V2.1 — Electricista360 Voice360 Adapter & Client (Zero Core D
       const client = new Voice360Client({ baseUrl: "http://test-voice360:3088", enabled: true });
       const res = await client.process({
         tenantId: "tenant-electricista-100",
-        input: "Presupuesto para Pedro",
+        input: "Presupuesto para Juan",
         requestId: "req-12345",
         channel: "whatsapp",
         context: { vertical: "electricista", supplier: "SOKOEL" },
@@ -92,7 +92,7 @@ describe("COM360-V2.1 — Electricista360 Voice360 Adapter & Client (Zero Core D
       assert.equal(capturedUrl, "http://test-voice360:3088/api/asistente/voice360");
       assert.equal(capturedHeaders["x-tenant-id"], "tenant-electricista-100");
       assert.equal(capturedBody.tenantId, "tenant-electricista-100");
-      assert.equal(capturedBody.input, "Presupuesto para Pedro");
+      assert.equal(capturedBody.input, "Presupuesto para Juan");
       assert.equal(capturedBody.context.supplier, "SOKOEL");
       assert.equal(res.success, true);
       assert.equal(res.action, "budget_draft");

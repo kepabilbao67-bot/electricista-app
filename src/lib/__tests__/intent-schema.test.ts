@@ -103,7 +103,7 @@ describe("intent-parser: parseIntent", () => {
   });
 
   test("resultado siempre es draft", () => {
-    const result = parseIntent("Crea una factura para Pedro de 500 euros de consultoría");
+    const result = parseIntent("Crea una factura para Juan de 500 euros de consultoría");
     assert.equal(result.isDraft, true);
   });
 

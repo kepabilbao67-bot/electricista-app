@@ -9,7 +9,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantStyles: Record<NonNullable<ButtonProps["variant"]>, string> = {
-  primary: "bg-gradient-to-r from-[#f5d48a] via-[#d9b35f] to-[#c79d46] text-slate-950 shadow-[0_16px_30px_rgba(217,179,95,0.28)] hover:brightness-110 active:scale-[0.98] focus:ring-[#f5d48a] border border-[#d9b35f]/60",
+  primary: "bg-gradient-to-r from-[#34d399] via-[#10b981] to-[#c79d46] text-slate-950 shadow-[0_16px_30px_rgba(217,179,95,0.28)] hover:brightness-110 active:scale-[0.98] focus:ring-[#34d399] border border-[#10b981]/60",
   secondary: "border border-slate-700 bg-slate-900/90 text-slate-100 shadow-sm hover:bg-slate-800 hover:border-slate-600 active:scale-[0.98] focus:ring-slate-500",
   ghost: "bg-transparent text-slate-300 hover:bg-slate-800 hover:text-slate-100 active:bg-slate-700 focus:ring-slate-500",
   danger: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-[0_16px_30px_rgba(239,68,68,0.25)] hover:brightness-110 active:scale-[0.98] focus:ring-red-500 border border-red-400/50",

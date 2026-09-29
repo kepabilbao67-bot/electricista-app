@@ -69,7 +69,7 @@ interface CrmTask {
   notes?: string | null;
 }
 
-// 6 Columnas Visuales del Pipeline Barymont
+// 6 Columnas visuales del pipeline comercial
 const PIPELINE_COLUMNS: {
   key: CrmStage;
   label: string;
@@ -221,12 +221,12 @@ export default function CRMCommercialPage() {
           <Breadcrumbs items={[{ label: "CRM & Centro de Trabajo" }]} />
           <h1 className="text-2xl sm:text-3xl font-black text-slate-100 mt-1 tracking-tight flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0284c7] via-[#0369a1] to-[#0b1b30] border border-sky-400/30 text-white shadow-md">
-              <TrendingUp className="h-5 w-5 text-[#f5d48a]" />
+              <TrendingUp className="h-5 w-5 text-[#34d399]" />
             </div>
-            <span>Centro Comercial Barymont</span>
+            <span>Centro Comercial</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Gestión comercial y patrimonial para Pedro: agenda diaria de seguimiento y pipeline visual Kanban.
+            Gestión comercial y patrimonial: agenda diaria de seguimiento y pipeline visual Kanban.
           </p>
         </div>
 
@@ -245,12 +245,12 @@ export default function CRMCommercialPage() {
       {/* KPI Stats Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Pipeline Total */}
-        <div className="card p-5 bg-[#0a1424]/90 border border-[#d9b35f]/30 flex flex-col justify-between relative overflow-hidden">
+        <div className="card p-5 bg-[#0a1424]/90 border border-[#10b981]/30 flex flex-col justify-between relative overflow-hidden">
           <div>
-            <span className="text-[11px] font-bold text-[#f5d48a] uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-[#34d399] uppercase tracking-wider">
               Pipeline Total
             </span>
-            <p className="text-2xl font-black text-[#f5d48a] font-mono mt-1">
+            <p className="text-2xl font-black text-[#34d399] font-mono mt-1">
               {(metrics?.pipelineValue || 0).toLocaleString("es-ES", { minimumFractionDigits: 0 })} €
             </p>
           </div>
@@ -273,7 +273,7 @@ export default function CRMCommercialPage() {
             <p className="text-2xl font-black text-slate-100 font-mono">
               {metrics?.openOpportunities || 0}
             </p>
-            <p className="text-[11px] text-[#f5d48a] mt-0.5 font-medium">
+            <p className="text-[11px] text-[#34d399] mt-0.5 font-medium">
               {hotOpportunities.length} prioritarias / calientes
             </p>
           </div>
@@ -326,19 +326,19 @@ export default function CRMCommercialPage() {
           onClick={() => setViewMode("workspace")}
           className={`px-4 py-2.5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
             viewMode === "workspace"
-              ? "bg-[#d9b35f] text-slate-950 shadow-md ring-2 ring-[#f5d48a]/30"
+              ? "bg-[#10b981] text-slate-950 shadow-md ring-2 ring-[#34d399]/30"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800"
           }`}
         >
           <Sparkles className="h-4 w-4" />
-          Centro de Trabajo Diario de Pedro
+          Centro de Trabajo Diario
         </button>
 
         <button
           onClick={() => setViewMode("pipeline")}
           className={`px-4 py-2.5 text-xs font-bold rounded-xl flex items-center gap-2 transition-all ${
             viewMode === "pipeline"
-              ? "bg-[#d9b35f] text-slate-950 shadow-md ring-2 ring-[#f5d48a]/30"
+              ? "bg-[#10b981] text-slate-950 shadow-md ring-2 ring-[#34d399]/30"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 border border-slate-800"
           }`}
         >
@@ -351,9 +351,9 @@ export default function CRMCommercialPage() {
         <div className="space-y-8">
           {/* Section 1: HOY */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 border-l-4 border-[#d9b35f] pl-3">
+            <div className="flex items-center gap-2 border-l-4 border-[#10b981] pl-3">
               <h2 className="text-base font-black text-slate-100 uppercase tracking-wider">
-                Hoy en la Agenda de Pedro
+                Hoy en la Agenda
               </h2>
               <span className="text-xs text-slate-400">
                 · Llamadas pendientes, reuniones y documentación urgente
@@ -415,7 +415,7 @@ export default function CRMCommercialPage() {
                           <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
                             <WhatsAppButton
                               phone={t.client_phone}
-                              message={`Hola ${t.client_name || ""}, te contacto desde Barymont.`}
+                              message={`Hola ${t.client_name || ""}, te contacto desde Electricista360.`}
                               className="h-7 px-2.5 text-[11px]"
                             />
                             <a
@@ -491,7 +491,7 @@ export default function CRMCommercialPage() {
                           {c.phone ? (
                             <WhatsAppButton
                               phone={c.phone}
-                              message={`Hola ${c.name}, te contacto desde Barymont para recordar la documentación pendiente.`}
+                              message={`Hola ${c.name}, te contacto desde Electricista360 para recordar la documentación pendiente.`}
                               className="h-7 px-2.5 text-[11px]"
                             />
                           ) : <div />}
@@ -523,10 +523,10 @@ export default function CRMCommercialPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Oportunidades Calientes */}
-              <div className="card p-5 bg-[#0a1424]/90 border border-[#d9b35f]/30 space-y-4">
+              <div className="card p-5 bg-[#0a1424]/90 border border-[#10b981]/30 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-[#f5d48a] uppercase tracking-wider flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-[#f5d48a]" />
+                  <h3 className="text-xs font-bold text-[#34d399] uppercase tracking-wider flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-[#34d399]" />
                     Oportunidades Calientes ({hotOpportunities.length})
                   </h3>
                 </div>
@@ -540,7 +540,7 @@ export default function CRMCommercialPage() {
                     {hotOpportunities.map((opp) => (
                       <div
                         key={opp.id}
-                        className="p-3.5 rounded-xl border border-[#d9b35f]/20 bg-[#0d1c33] hover:border-[#d9b35f]/40 transition-all space-y-2"
+                        className="p-3.5 rounded-xl border border-[#10b981]/20 bg-[#0d1c33] hover:border-[#10b981]/40 transition-all space-y-2"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -550,13 +550,13 @@ export default function CRMCommercialPage() {
                               {opp.client_company ? ` · ${opp.client_company}` : ""}
                             </p>
                           </div>
-                          <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-[#d9b35f]/20 text-[#f5d48a] border border-[#d9b35f]/40 shrink-0">
+                          <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/40 shrink-0">
                             {opp.probability || 60}%
                           </span>
                         </div>
 
                         <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                          <span className="font-mono font-black text-[#f5d48a]">
+                          <span className="font-mono font-black text-[#34d399]">
                             {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
                           </span>
                           {opp.client_id ? (
@@ -633,13 +633,13 @@ export default function CRMCommercialPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
-                Pipeline de Soluciones Financieras Barymont
+                Pipeline Comercial
               </h2>
               <p className="text-xs text-slate-400">
                 Flujo visual de 6 etapas comerciales desde el primer contacto hasta el cierre de póliza o plan.
               </p>
             </div>
-            <span className="text-xs font-mono font-bold text-[#f5d48a] self-start sm:self-auto">
+            <span className="text-xs font-mono font-bold text-[#34d399] self-start sm:self-auto">
               Total Pipeline: {pipelineValue.toLocaleString("es-ES")} €
             </span>
           </div>
@@ -663,7 +663,7 @@ export default function CRMCommercialPage() {
                           {colOpps.length}
                         </span>
                       </div>
-                      <p className="text-xs font-mono font-bold text-[#f5d48a]">
+                      <p className="text-xs font-mono font-bold text-[#34d399]">
                         {colTotal.toLocaleString("es-ES")} €
                       </p>
                     </div>
@@ -699,7 +699,7 @@ export default function CRMCommercialPage() {
                             </div>
 
                             <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/80">
-                              <span className="font-mono font-black text-[#f5d48a]">
+                              <span className="font-mono font-black text-[#34d399]">
                                 {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
                               </span>
                               {opp.probability !== undefined && (
@@ -747,8 +747,8 @@ export default function CRMCommercialPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
           <div className="card w-full max-w-lg p-6 bg-[#0c182c] border border-slate-700 shadow-2xl space-y-4 animate-scale-in max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <Plus className="h-5 w-5 text-[#f5d48a]" />
-              Nueva Oportunidad Comercial (Barymont)
+              <Plus className="h-5 w-5 text-[#34d399]" />
+              Nueva Oportunidad Comercial
             </h3>
             <form onSubmit={handleCreateOpp} className="space-y-3">
               <div>

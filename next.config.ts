@@ -59,6 +59,30 @@ function detectarOrigenesLan(): string[] {
  */
 const origenesLan = detectarOrigenesLan();
 
+/**
+ * TÚNEL HTTPS (P0 real: probar la VOZ en el móvil).
+ *
+ * POR QUÉ HACE FALTA
+ * El micrófono del navegador exige CONTEXTO SEGURO: por `http://IP-de-LAN` no hay
+ * `getUserMedia` y el dictado no puede funcionar. La única forma de probar la voz
+ * en el móvil de verdad es un túnel HTTPS... pero la URL del túnel es OTRO HOST, y
+ * Next 16 bloquea por defecto sus recursos de desarrollo para hosts no permitidos.
+ * Resultado medido con el túnel puesto y sin esta lista: el HTML llega, React NO
+ * hidrata, el botón "Dictar" no arranca la escucha y la página se recarga sola
+ * (el log del servidor lo dice literalmente:
+ *   "Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from
+ *    <host>.trycloudflare.com").
+ *
+ * Los túneles rápidos de Cloudflare CAMBIAN de subdominio en cada arranque, así que
+ * se permite el patrón completo. `E360_DEV_ORIGIN` permite añadir además un dominio
+ * fijo (túnel con nombre propio) sin tocar código.
+ *
+ * ALCANCE: `allowedDevOrigins` SOLO lo usa el servidor de DESARROLLO. No afecta a
+ * `next build` ni al despliegue: en producción esta lista no se consulta.
+ */
+const ORIGENES_TUNEL = ["*.trycloudflare.com", "*.cfargotunnel.com"];
+const origenExtra = process.env.E360_DEV_ORIGIN?.trim();
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "localhost",
@@ -67,6 +91,9 @@ const nextConfig: NextConfig = {
     // Red de seguridad: cualquier host privado, por si la IP cambia sin reiniciar.
     "192.168.*.*",
     "10.*.*.*",
+    // Túneles HTTPS para probar la voz en el móvil (solo desarrollo).
+    ...ORIGENES_TUNEL,
+    ...(origenExtra ? [origenExtra] : []),
   ],
   serverExternalPackages: ["better-sqlite3"],
   experimental: {

@@ -111,7 +111,7 @@ describe("asistente-flow: error handling", () => {
   });
 
   test("intent de tipo incorrecto genera error claro", () => {
-    const intent = parseIntent("buscar cliente Pedro");
+    const intent = parseIntent("buscar cliente Juan");
     const result = buildBudgetDraft(intent);
     assert.equal(result.success, false);
     assert.ok(result.errors[0].includes("create_budget"));

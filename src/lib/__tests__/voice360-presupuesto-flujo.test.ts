@@ -197,11 +197,11 @@ test("Voz 360 — flujo completo: borrador, corrección por voz, confirmación e
   assert.equal(num(paso5b.json.totals.subtotal), 458, "base tras completar la línea añadida");
   assert.equal(await contarPresupuestos(), 0);
 
-  // ── 6. "el cliente es Pedro García" ───────────────────────────────────
-  const paso6 = await post({ input: "el cliente es Pedro García", draft });
+  // ── 6. "el cliente es Juan Pérez" ───────────────────────────────────
+  const paso6 = await post({ input: "el cliente es Juan Pérez", draft });
   assert.equal(paso6.json.intent, "electricista:budget_set_client");
   draft = paso6.json.draft;
-  assert.equal(draft.client_name, "Pedro García");
+  assert.equal(draft.client_name, "Juan Pérez");
   assert.equal(await contarPresupuestos(), 0);
 
   // ── 7. "cambia el IVA al 10" ──────────────────────────────────────────

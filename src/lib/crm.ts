@@ -2,12 +2,12 @@
  * AUTÓNOMO360 - CRM & Commercial Pipeline
  *
  * Soporte unificado para flujos comerciales y CRM:
- * - Vertical Barymont (Prospección financiera, reuniones, propuestas, seguimiento y cierre)
+ * - Vertical comercial (prospección, reuniones, propuestas, seguimiento y cierre)
  * - Vertical Electricista / General (Visitas técnicas, presupuestos y facturación)
  */
 
 export const CRM_STAGES = [
-  // Estados comerciales Barymont / General
+  // Estados comerciales / General
   "nuevo",
   "contactado",
   "reunion",
@@ -164,9 +164,9 @@ export const CRM_STAGE_BADGES: Record<
 };
 
 /**
- * Pipeline comercial principal estructurado para Barymont / Ventas consultivas
+ * Pipeline comercial principal / Ventas consultivas
  */
-export const BARYMONT_PIPELINE_STAGES: readonly CrmStage[] = [
+export const CRM_PIPELINE_STAGES: readonly CrmStage[] = [
   "nuevo",
   "contactado",
   "reunion",

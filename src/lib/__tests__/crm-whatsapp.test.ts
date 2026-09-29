@@ -4,15 +4,19 @@ import { CRM_STAGES, isCrmStage } from "../crm";
 import { buildWhatsAppUrl, normalizePhoneForWhatsApp } from "../phone";
 import { fillTemplate, templates } from "../templates";
 
-test("el pipeline conserva las etapas comerciales en orden", () => {
-  assert.ok(CRM_STAGES.includes("nuevo"));
-  assert.ok(CRM_STAGES.includes("contactado"));
-  assert.ok(CRM_STAGES.includes("visita"));
-  assert.ok(CRM_STAGES.includes("presupuesto"));
-  assert.ok(CRM_STAGES.includes("aceptado"));
-  assert.ok(CRM_STAGES.includes("trabajo"));
-  assert.ok(CRM_STAGES.includes("facturado"));
-  assert.ok(CRM_STAGES.includes("cobrado"));
+test("el pipeline conserva las etapas comerciales en orden y sin duplicados", () => {
+  // El pipeline del CRM incluye las etapas comerciales genéricas del vertical
+  // electricista (visita, presupuesto, aceptado, trabajo, facturado, cobrado) más
+  // las etapas de seguimiento. El test fija el ORDEN y la AUSENCIA de duplicados,
+  // que es el invariante real: si se añade una etapa, este test debe actualizarse
+  // en el mismo cambio.
+  const esperadas = [
+    "nuevo", "contactado", "reunion", "seguimiento", "interesado", "doc_pendiente",
+    "propuesta", "negociacion", "cliente", "no_interesado", "perdido", "visita",
+    "presupuesto", "aceptado", "trabajo", "facturado", "cobrado",
+  ];
+  assert.deepEqual([...CRM_STAGES], esperadas);
+  assert.equal(new Set(CRM_STAGES).size, CRM_STAGES.length, "sin etapas duplicadas");
   assert.equal(isCrmStage("facturado"), true);
   assert.equal(isCrmStage("enviado"), false);
 });

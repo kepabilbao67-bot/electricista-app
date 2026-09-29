@@ -400,7 +400,7 @@ export default function ClienteDetailPage() {
       </div>
 
       {/* Main Client Profile Header Card */}
-      <div className="card p-6 sm:p-7 bg-gradient-to-br from-[#06101c] via-[#0a1829] to-[#0d223a] border border-slate-700/80 shadow-2xl relative overflow-hidden space-y-6">
+      <div className="card p-6 sm:p-7 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b] border border-slate-700/80 shadow-2xl relative overflow-hidden space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           {/* Avatar & Basic Info */}
           <div className="flex items-start sm:items-center gap-4">
@@ -477,7 +477,7 @@ export default function ClienteDetailPage() {
                   onClick={() => handleStatusChange(st)}
                   className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
                     isCurrent
-                      ? "bg-[#d9b35f] text-slate-950 shadow-sm ring-1 ring-[#f5d48a]"
+                      ? "bg-[#10b981] text-slate-950 shadow-sm ring-1 ring-[#34d399]"
                       : "bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800"
                   }`}
                 >
@@ -491,7 +491,7 @@ export default function ClienteDetailPage() {
           <div className="md:col-span-4 flex items-center justify-end gap-4 text-xs">
             <div className="text-right">
               <span className="text-[10px] text-slate-400 uppercase font-bold">Pipeline Oportunidades</span>
-              <p className="font-mono font-black text-sm text-[#f5d48a]">
+              <p className="font-mono font-black text-sm text-[#34d399]">
                 {totalOppValue.toLocaleString("es-ES")} €
               </p>
             </div>
@@ -511,7 +511,7 @@ export default function ClienteDetailPage() {
           onClick={() => setActiveTab("resumen")}
           className={`px-4 py-2.5 font-bold rounded-xl transition-all ${
             activeTab === "resumen"
-              ? "bg-[#d9b35f] text-slate-950 shadow-sm"
+              ? "bg-[#10b981] text-slate-950 shadow-sm"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
           }`}
         >
@@ -522,7 +522,7 @@ export default function ClienteDetailPage() {
           onClick={() => setActiveTab("actividad")}
           className={`px-4 py-2.5 font-bold rounded-xl flex items-center gap-1.5 transition-all ${
             activeTab === "actividad"
-              ? "bg-[#d9b35f] text-slate-950 shadow-sm"
+              ? "bg-[#10b981] text-slate-950 shadow-sm"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
           }`}
         >
@@ -533,7 +533,7 @@ export default function ClienteDetailPage() {
           onClick={() => setActiveTab("oportunidades")}
           className={`px-4 py-2.5 font-bold rounded-xl flex items-center gap-1.5 transition-all ${
             activeTab === "oportunidades"
-              ? "bg-[#d9b35f] text-slate-950 shadow-sm"
+              ? "bg-[#10b981] text-slate-950 shadow-sm"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
           }`}
         >
@@ -544,7 +544,7 @@ export default function ClienteDetailPage() {
           onClick={() => setActiveTab("tareas")}
           className={`px-4 py-2.5 font-bold rounded-xl flex items-center gap-1.5 transition-all ${
             activeTab === "tareas"
-              ? "bg-[#d9b35f] text-slate-950 shadow-sm"
+              ? "bg-[#10b981] text-slate-950 shadow-sm"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
           }`}
         >
@@ -555,7 +555,7 @@ export default function ClienteDetailPage() {
           onClick={() => setActiveTab("documentos")}
           className={`px-4 py-2.5 font-bold rounded-xl flex items-center gap-1.5 transition-all ${
             activeTab === "documentos"
-              ? "bg-[#d9b35f] text-slate-950 shadow-sm"
+              ? "bg-[#10b981] text-slate-950 shadow-sm"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
           }`}
         >
@@ -624,9 +624,9 @@ export default function ClienteDetailPage() {
           {/* Sidebar Info */}
           <div className="lg:col-span-4 space-y-6">
             {/* Quick Summary Card */}
-            <div className="card p-5 bg-[#0a1424]/90 border border-[#d9b35f]/30 space-y-4">
-              <h3 className="text-xs font-bold text-[#f5d48a] uppercase tracking-wider flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#f5d48a]" />
+            <div className="card p-5 bg-[#0a1424]/90 border border-[#10b981]/30 space-y-4">
+              <h3 className="text-xs font-bold text-[#34d399] uppercase tracking-wider flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#34d399]" />
                 Estado del Prospecto
               </h3>
               <div className="space-y-2 text-xs">
@@ -640,7 +640,7 @@ export default function ClienteDetailPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800">
                   <span className="text-slate-400">Total en cartera:</span>
-                  <span className="font-mono font-bold text-[#f5d48a]">{totalOppValue.toLocaleString("es-ES")} €</span>
+                  <span className="font-mono font-bold text-[#34d399]">{totalOppValue.toLocaleString("es-ES")} €</span>
                 </div>
               </div>
             </div>
@@ -731,7 +731,7 @@ export default function ClienteDetailPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-              <BriefcaseBusiness className="h-4 w-4 text-[#f5d48a]" />
+              <BriefcaseBusiness className="h-4 w-4 text-[#34d399]" />
               Oportunidades & Soluciones en Curso
             </h2>
             <Button
@@ -755,7 +755,7 @@ export default function ClienteDetailPage() {
               {opportunities.map((opp) => (
                 <div
                   key={opp.id}
-                  className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 hover:border-[#d9b35f]/40 transition-all space-y-3 shadow-md"
+                  className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 hover:border-[#10b981]/40 transition-all space-y-3 shadow-md"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -764,7 +764,7 @@ export default function ClienteDetailPage() {
                         Etapa: <strong className="text-slate-200">{CRM_STAGE_LABELS[opp.stage]}</strong>
                       </p>
                     </div>
-                    <span className="px-2.5 py-0.5 text-xs font-mono font-bold rounded-full bg-[#d9b35f]/20 text-[#f5d48a] border border-[#d9b35f]/30">
+                    <span className="px-2.5 py-0.5 text-xs font-mono font-bold rounded-full bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/30">
                       {opp.probability || 20}%
                     </span>
                   </div>
@@ -772,7 +772,7 @@ export default function ClienteDetailPage() {
                   <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase font-bold">Valor Estimado</span>
-                      <p className="font-mono font-black text-base text-[#f5d48a]">
+                      <p className="font-mono font-black text-base text-[#34d399]">
                         {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
                       </p>
                     </div>
@@ -890,7 +890,7 @@ export default function ClienteDetailPage() {
             {/* Presupuestos / Estudios */}
             <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 space-y-3">
               <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <FileText className="h-4 w-4 text-[#f5d48a]" />
+                <FileText className="h-4 w-4 text-[#34d399]" />
                 Estudios / Presupuestos ({budgets.length})
               </h3>
               {budgets.length === 0 ? (
@@ -904,7 +904,7 @@ export default function ClienteDetailPage() {
                       className="p-2.5 rounded-xl border border-slate-800 bg-[#0c182c] hover:border-slate-700 flex items-center justify-between text-xs transition-colors"
                     >
                       <span className="font-bold text-slate-200">{b.number}</span>
-                      <span className="font-mono font-bold text-[#f5d48a]">{Number(b.total || 0).toLocaleString("es-ES")} €</span>
+                      <span className="font-mono font-bold text-[#34d399]">{Number(b.total || 0).toLocaleString("es-ES")} €</span>
                     </Link>
                   ))}
                 </div>
@@ -1003,7 +1003,7 @@ export default function ClienteDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
           <div className="card w-full max-w-lg p-6 bg-[#0c182c] border border-slate-700 shadow-2xl space-y-4 animate-scale-in">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <BriefcaseBusiness className="h-5 w-5 text-[#f5d48a]" />
+              <BriefcaseBusiness className="h-5 w-5 text-[#34d399]" />
               Nueva Oportunidad Comercial
             </h3>
             <form onSubmit={handleSaveOpportunity} className="space-y-3">

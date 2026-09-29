@@ -121,62 +121,49 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16">
-      {/* Header Banner - Barymont Identity */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-700/80 bg-gradient-to-br from-[#06101c] via-[#0a1829] to-[#0d223a] p-6 sm:p-8 shadow-[0_20px_50px_rgba(2,6,23,0.5)]">
-        <div className="absolute right-0 top-0 -mt-12 -mr-12 h-64 w-64 rounded-full bg-gradient-to-br from-[#0284c7]/20 to-[#d9b35f]/10 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-[#d9b35f]/15 text-[#f5d48a] border border-[#d9b35f]/30">
-                <Sparkles className="h-3.5 w-3.5" /> BARYMONT · CENTRO COMERCIAL
-              </span>
-              <span className="hidden sm:inline-block text-xs text-slate-400">
-                “Planifica. Protege. Haz crecer.”
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight">
-              Buenos días, <span className="bg-gradient-to-r from-slate-100 via-[#f5d48a] to-[#d9b35f] bg-clip-text text-transparent">Pedro</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              Supervisión de actividad comercial, planificación de cartera y seguimiento de clientes en tiempo real.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <Link href="/crm" className="btn-primary">
-              <TrendingUp className="h-4 w-4" /> Pipeline CRM
-            </Link>
-            <Link href="/clientes" className="btn-secondary">
-              <Users className="h-4 w-4" /> Directorio Clientes
-            </Link>
-            <Link href="/asistente" className="btn-accent">
-              <Sparkles className="h-4 w-4" /> Copilot IA
-            </Link>
-          </div>
+      {/* Cabecera Electricista360 */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-slate-100">
+            Electricista360
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
+            Supervisión de presupuestos, partes de trabajo y facturación en tiempo real.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <Link href="/crm" className="btn-secondary">
+            <TrendingUp className="h-4 w-4" /> CRM
+          </Link>
+          <Link href="/clientes" className="btn-secondary">
+            <Users className="h-4 w-4" /> Clientes
+          </Link>
+          <Link href="/asistente" className="btn-primary">
+            <Sparkles className="h-4 w-4" /> Asistente
+          </Link>
         </div>
       </div>
 
       {/* Hero Metric & Main KPI Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Hero Card: Pipeline Activo (Protagonista Champagne) */}
-        <div className="lg:col-span-5 rounded-3xl border border-[#d9b35f]/30 bg-gradient-to-br from-[#0b1728] via-[#0d1d33] to-[#091524] p-6 sm:p-7 shadow-[0_20px_45px_rgba(217,179,95,0.08)] flex flex-col justify-between space-y-6 relative overflow-hidden">
+        <div className="lg:col-span-5 rounded-3xl border border-[#10b981]/30 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#020617] p-6 sm:p-7 shadow-[0_20px_45px_rgba(217,179,95,0.08)] flex flex-col justify-between space-y-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-            <DollarSign className="h-32 w-32 text-[#f5d48a]" />
+            <DollarSign className="h-32 w-32 text-[#34d399]" />
           </div>
 
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#f5d48a]">
+              <span className="text-xs font-bold uppercase tracking-widest text-[#34d399]">
                 Valor del Pipeline Activo
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#f5d48a]/20 text-[#f5d48a] border border-[#f5d48a]/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/30">
                 {metrics?.openOpportunities || opportunities.length} operaciones
               </span>
             </div>
 
             <div>
-              <div className="text-3xl sm:text-4xl font-black tracking-tight text-[#f5d48a] font-mono">
+              <div className="text-3xl sm:text-4xl font-black tracking-tight text-[#34d399] font-mono">
                 {pipelineValue.toLocaleString("es-ES", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
               </div>
               <p className="text-xs text-slate-300 mt-1 flex items-center gap-1.5">
@@ -194,7 +181,7 @@ export default function HomePage() {
             </span>
             <Link
               href="/crm"
-              className="text-xs font-bold text-[#f5d48a] hover:text-white flex items-center gap-1 transition-colors"
+              className="text-xs font-bold text-[#34d399] hover:text-white flex items-center gap-1 transition-colors"
             >
               Ver Kanban <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -224,17 +211,17 @@ export default function HomePage() {
           </div>
 
           {/* Card 2: Oportunidades Calientes */}
-          <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 flex flex-col justify-between hover:border-[#d9b35f]/40 transition-all">
+          <div className="card p-5 bg-[#0a1424]/90 border border-slate-700/80 flex flex-col justify-between hover:border-[#10b981]/40 transition-all">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Oportunidades Calientes
               </span>
-              <div className="p-2 rounded-xl bg-[#d9b35f]/15 text-[#f5d48a] border border-[#d9b35f]/30">
+              <div className="p-2 rounded-xl bg-[#10b981]/15 text-[#34d399] border border-[#10b981]/30">
                 <Target className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">
-              <p className="text-2xl font-black text-[#f5d48a] font-mono">
+              <p className="text-2xl font-black text-[#34d399] font-mono">
                 {metrics?.hotOpportunities || hotOpportunities.length}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">
@@ -367,10 +354,10 @@ export default function HomePage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#f5d48a]" />
+                <Target className="h-4 w-4 text-[#34d399]" />
                 Oportunidades Prioritarias
               </h2>
-              <Link href="/crm" className="text-xs font-semibold text-[#f5d48a] hover:text-white">
+              <Link href="/crm" className="text-xs font-semibold text-[#34d399] hover:text-white">
                 Ver Kanban
               </Link>
             </div>
@@ -385,7 +372,7 @@ export default function HomePage() {
                 {hotOpportunities.map((opp) => (
                   <div
                     key={opp.id}
-                    className="card p-4 bg-[#0a1424]/90 border border-slate-700/80 hover:border-[#d9b35f]/40 transition-all space-y-2"
+                    className="card p-4 bg-[#0a1424]/90 border border-slate-700/80 hover:border-[#10b981]/40 transition-all space-y-2"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -395,13 +382,13 @@ export default function HomePage() {
                           {opp.client_company ? ` · ${opp.client_company}` : ""}
                         </p>
                       </div>
-                      <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-[#d9b35f]/20 text-[#f5d48a] border border-[#d9b35f]/40 shrink-0">
+                      <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-[#10b981]/20 text-[#34d399] border border-[#10b981]/40 shrink-0">
                         {opp.probability || 60}%
                       </span>
                     </div>
 
                     <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                      <span className="font-mono font-black text-[#f5d48a]">
+                      <span className="font-mono font-black text-[#34d399]">
                         {Number(opp.estimated_value || 0).toLocaleString("es-ES")} €
                       </span>
                       {opp.next_action && (

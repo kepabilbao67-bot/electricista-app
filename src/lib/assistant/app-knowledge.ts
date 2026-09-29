@@ -286,7 +286,7 @@ export const APP_MODULES: AppModule[] = [
       "Crear presupuestos por voz con normalización de vocabulario eléctrico (enchufes→bases de enchufe, magnetos→magnetotérmicos, etc.)",
       "Borrador EN MEMORIA que se muestra completo: cliente, líneas (cantidad, unidad, descripción, precio unitario y subtotal por línea), base imponible, IVA, total y observaciones",
       "Acciones visibles sobre el borrador: Editar (cantidad, unidad, descripción, precio y alta/baja de líneas), Guardar presupuesto y Cancelar",
-      "Correcciones por voz sobre el mismo borrador: «cambia los cuatro enchufes por seis», «el magnetotérmico son 25 euros», «quita el cable», «añade dos horas de trabajo», «el cliente es Pedro García», «cambia el IVA al 10»",
+      "Correcciones por voz sobre el mismo borrador: «cambia los cuatro enchufes por seis», «el magnetotérmico son 25 euros», «quita el cable», «añade dos horas de trabajo», «el cliente es Juan Pérez», «cambia el IVA al 10»",
       "Recalcula subtotal, IVA y total después de cada cambio y sigue SIN guardar",
       "Añadir líneas de presupuesto por voz",
       "Fijar el IVA del borrador sin crear líneas de IVA; 'Añade IVA' conserva el tipo ya fijado",

@@ -27,7 +27,7 @@ export default async function LoginPage({
   const brand = loadVerticalConfig().brand;
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#070d17] px-4 py-10">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#020617] px-4 py-10">
       <div className="w-full max-w-sm rounded-2xl border border-slate-700/80 bg-slate-950/60 p-6 shadow-xl backdrop-blur-md sm:p-8">
         <div className="mb-7 text-center">
           <div

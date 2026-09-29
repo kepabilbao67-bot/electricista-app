@@ -182,19 +182,19 @@ export default async function RootLayout({
           }
         `}</style>
       </head>
-      <body className="bg-[#070d17] text-slate-100 antialiased transition-colors duration-200">
+      <body className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 antialiased">
         {isPublicRoute ? (
           <div className="app-public min-h-[100dvh]">{children}</div>
         ) : (
-          <div className="app-shell flex h-[100dvh] overflow-hidden bg-transparent">
+          <div className="app-shell flex h-[100dvh] overflow-hidden">
             <Sidebar navItems={navItems} brand={sidebarBrand} />
-            <div className="app-content flex min-w-0 flex-1 flex-col overflow-hidden">
-              <header className="hidden h-16 items-center justify-end gap-3 border-b border-slate-700/80 bg-slate-950/60 px-6 backdrop-blur-md md:flex">
+            <div className="app-content flex flex-1 flex-col overflow-hidden min-w-0">
+              <header className="hidden md:flex h-12 items-center justify-end gap-3 px-6 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md">
                 <LogoutButton />
                 <ThemeToggle />
               </header>
               <MobileNav navItems={navItems} brand={mobileNavBrand} />
-              <main className="app-main flex-1 overflow-y-auto overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.5),_transparent_28%)] p-3 md:p-6 lg:p-8">
+              <main className="app-main flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 lg:p-8">
                 {children}
               </main>
             </div>

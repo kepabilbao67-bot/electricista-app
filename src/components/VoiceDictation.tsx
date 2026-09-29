@@ -55,24 +55,34 @@ interface VoiceDictationProps {
 
 /**
  * Modo de dictado realmente disponible:
- *  - "native": puente Android (window.AndroidSTT) → reconocedor del propio teléfono.
- *  - "web":    Web Speech API (navegador en contexto seguro).
- *  - "none":   no hay ningún motor; se avisa en pantalla, NO se simula éxito.
+ *  - "native":   puente Android (window.AndroidSTT) → reconocedor del teléfono.
+ *  - "web":      Web Speech API (navegador).
+ *  - "fallback": MediaRecorder + /api/asistente/transcribe (servidor).
+ *  - "none":     no hay NINGUNA vía (ni puente, ni Web Speech, ni micrófono):
+ *                se avisa en pantalla, NO se simula éxito.
  *
- * CONTEXTO SEGURO (causa raíz del fallo en móvil):
- * El navegador solo permite el micrófono en contextos seguros (https, localhost
- * o 127.0.0.1). Servida por http://IP-de-LAN, la página tiene
- * window.isSecureContext === false y navigator.mediaDevices es undefined, así que
- * Chrome deniega el micrófono y la Web Speech API responde "not-allowed".
- * En ese caso NO se puede arreglar por código: se avisa con un mensaje claro y se
- * deja el teclado como alternativa. En la APK el dictado va por el puente nativo
- * (AndroidSTT) y por eso sí funciona sobre HTTP.
+ * POR QUÉ EXISTE EL MODO "fallback" (fallo real corregido)
+ * Antes, si el navegador no exponía la Web Speech API —o la exponía y fallaba con
+ * "network", "service-not-allowed" o "not-allowed" (lo normal en móvil: el
+ * servicio de voz de Google no está disponible, o el WebView no lo permite)— el
+ * botón Dictar se quedaba SIN hacer nada útil: sólo un mensaje de error, sin texto
+ * y sin forma de dictar. El usuario pulsaba, hablaba y no aparecía nada.
+ *
+ * Ahora, en cualquiera de esos casos se pasa AUTOMÁTICAMENTE a grabar con
+ * MediaRecorder y se transcribe en el servidor (`/api/asistente/transcribe`). La
+ * clave del proveedor vive SOLO en el servidor: el navegador nunca la ve.
+ *
+ * CONTEXTO SEGURO
+ * El navegador solo permite el micrófono en contextos seguros (https, localhost o
+ * 127.0.0.1). Servida por http://IP-de-LAN la página NO es contexto seguro y no
+ * hay getUserMedia: ahí sólo puede dictarse por el puente nativo (APK) o con el
+ * teclado, y se dice claramente.
  */
-type SttMode = "native" | "web" | "none";
+type SttMode = "native" | "web" | "fallback" | "none";
 
 const SIN_MOTOR_TEXTO = "Dictado no disponible aquí";
 const SIN_MOTOR_TITULO =
-  "Este WebView no expone la Web Speech API y no hay puente nativo. " +
+  "Este navegador no expone micrófono ni reconocimiento de voz. " +
   "Escribe la orden con el teclado.";
 
 /** Traduce los códigos de error de la Web Speech API a algo legible. */
@@ -84,6 +94,68 @@ const ERRORES_WEB: Record<string, string> = {
 
 /** Errores sin sentido reintentar: se para y se informa. */
 const ERRORES_FATALES = new Set(["not-allowed", "service-not-allowed", "audio-capture"]);
+
+/**
+ * ERRORES DE LA WEB SPEECH API QUE ACTIVAN EL FALLA AUTOMÁTICO.
+ *
+ * `network` incluido: es el más habitual en móvil cuando el servicio de voz no
+ * está disponible, y antes dejaba al usuario sin ninguna vía.
+ */
+const ERRORES_QUE_PASAN_A_FALLBACK = new Set([
+  "not-allowed",
+  "service-not-allowed",
+  "network",
+  "audio-capture",
+  "language-not-supported",
+]);
+
+/** Arranque de la Web Speech API: si no da señales en este tiempo, está colgada. */
+const ESPERA_ARRANQUE_WEB_MS = 2500;
+/**
+ * Tope de grabación del fallback. Corta solo: en el móvil el usuario puede no
+ * volver a pulsar "Detener", y sin tope el micrófono quedaría tomado para siempre.
+ */
+const MAX_GRABACION_MS = 20000;
+/**
+ * Si tras este tiempo grabando NO se ha detectado voz (energía), se corta y se
+ * avisa de que no se ha oído nada: no se manda un audio vacío al servidor.
+ */
+const ESPERA_VOZ_FALLBACK_MS = 6000;
+/** Umbral de energía (RMS sobre [-1,1]) para considerar que hay voz. */
+const UMBRAL_VOZ_FALLBACK = 0.012;
+/**
+ * TOPE DE LA TRANSCRIPCIÓN (autocuración del ciclo de dictado).
+ *
+ * Si el servidor no contesta (radio caída, túnel muerto, proveedor colgado),
+ * `fetch` puede quedarse esperando indefinidamente. Sin tope, el estado se quedaba
+ * en "transcribiendo" con el botón Dictar DESHABILITADO para siempre: había que
+ * recargar la aplicación. Con el tope, la sesión se libera y se puede volver a
+ * dictar inmediatamente.
+ *
+ * El valor cubre el peor caso REAL del servidor: proveedor de OpenAI (petición +
+ * reintento) → modelo principal de Google (petición + reintento) → modelo de
+ * reserva (una sola petición). Medido: ~2-3 s por intento, así que 25 s deja
+ * margen y sigue siendo un tope acotado: el usuario ve "no se ha podido", nunca un
+ * botón muerto.
+ */
+const TIMEOUT_TRANSCRIPCION_MS = 25000;
+/**
+ * Red de seguridad del cierre de la grabación: si `MediaRecorder.onstop` no llega
+ * (recorder atascado en "stopping"), el ciclo se cierra igual y el botón no queda
+ * muerto en "Detener".
+ */
+const ESPERA_CIERRE_GRABACION_MS = 1500;
+/** Estados de la grabación del fallback, para poder informar en pantalla. */
+type FaseFallback = "idle" | "grabando" | "transcribiendo";
+
+const FALLBACK_GRABANDO_TEXTO = "Grabando… habla y pulsa Detener";
+const FALLBACK_TRANSCRIBIENDO_TEXTO = "Transcribiendo…";
+const FALLBACK_SIN_VOZ_TEXTO =
+  "No se ha oído nada. Acércate al micrófono y vuelve a pulsar Dictar, o escribe la orden en el cuadro de texto.";
+const FALLBACK_SIN_SERVIDOR_TEXTO =
+  "El dictado por voz no está disponible en el servidor. Escribe la orden en el cuadro de texto.";
+const FALLBACK_FALLO_TEXTO =
+  "No se pudo transcribir el audio. Vuelve a pulsar Dictar o escribe la orden en el cuadro de texto.";
 
 /**
  * Mensajes del puente nativo (NativeStt.java). El puente entrega en `text` un
@@ -142,11 +214,69 @@ export default function VoiceDictation({
   const [error, setError] = useState<string | null>(null);
   /** Texto reconocido que se va mostrando mientras se habla. */
   const [preview, setPreview] = useState("");
+  /** Estado de la grabación del fallback (para informar en pantalla). */
+  const [faseFallback, setFaseFallback] = useState<FaseFallback>("idle");
 
   const reconocimientoRef = useRef<any>(null);
   const modoRef = useRef<SttMode>("web");
   /** Error irrecuperable: no se reintenta ni se reconecta. */
   const errorFatalRef = useRef(false);
+  /**
+   * ¿Ya se ha intentado el fallback en ESTA pulsación?
+   *
+   * Evita el bucle "Web Speech falla → fallback → falla → fallback": el fallback se
+   * intenta UNA vez por dictado y, si tampoco puede, se informa y se para.
+   */
+  const fallbackIntentadoRef = useRef(false);
+  /** ¿Está el dictado de fallback VIVO ahora mismo? (grabando o transcribiendo). */
+  const fallbackActivoRef = useRef(false);
+  /** Recursos de la grabación de fallback (se liberan SIEMPRE al terminar). */
+  const grabacionRef = useRef<{
+    recorder: MediaRecorder | null;
+    stream: MediaStream | null;
+    chunks: Blob[];
+    contexto: AudioContext | null;
+    analizador: AnalyserNode | null;
+    fuente: MediaStreamAudioSourceNode | null;
+    watchdog: number | null;
+    tope: number | null;
+    /** Red de seguridad del cierre de la grabación (si `onstop` no llega). */
+    timerCierre: number | null;
+    /**
+     * Token de la sesión de grabación. Cada arranque lo sube y `liberarGrabacion`
+     * también: así un arranque que siga en vuelo (esperando el permiso del
+     * micrófono) no puede resucitar por encima de un cierre o de un dictado nuevo.
+     */
+    id: number;
+    huboVoz: boolean;
+    parando: boolean;
+  }>({
+    recorder: null,
+    stream: null,
+    chunks: [],
+    contexto: null,
+    analizador: null,
+    fuente: null,
+    watchdog: null,
+    tope: null,
+    timerCierre: null,
+    id: 0,
+    huboVoz: false,
+    parando: false,
+  });
+  /** Watchdog de arranque de la Web Speech API (detecta el motor colgado). */
+  const watchdogArranqueWebRef = useRef<number | null>(null);
+  /**
+   * ¿Cuántos turnos seguidos ha cerrado el motor de NAVEGADOR sin una sola palabra?
+   *
+   * Distingue dos casos que desde fuera parecen el mismo: "el usuario no ha hablado"
+   * (normal) y "el motor está MUDO" (arranca, no devuelve resultados y no da error,
+   * que es lo que se ha medido en un Chrome sin servicio de voz). En el segundo
+   * caso, insistir con el mismo motor deja el dictado inservible para siempre, así
+   * que la PULSACIÓN SIGUIENTE usa la grabación de servidor. Con voz reconocida el
+   * contador se pone a cero: un turno bueno demuestra que el motor sirve.
+   */
+  const turnosWebSinTextoRef = useRef(0);
   /**
    * Texto ya ENTREGADO en este dictado: la entrega es IDEMPOTENTE.
    *
@@ -359,6 +489,461 @@ export default function VoiceDictation({
   }
 
   /**
+   * ==========================================================================
+   * FALLBACK DE DICTADO: MediaRecorder → /api/asistente/transcribe
+   * ==========================================================================
+   * Es la vía que hace que "Dictar" funcione SIEMPRE:
+   *
+   *   - navegador sin Web Speech API (Firefox, muchos WebView, iOS antiguo),
+   *   - Web Speech que responde "network" / "service-not-allowed" / "not-allowed",
+   *   - Web Speech que se queda COLGADA sin dar ninguna señal.
+   *
+   * Se graba con MediaRecorder, se manda el audio al servidor y se escribe el
+   * texto que devuelve. La clave del proveedor de voz NO sale del servidor: el
+   * navegador sólo envía el audio a NUESTRA ruta y recibe `{ text }`.
+   */
+
+  /** ¿Puede este navegador grabar audio? (requisito del fallback) */
+  function fallbackDisponible(): boolean {
+    if (typeof window === "undefined") return false;
+    const media = navigator?.mediaDevices;
+    if (!media?.getUserMedia) return false;
+    return typeof (window as unknown as { MediaRecorder?: unknown }).MediaRecorder === "function";
+  }
+
+  /** Traduce el error de `getUserMedia` a un mensaje claro y accionable. */
+  function mensajeErrorMicrofono(causa: unknown): string {
+    const nombre = causa instanceof Error ? causa.name : String(causa);
+    if (nombre === "NotAllowedError" || nombre === "SecurityError") {
+      return mensajeMicrofonoBloqueado();
+    }
+    if (nombre === "NotFoundError" || nombre === "DevicesNotFoundError") {
+      return "No se detecta ningún micrófono en el dispositivo. " + TECLADO_TEXTO;
+    }
+    return "No se pudo abrir el micrófono. " + TECLADO_TEXTO;
+  }
+
+  /** Libera SIEMPRE los recursos de la grabación: sin esto, el micro queda tomado. */
+  function liberarGrabacion() {
+    const g = grabacionRef.current;
+    // Al liberar, la sesión de grabación queda INVALIDADA: cualquier arranque que
+    // siga en vuelo (permiso del micrófono a medias) se descarta en vez de resucitar.
+    g.id += 1;
+    if (g.timerCierre !== null) {
+      window.clearTimeout(g.timerCierre);
+      g.timerCierre = null;
+    }
+    if (g.watchdog !== null) {
+      window.clearInterval(g.watchdog);
+      g.watchdog = null;
+    }
+    if (g.tope !== null) {
+      window.clearTimeout(g.tope);
+      g.tope = null;
+    }
+    try {
+      g.fuente?.disconnect();
+    } catch {
+      /* ignore */
+    }
+    g.fuente = null;
+    try {
+      g.contexto?.close();
+    } catch {
+      /* ignore */
+    }
+    g.contexto = null;
+    g.analizador = null;
+    if (g.recorder) {
+      g.recorder.ondataavailable = null;
+      g.recorder.onstop = null;
+      g.recorder.onerror = null;
+      if (g.recorder.state !== "inactive") {
+        try {
+          g.recorder.stop();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    g.recorder = null;
+    if (g.stream) {
+      for (const pista of g.stream.getTracks()) {
+        try {
+          pista.stop();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    g.stream = null;
+    g.chunks = [];
+    g.parando = false;
+    fallbackActivoRef.current = false;
+    setFaseFallback("idle");
+  }
+
+  /** Cabecera WAV para PCM 16 bits mono. */
+  function wavDesdeInt16(muestras: Int16Array, rate: number): ArrayBuffer {
+    const datos = new Uint8Array(muestras.length * 2);
+    const vista = new DataView(datos.buffer);
+    for (let i = 0; i < muestras.length; i += 1) vista.setInt16(i * 2, muestras[i], true);
+    const cabecera = new ArrayBuffer(44);
+    const v = new DataView(cabecera);
+    const texto = (pos: number, s: string) => {
+      for (let i = 0; i < s.length; i += 1) v.setUint8(pos + i, s.charCodeAt(i));
+    };
+    texto(0, "RIFF");
+    v.setUint32(4, 36 + datos.length, true);
+    texto(8, "WAVE");
+    texto(12, "fmt ");
+    v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); // PCM
+    v.setUint16(22, 1, true); // mono
+    v.setUint32(24, rate, true);
+    v.setUint32(28, rate * 2, true);
+    v.setUint16(32, 2, true);
+    v.setUint16(34, 16, true);
+    texto(36, "data");
+    v.setUint32(40, datos.length, true);
+    const salida = new Uint8Array(44 + datos.length);
+    salida.set(new Uint8Array(cabecera), 0);
+    salida.set(datos, 44);
+    return salida.buffer;
+  }
+
+  /**
+   * Convierte el audio grabado a WAV 16 kHz mono.
+   *
+   * POR QUÉ (comprobado contra la API real)
+   * MediaRecorder entrega WebM/Opus. El proveedor de voz del servidor acepta WAV y
+   * rechaza formato que no reconozca, así que se decodifica en el propio navegador
+   * (WebAudio) y se reempaqueta: mismo audio, formato que entienden TODOS los
+   * proveedores. Si la decodificación falla, se envía el audio original: el
+   * dictado se intenta igual y no se pierde el turno.
+   */
+  async function convertirAWav16k(blob: Blob): Promise<Blob | null> {
+    try {
+      const Ctor =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const contexto = new Ctor();
+      const crudo = await blob.arrayBuffer();
+      const audio = await contexto.decodeAudioData(crudo);
+      const canales = audio.numberOfChannels;
+      const n = audio.length;
+      const mono = new Float32Array(n);
+      for (let c = 0; c < canales; c += 1) {
+        const datos = audio.getChannelData(c);
+        for (let i = 0; i < n; i += 1) mono[i] += datos[i] / canales;
+      }
+      const destino = 16000;
+      const total = Math.max(1, Math.floor((n * destino) / audio.sampleRate));
+      const salida = new Int16Array(total);
+      for (let i = 0; i < total; i += 1) {
+        const pos = (i * audio.sampleRate) / destino;
+        const i0 = Math.floor(pos);
+        const i1 = Math.min(i0 + 1, n - 1);
+        const f = pos - i0;
+        const muestra = mono[i0] * (1 - f) + mono[i1] * f;
+        salida[i] = Math.max(-1, Math.min(1, muestra)) * 32767;
+      }
+      try {
+        void contexto.close();
+      } catch {
+        /* ignore */
+      }
+      return new Blob([wavDesdeInt16(salida, destino)], { type: "audio/wav" });
+    } catch {
+      return null;
+    }
+  }
+
+  /** Manda el audio grabado al servidor y entrega el texto reconocido. */
+  async function transcribirGrabacion(blob: Blob, huboVoz: boolean) {
+    // Si el usuario canceló, se libera IGUAL: volver sin liberar dejaba la sesión
+    // marcada como activa para siempre y el dictado no volvía a arrancar.
+    if (descartadoRef.current) {
+      liberarGrabacion();
+      return;
+    }
+    setFaseFallback("transcribiendo");
+    setPreview(FALLBACK_TRANSCRIBIENDO_TEXTO);
+    // Tope duro de la transcripción: si el servidor no contesta, se aborta.
+    let relojTranscripcion: number | null = null;
+    try {
+      // Se intenta enviar WAV (lo entienden todos los proveedores). Si no se puede
+      // decodificar, se manda el audio original tal cual.
+      const wav = await convertirAWav16k(blob);
+      const audio = wav ?? blob;
+      const nombre = wav
+        ? "dictado.wav"
+        : blob.type.includes("ogg")
+          ? "dictado.ogg"
+          : blob.type.includes("mp4")
+            ? "dictado.mp4"
+            : "dictado.webm";
+
+      const formulario = new FormData();
+      formulario.append("audio", audio, nombre);
+
+      const controlador = new AbortController();
+      relojTranscripcion = window.setTimeout(
+        () => controlador.abort(),
+        TIMEOUT_TRANSCRIPCION_MS
+      );
+
+      const respuesta = await fetch("/api/asistente/transcribe", {
+        method: "POST",
+        body: formulario,
+        signal: controlador.signal,
+      });
+      const cuerpo = (await respuesta.json().catch(() => ({}))) as { text?: string; error?: string };
+
+      if (!respuesta.ok) {
+        // 422 = el servidor ha recibido audio pero no ha encontrado voz.
+        if (respuesta.status === 422 || cuerpo.error === "STT_EMPTY") {
+          setError(FALLBACK_SIN_VOZ_TEXTO);
+          onErrorRef.current?.(FALLBACK_SIN_VOZ_TEXTO);
+          return;
+        }
+        // 503: no hay proveedor de voz configurado en el servidor (no es culpa
+        // del micrófono ni del usuario, y NO debe parecer un error interno).
+        if (respuesta.status === 503 || cuerpo.error === "STT_NOT_CONFIGURED") {
+          setError(FALLBACK_SIN_SERVIDOR_TEXTO);
+          onErrorRef.current?.(FALLBACK_SIN_SERVIDOR_TEXTO);
+          return;
+        }
+        setError(FALLBACK_FALLO_TEXTO);
+        onErrorRef.current?.(FALLBACK_FALLO_TEXTO);
+        return;
+      }
+
+      const texto = (cuerpo.text ?? "").trim();
+      if (!texto) {
+        setError(huboVoz ? FALLBACK_FALLO_TEXTO : FALLBACK_SIN_VOZ_TEXTO);
+        onErrorRef.current?.(huboVoz ? FALLBACK_FALLO_TEXTO : FALLBACK_SIN_VOZ_TEXTO);
+        return;
+      }
+      // Entrega ÚNICA (misma garantía que la vía nativa/web): nunca duplica.
+      entregarTurno(texto);
+    } catch {
+      setError(FALLBACK_FALLO_TEXTO);
+      onErrorRef.current?.(FALLBACK_FALLO_TEXTO);
+    } finally {
+      if (relojTranscripcion !== null) window.clearTimeout(relojTranscripcion);
+      // SIEMPRE se libera: el ciclo queda reutilizable aunque el servidor falle,
+      // tarde de más o el usuario ya se haya ido de la pantalla.
+      liberarGrabacion();
+    }
+  }
+
+  /**
+   * Termina la grabación. `enviar = false` descarta el audio (Cancelar).
+   *
+   * Es IDEMPOTENTE: da igual si la llaman el usuario, el watchdog de silencio o el
+   * tope de grabación; el audio se envía una sola vez.
+   */
+  function terminarGrabacion(enviar: boolean) {
+    const g = grabacionRef.current;
+    if (g.parando) return;
+    g.parando = true;
+
+    if (g.watchdog !== null) {
+      window.clearInterval(g.watchdog);
+      g.watchdog = null;
+    }
+    if (g.tope !== null) {
+      window.clearTimeout(g.tope);
+      g.tope = null;
+    }
+
+    const huboVoz = g.huboVoz;
+    const recorder = g.recorder;
+
+    // `cerrar` es IDEMPOTENTE: pueden concurrir el `onstop` del propio recorder y
+    // la red de seguridad de abajo, y el audio sólo puede enviarse UNA vez.
+    let cerrado = false;
+    const cerrar = () => {
+      if (cerrado) return;
+      cerrado = true;
+      if (g.timerCierre !== null) {
+        window.clearTimeout(g.timerCierre);
+        g.timerCierre = null;
+      }
+      const tipo = recorder?.mimeType || "audio/webm";
+      const blob = new Blob(g.chunks, { type: tipo });
+      // El micrófono se libera ANTES de transcribir: así nunca queda una pista
+      // abierta mientras se espera al servidor y se puede volver a pulsar Dictar.
+      const stream = g.stream;
+      g.stream = null;
+      if (stream) {
+        for (const pista of stream.getTracks()) {
+          try {
+            pista.stop();
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      if (stream) {
+        setIsListening(false);
+        setPreview("");
+        onListeningEndRef.current?.();
+      }
+      if (!enviar || descartadoRef.current) {
+        liberarGrabacion();
+        return;
+      }
+      if (!huboVoz) {
+        // Silencio: no se manda audio vacío al servidor; se avisa y se libera.
+        liberarGrabacion();
+        setError(FALLBACK_SIN_VOZ_TEXTO);
+        onErrorRef.current?.(FALLBACK_SIN_VOZ_TEXTO);
+        return;
+      }
+      void transcribirGrabacion(blob, huboVoz);
+    };
+
+    if (recorder && recorder.state !== "inactive") {
+      recorder.onstop = cerrar;
+      try {
+        recorder.stop(); // dispara onstop → cerrar()
+        // RED DE SEGURIDAD: si `onstop` no llega (recorder atascado en "stopping"),
+        // el cierre ocurre igual. Sin esto el botón se quedaba en "Detener" y no se
+        // podía volver a dictar sin recargar.
+        if (g.timerCierre !== null) window.clearTimeout(g.timerCierre);
+        g.timerCierre = window.setTimeout(() => {
+          g.timerCierre = null;
+          cerrar();
+        }, ESPERA_CIERRE_GRABACION_MS);
+        return;
+      } catch {
+        /* si no se puede parar, se cierra igualmente */
+      }
+    }
+    cerrar();
+  }
+
+  /**
+   * ARRANCA el dictado de fallback: graba hasta que el usuario pulse Detener (o
+   * hasta el tope, o hasta detectar que no hay voz).
+   */
+  async function iniciarEscuchaFallback() {
+    if (fallbackActivoRef.current) return;
+    const g = grabacionRef.current;
+    // Token de ESTA sesión de grabación: si mientras se pide el micrófono el usuario
+    // cancela, para el dictado o arranca otro, este arranque queda invalidado.
+    g.id += 1;
+    const idSesion = g.id;
+    fallbackActivoRef.current = true;
+    fallbackIntentadoRef.current = true;
+    descartadoRef.current = false;
+    entregaHechaRef.current = false;
+    // Estado limpio en CADA arranque: ningún residuo del ciclo anterior.
+    errorFatalRef.current = false;
+    setError(null);
+    setPreview("");
+    setIsListening(true);
+
+    g.chunks = [];
+    g.huboVoz = false;
+    g.parando = false;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      // El usuario pudo cancelar —o cerrarse la sesión— mientras se pedía el permiso.
+      // Si esta sesión ya no es la vigente, el arranque es FANTASMA: se sueltan las
+      // pistas y NO se toca ningún estado (el del dictado en curso manda).
+      if (descartadoRef.current || g.id !== idSesion) {
+        for (const pista of stream.getTracks()) {
+          try {
+            pista.stop();
+          } catch {
+            /* ignore */
+          }
+        }
+        return;
+      }
+      g.stream = stream;
+
+      // Detector de voz por energía: distingue "no ha hablado" de "fallo del
+      // servidor", que son dos mensajes distintos para el usuario.
+      try {
+        const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const contexto = new Ctor();
+        const fuente = contexto.createMediaStreamSource(stream);
+        const analizador = contexto.createAnalyser();
+        analizador.fftSize = 1024;
+        fuente.connect(analizador);
+        g.contexto = contexto;
+        g.fuente = fuente;
+        g.analizador = analizador;
+      } catch {
+        /* sin analizador el dictado sigue funcionando; sólo se pierde el aviso */
+      }
+
+      const tipoPreferido = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"]
+        .find((t) => typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(t));
+      const recorder = tipoPreferido ? new MediaRecorder(stream, { mimeType: tipoPreferido }) : new MediaRecorder(stream);
+      g.recorder = recorder;
+      recorder.ondataavailable = (evento) => {
+        if (evento.data && evento.data.size > 0) g.chunks.push(evento.data);
+      };
+      recorder.onerror = () => {
+        terminarGrabacion(false);
+        setError(FALLBACK_FALLO_TEXTO);
+        onErrorRef.current?.(FALLBACK_FALLO_TEXTO);
+      };
+      recorder.start(250); // trozos de 250 ms: no se pierde el final de la frase
+
+      setFaseFallback("grabando");
+      setPreview(FALLBACK_GRABANDO_TEXTO);
+      onListeningStartRef.current?.();
+
+      // Vigilancia: (1) no ha hablado en N ms → corta y avisa; (2) tope duro.
+      const datos = new Uint8Array(128);
+      const inicio = Date.now();
+      g.watchdog = window.setInterval(() => {
+        const analizador = grabacionRef.current.analizador;
+        if (analizador) {
+          try {
+            analizador.getByteTimeDomainData(datos);
+            let suma = 0;
+            for (let i = 0; i < datos.length; i += 1) {
+              const v = (datos[i] - 128) / 128;
+              suma += v * v;
+            }
+            if (Math.sqrt(suma / datos.length) > UMBRAL_VOZ_FALLBACK) {
+              grabacionRef.current.huboVoz = true;
+            }
+          } catch {
+            /* si el analizador falla, se asume que sí hubo voz */
+            grabacionRef.current.huboVoz = true;
+          }
+        }
+        const transcurrido = Date.now() - inicio;
+        if (transcurrido > ESPERA_VOZ_FALLBACK_MS && !grabacionRef.current.huboVoz) {
+          terminarGrabacion(true); // silencio: se cierra y se avisa
+        }
+      }, 250);
+      g.tope = window.setTimeout(() => terminarGrabacion(true), MAX_GRABACION_MS);
+    } catch (causa) {
+      // Si la sesión ya no es la vigente (cancelada mientras se pedía el permiso),
+      // este fallo pertenece a un arranque fantasma: no se pisa el estado actual.
+      if (g.id !== idSesion) return;
+      liberarGrabacion();
+      setIsListening(false);
+      const mensaje = mensajeErrorMicrofono(causa);
+      setError(mensaje);
+      onErrorRef.current?.(mensaje);
+      onListeningEndRef.current?.();
+    }
+  }
+
+  /**
    * ENTREGA ÚNICA del turno.
    *
    * Es el ÚNICO sitio del componente que llama a `onTranscriptComplete`, y sólo
@@ -496,6 +1081,7 @@ export default function VoiceDictation({
     ws.finalizado = true;
     ws.sesionActiva = false;
     ws.keepListening = false;
+    desarmarWatchdogArranqueWeb();
     if (ws.latido !== null) {
       window.clearInterval(ws.latido);
       ws.latido = null;
@@ -515,8 +1101,20 @@ export default function VoiceDictation({
     const dicho = finalUtteranceText(ws.actual);
     ws.actual = EMPTY_UTTERANCE;
     ws.base = EMPTY_UTTERANCE;
+    // Un turno SIN una sola palabra puede significar que el motor está mudo: se
+    // cuenta para que la pulsación siguiente grabe y transcriba en el servidor en
+    // vez de volver a un motor que no entrega nada nunca.
+    turnosWebSinTextoRef.current = dicho.length > 0 ? 0 : turnosWebSinTextoRef.current + 1;
     console.log("[VOZ360][STT] cierre web", { motivo, caracteres: dicho.length });
     entregarTurno(dicho);
+  }
+
+  /** Desarma el watchdog de arranque de la Web Speech API (motor colgado). */
+  function desarmarWatchdogArranqueWeb() {
+    if (watchdogArranqueWebRef.current !== null) {
+      window.clearTimeout(watchdogArranqueWebRef.current);
+      watchdogArranqueWebRef.current = null;
+    }
   }
 
   /**
@@ -534,7 +1132,16 @@ export default function VoiceDictation({
 
     const puenteNativo = !!(w.AndroidSTT && typeof w.AndroidSTT.start === "function");
     const webSpeech = w.SpeechRecognition || w.webkitSpeechRecognition;
-    const resuelto: SttMode = puenteNativo ? "native" : webSpeech ? "web" : "none";
+    // ORDEN DE PRIORIDAD: puente nativo → Web Speech → FALLBACK de servidor.
+    // "none" queda reservado para cuando no hay NI micrófono: si se puede grabar,
+    // el dictado funciona por el fallback aunque no exista Web Speech.
+    const resuelto: SttMode = puenteNativo
+      ? "native"
+      : webSpeech
+        ? "web"
+        : fallbackDisponible()
+          ? "fallback"
+          : "none";
 
     modoRef.current = resuelto;
     setMode(resuelto);
@@ -543,6 +1150,7 @@ export default function VoiceDictation({
     console.log("[VOZ360][STT] deteccion", {
       puenteNativo,
       webSpeech: !!webSpeech,
+      fallback: fallbackDisponible(),
       isSecureContext: w.isSecureContext,
       mediaDevices: typeof navigator?.mediaDevices,
       modo: resuelto,
@@ -672,6 +1280,11 @@ export default function VoiceDictation({
       descartadoRef.current = true;
       entregaHechaRef.current = true;
       limpiarTemporizadores();
+      desarmarWatchdogArranqueWeb();
+      // La grabación de fallback también se cierra y libera su micrófono: si no,
+      // al salir de la pantalla con una grabación abierta la pista quedaría viva.
+      terminarGrabacion(false);
+      liberarGrabacion();
       desactivarBargeInPorEnergia();
       try {
         (window as any).AndroidSTT?.cancel?.();
@@ -735,6 +1348,73 @@ export default function VoiceDictation({
     n.programarConfirmacion();
   }
 
+  /**
+   * CAMBIA A GRABACIÓN DE SERVIDOR EN CALIENTE.
+   *
+   * Se usa cuando la Web Speech API falla (network / service-not-allowed /
+   * not-allowed) o se queda colgada: en lugar de dejar al usuario sin dictado, se
+   * cierra esa vía y se arranca el fallback en el mismo gesto.
+   */
+  function pasarAFallback(motivo: string) {
+    if (fallbackIntentadoRef.current) return;
+    if (!fallbackDisponible()) return;
+    console.log("[VOZ360][STT] Web Speech no sirve, se pasa al fallback", { motivo });
+    errorFatalRef.current = true;
+    // Cierra la sesión de Web Speech SIN entregar nada (no había texto o era basura).
+    const ws = wsRef.current;
+    ws.finalizado = true;
+    ws.sesionActiva = false;
+    ws.keepListening = false;
+    if (ws.latido !== null) {
+      window.clearInterval(ws.latido);
+      ws.latido = null;
+    }
+    desarmarWatchdogArranqueWeb();
+    const recognition = reconocimientoRef.current;
+    reconocimientoRef.current = null;
+    if (recognition) {
+      try {
+        recognition.onend = null;
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.abort();
+      } catch {
+        /* ignore */
+      }
+    }
+    ws.actual = EMPTY_UTTERANCE;
+    ws.base = EMPTY_UTTERANCE;
+    entregaHechaRef.current = false;
+    modoRef.current = "fallback";
+    setMode("fallback");
+    setIsListening(false);
+    void iniciarEscuchaFallback();
+  }
+
+  /**
+   * Suelta el reconocedor de navegador que hubiera VIVO.
+   *
+   * POR QUÉ (ciclos repetidos): si el motor se queda colgado sin emitir `onstart`,
+   * el botón sigue diciendo "Dictar" y el usuario vuelve a pulsarlo. Sin soltar el
+   * anterior se creaban DOS reconocedores a la vez: el viejo quedaba vivo con el
+   * micrófono tomado y el motor ocupado, y a partir de ahí el dictado ya no
+   * arrancaba hasta recargar la aplicación.
+   */
+  function liberarReconocimientoWeb() {
+    const recognition = reconocimientoRef.current;
+    reconocimientoRef.current = null;
+    if (!recognition) return;
+    try {
+      recognition.onstart = null;
+      recognition.onend = null;
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.abort();
+    } catch {
+      /* ignore */
+    }
+  }
+
   /** Arranca la escucha con la Web Speech API (escritorio / PWA). */
   function iniciarEscuchaWeb() {
     const SpeechRecognition =
@@ -743,11 +1423,19 @@ export default function VoiceDictation({
       setError(SIN_MOTOR_TEXTO);
       return;
     }
-    // Bloqueo conocido por origen no seguro: avisamos sin intentarlo.
+    // Bloqueo conocido por origen no seguro: si hay micrófono, se usa el fallback
+    // (su audio SÍ viaja por HTTPS aunque el reconocedor local no exista).
     if (origenNoSeguro() && typeof navigator.mediaDevices === "undefined") {
       setError(mensajeMicrofonoBloqueado());
       return;
     }
+
+    // AUTOCURACIÓN: se suelta CUALQUIER reconocedor anterior antes de abrir otro.
+    // Sin esto, un motor colgado (sin `onstart`) dejaba el botón en "Dictar" y la
+    // segunda pulsación creaba un SEGUNDO reconocedor: el viejo seguía vivo con el
+    // micrófono tomado y el dictado ya no arrancaba hasta recargar.
+    liberarReconocimientoWeb();
+    desarmarWatchdogArranqueWeb();
 
     const ws = wsRef.current;
     ws.base = EMPTY_UTTERANCE;
@@ -771,7 +1459,23 @@ export default function VoiceDictation({
       recognition.interimResults = true;
       recognition.maxAlternatives = 1;
 
+      /**
+       * WATCHDOG DE ARRANQUE: la Web Speech API puede quedarse COLGADA sin emitir
+       * ni un solo evento (no llama a onstart, no da error y el usuario habla al
+       * vacío). Antes eso dejaba el botón "escuchando" para siempre. Si no hay
+       * ninguna señal en ESPERA_ARRANQUE_WEB_MS, se pasa al fallback.
+       */
+      desarmarWatchdogArranqueWeb();
+      watchdogArranqueWebRef.current = window.setTimeout(() => {
+        watchdogArranqueWebRef.current = null;
+        if (ws.sesionActiva && !ws.finalizado && !entregaHechaRef.current) {
+          pasarAFallback("arranque_sin_señal");
+        }
+      }, ESPERA_ARRANQUE_WEB_MS);
+
       recognition.onstart = () => {
+        // El motor ha arrancado de verdad: el watchdog ya no hace falta.
+        desarmarWatchdogArranqueWeb();
         setIsListening(true);
       };
 
@@ -822,6 +1526,23 @@ export default function VoiceDictation({
         // dictado, el turno se cierra CON ello en lugar de tirarlo.
         if (!isEmptyUtterance(ws.actual)) {
           cerrarTurnoWeb("manual");
+          return;
+        }
+
+        /**
+         * FALLO DEL MOTOR DE VOZ → SE PASA AL FALLBACK, NO SE ABANDONA.
+         *
+         * Éste era el fallo real en móvil: "network" (el servicio de voz del
+         * navegador no está disponible) o "service-not-allowed" dejaban al usuario
+         * con un mensaje de error y SIN texto, aunque el micrófono funcionara
+         * perfectamente. Ahora se graba y se transcribe en el servidor.
+         *
+         * Si el usuario ha denegado el micrófono (`not-allowed` con permiso
+         * denegado), el fallback tampoco podrá y dará el mensaje de permisos: no se
+         * entra en bucle porque sólo se intenta UNA vez por dictado.
+         */
+        if (ERRORES_QUE_PASAN_A_FALLBACK.has(code) && fallbackDisponible() && !fallbackIntentadoRef.current) {
+          pasarAFallback(code);
           return;
         }
 
@@ -895,8 +1616,14 @@ export default function VoiceDictation({
     } catch {
       ws.sesionActiva = false;
       ws.keepListening = false;
-      reconocimientoRef.current = null;
+      // El reconocedor que no ha podido arrancar se suelta: nunca queda vivo.
+      liberarReconocimientoWeb();
       setIsListening(false);
+      // Si el motor no arranca, todavía queda el fallback de servidor.
+      if (fallbackDisponible() && !fallbackIntentadoRef.current) {
+        pasarAFallback("start_fallido");
+        return;
+      }
       setError("No se pudo iniciar el reconocimiento de voz");
     }
   }
@@ -904,6 +1631,10 @@ export default function VoiceDictation({
   const startListening = () => {
     if (disabled) return;
     setError(null);
+    // Cada pulsación concede UN intento de fallback (nunca un bucle dentro del
+    // mismo dictado, pero sí uno nuevo en la pulsación siguiente).
+    fallbackIntentadoRef.current = false;
+    descartadoRef.current = false;
     // Si el asistente está hablando, se corta AHORA: el usuario tiene la palabra.
     // (Interrupción natural: nunca se solapan la voz del asistente y la suya.)
     interrumpirTts();
@@ -914,13 +1645,28 @@ export default function VoiceDictation({
       return;
     }
 
-    // 2) Sin motor disponible: aviso honesto, sin simular que escucha.
+    // 2) Grabación + transcripción en el servidor (la vía que siempre queda).
+    if (modoRef.current === "fallback") {
+      void iniciarEscuchaFallback();
+      return;
+    }
+
+    // 3) Sin micrófono ni reconocedor: aviso honesto, sin simular que escucha.
     if (modoRef.current === "none") {
       setError(SIN_MOTOR_TEXTO);
       return;
     }
 
-    // 3) Web Speech API (navegador en contexto seguro).
+    // 4) Web Speech API (navegador en contexto seguro). Si falla, salta el fallback.
+    //
+    // AUTOCURACIÓN DEL MOTOR MUDO: si el turno anterior se cerró sin UNA sola
+    // palabra (arranca, no devuelve resultados y no da error), no se insiste con el
+    // mismo motor: se graba y se transcribe en el servidor. Sin esto, un navegador
+    // con el servicio de voz caído se quedaba "sin dictado" para siempre.
+    if (turnosWebSinTextoRef.current > 0 && fallbackDisponible()) {
+      pasarAFallback("web_sin_resultados");
+      return;
+    }
     iniciarEscuchaWeb();
   };
 
@@ -948,6 +1694,15 @@ export default function VoiceDictation({
         return;
       }
       programarCierreNativoForzado();
+      return;
+    }
+
+    // FALLBACK: Detener cierra la grabación y lanza la transcripción del audio
+    // COMPLETO (nada de cortes a mitad de frase: no se pierden las últimas
+    // palabras, que es justo lo que se perdía con los cierres prematuros).
+    if (modoRef.current === "fallback" || fallbackActivoRef.current) {
+      setIsListening(false);
+      terminarGrabacion(true);
       return;
     }
 
@@ -991,6 +1746,14 @@ export default function VoiceDictation({
 
     limpiarTemporizadores();
     setIsListening(false);
+
+    // CANCELAR EN EL FALLBACK: se corta la grabación y NO se envía el audio.
+    if (modoRef.current === "fallback" || fallbackActivoRef.current) {
+      terminarGrabacion(false);
+      liberarGrabacion();
+      onListeningEndRef.current?.();
+      return;
+    }
 
     if (modoRef.current === "native") {
       const puente = puenteSttNativo();
@@ -1036,15 +1799,17 @@ export default function VoiceDictation({
   /**
    * ¿Hay una escucha VIVA ahora mismo?
    *
-   * Se pregunta al estado REAL de cada vía (sesión nativa del núcleo de audio o
-   * sesión de Web Speech) y no a `isListening`, que es una copia de React y puede
-   * llegar con un render de retraso justo cuando llega la petición externa.
+   * Se pregunta al estado REAL de cada vía (sesión nativa del núcleo de audio,
+   * sesión de Web Speech o grabación de fallback) y no a `isListening`, que es una
+   * copia de React y puede llegar con un render de retraso justo cuando llega la
+   * petición externa.
    */
   function hayEscuchaViva(): boolean {
     if (modoRef.current === "native") {
       const n = sttNativoRef.current;
       return n.activo && !n.finalizado;
     }
+    if (fallbackActivoRef.current) return true;
     return wsRef.current.sesionActiva;
   }
 
@@ -1068,6 +1833,8 @@ export default function VoiceDictation({
   }, [escuchaSolicitada, disabled]);
 
   const sinMotor = mode === "none";
+  const enFallback = mode === "fallback";
+  const transcribiendo = faseFallback === "transcribiendo";
 
   return (
     <div className="inline-flex flex-col items-start gap-1">
@@ -1075,27 +1842,29 @@ export default function VoiceDictation({
         <button
           type="button"
           onClick={toggleListening}
-          disabled={disabled}
+          disabled={disabled || transcribiendo}
           aria-pressed={isListening}
           title={
             sinMotor
               ? SIN_MOTOR_TITULO
               : isListening
-                ? "Escuchando… Pulsa para detener y usar el texto"
-                : "Dictar por voz (Español)"
+                ? "Escuchando… Pulsa para detener y transcribir"
+                : enFallback
+                  ? "Dictar por voz (grabación y transcripción en el servidor)"
+                  : "Dictar por voz (Español)"
           }
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg border transition-all ${
             isListening
               ? "bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 animate-pulse ring-2 ring-rose-200 dark:ring-rose-900"
               : "bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
-          } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${className}`}
+          } ${disabled || transcribiendo ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${className}`}
         >
           {sinMotor ? (
             <MicOff className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
           ) : (
             <Mic className={`h-3.5 w-3.5 ${isListening ? "text-rose-600 dark:text-rose-400" : "text-slate-500 dark:text-slate-400"}`} />
           )}
-          <span>{isListening ? "Detener" : "Dictar"}</span>
+          <span>{transcribiendo ? "Transcribiendo…" : isListening ? "Detener" : "Dictar"}</span>
         </button>
 
         {/* Cancelar: cierra el micrófono y DESCARTA lo reconocido. */}
@@ -1129,7 +1898,7 @@ export default function VoiceDictation({
       {/* Texto reconocido en directo: se conserva y solo se entrega al terminar. */}
       {isListening && (
         <span className="text-xs text-slate-500 dark:text-slate-400 italic max-w-[18rem] truncate" title={preview}>
-          {preview ? `“${preview}”` : "Escuchando… habla con calma"}
+          {preview ? `“${preview}”` : enFallback ? FALLBACK_GRABANDO_TEXTO : "Escuchando… habla con calma"}
         </span>
       )}
     </div>

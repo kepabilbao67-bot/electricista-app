@@ -413,10 +413,10 @@ export default function AgendaPage() {
               const dayVisits = visits.filter((v) => v.date === dateStr);
               
               return (
-                <div key={idx} className={`rounded-2xl border p-3 min-h-[120px] ${isToday ? "border-[#d9b35f]/50 bg-[#0d1d33]" : "border-slate-700/80 bg-[#0a1424]/90"}`}>
-                  <div className={`text-xs font-bold mb-2 uppercase tracking-wider ${isToday ? "text-[#f5d48a]" : "text-slate-400"}`}>
+                <div key={idx} className={`rounded-2xl border p-3 min-h-[120px] ${isToday ? "border-[#10b981]/50 bg-[#1e293b]" : "border-slate-700/80 bg-[#0a1424]/90"}`}>
+                  <div className={`text-xs font-bold mb-2 uppercase tracking-wider ${isToday ? "text-[#34d399]" : "text-slate-400"}`}>
                     {dayNames[idx]}
-                    <span className={`ml-1 inline-flex items-center justify-center rounded-full w-5 h-5 text-[10px] font-bold ${isToday ? "bg-[#d9b35f] text-slate-950 shadow-sm" : "text-slate-400"}`}>
+                    <span className={`ml-1 inline-flex items-center justify-center rounded-full w-5 h-5 text-[10px] font-bold ${isToday ? "bg-[#10b981] text-slate-950 shadow-sm" : "text-slate-400"}`}>
                       {date.getDate()}
                     </span>
                   </div>

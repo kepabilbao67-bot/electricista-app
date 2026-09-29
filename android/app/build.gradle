@@ -16,10 +16,43 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    /**
+     * FIRMA DE RELEASE — SIN SECRETOS EN EL REPOSITORIO.
+     *
+     * La ruta del keystore y su contraseña llegan por ENTORNO (o por `-P`), nunca
+     * escritas en este fichero: este fichero SÍ está en Git. Si no hay keystore
+     * disponible, la compilación de release sigue funcionando pero SIN firmar: no
+     * se inventa ni se reutiliza ninguna clave.
+     *
+     * Uso:
+     *   E360_KEYSTORE=<ruta.p12>  E360_KEY_ALIAS=electricista360
+     *   E360_KEYSTORE_PASSWORD=<contraseña>  gradlew assembleRelease
+     */
+    def keystoreRelease = System.getenv("E360_KEYSTORE") ?: (project.findProperty("e360Keystore") ?: "")
+    def aliasRelease = System.getenv("E360_KEY_ALIAS") ?: (project.findProperty("e360KeyAlias") ?: "electricista360")
+    def passRelease = System.getenv("E360_KEYSTORE_PASSWORD") ?: (project.findProperty("e360KeystorePassword") ?: "")
+    def hayFirmaRelease = keystoreRelease && file(keystoreRelease).exists() && passRelease
+
+    signingConfigs {
+        if (hayFirmaRelease) {
+            release {
+                storeFile file(keystoreRelease)
+                storePassword passRelease
+                keyAlias aliasRelease
+                keyPassword passRelease
+                storeType "PKCS12"
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hayFirmaRelease) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     compileOptions {

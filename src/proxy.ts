@@ -20,6 +20,7 @@ import {
 } from "@/lib/auth/session";
 import { findValidSessionByToken } from "@/lib/auth/store";
 import { ensureAuthSchema } from "@/lib/auth/bootstrap";
+import { intentarSesionQa } from "@/lib/auth/qa-autologin";
 
 /**
  * ELECTRICISTA360 — PUERTA DE AUTENTICACIÓN (Fase 1)
@@ -242,38 +243,79 @@ async function handleSessionPath(
   const secure = shouldUseSecureCookie(request);
   const clearedCookie = serializeClearedSessionCookie(secure);
 
+  /** Identidad derivada del SERVIDOR, inyectada para los route handlers. */
+  const continuarAutenticado = (identidad: {
+    userId: string;
+    tenantId: string;
+    sessionId: string;
+    role: string;
+  }, cookieExtra?: string): NextResponse => {
+    requestHeaders.set(AUTH_HEADER_USER_ID, identidad.userId);
+    requestHeaders.set(AUTH_HEADER_TENANT_ID, identidad.tenantId);
+    requestHeaders.set(AUTH_HEADER_SESSION_ID, identidad.sessionId);
+    requestHeaders.set(AUTH_HEADER_ROLE, identidad.role);
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    if (cookieExtra) {
+      response.headers.set("Set-Cookie", cookieExtra);
+      response.headers.set("Cache-Control", "no-store");
+    }
+    return response;
+  };
+
   // 2. Comprobación barata: firma HMAC. Rechaza tokens forjados sin tocar la BD.
   const signedValue = readSessionCookie(request.headers.get("cookie"));
   const token = readTokenFromSignedValue(signedValue);
-  if (!token) {
-    return rejectUnauthenticated(request, isApi, pathname, clearedCookie);
+
+  if (token) {
+    // 3. Comprobación AUTORITATIVA contra la base de datos.
+    let lookup: Awaited<ReturnType<typeof findValidSessionByToken>>;
+    try {
+      lookup = await findValidSessionByToken(hashSessionToken(token));
+    } catch {
+      // BD inaccesible o esquema de auth sin aplicar → se cierra, no se abre.
+      return unavailableResponse(isApi);
+    }
+
+    if (lookup.ok) {
+      // 4. Modo demostración: solo lectura sobre las APIs.
+      const demoBlocked = demoReadOnlyResponse(isApi);
+      if (demoBlocked) return demoBlocked;
+
+      // 5. Identidad derivada del SERVIDOR, inyectada para los route handlers.
+      //    El tenant procede del registro del usuario, nunca del cliente.
+      return continuarAutenticado({
+        userId: lookup.user.id,
+        tenantId: lookup.user.tenantId,
+        sessionId: lookup.session.id,
+        role: lookup.user.role,
+      });
+    }
   }
 
-  // 3. Comprobación AUTORITATIVA contra la base de datos.
-  let lookup: Awaited<ReturnType<typeof findValidSessionByToken>>;
-  try {
-    lookup = await findValidSessionByToken(hashSessionToken(token));
-  } catch {
-    // BD inaccesible o esquema de auth sin aplicar → se cierra, no se abre.
-    return unavailableResponse(isApi);
+  // 3.b ACCESO AUTOMÁTICO DE QA (SOLO DESARROLLO).
+  //
+  // Se llega aquí sólo cuando NO hay sesión válida (cookie ausente, firma inválida,
+  // sesión revocada/caducada o usuario inactivo). Si el acceso de QA está habilitado
+  // —y en PRODUCCIÓN `intentarSesionQa` devuelve siempre `null`— se emite una sesión
+  // REAL para el usuario QA y la petición continúa autenticada, de modo que la URL
+  // abre la aplicación directamente. Sin la variable `E360_QA_AUTOLOGIN=1` esto no
+  // cambia nada: se sigue rechazando como siempre.
+  const sesionQa = await intentarSesionQa(request);
+  if (sesionQa) {
+    const demoBloqueadoQa = demoReadOnlyResponse(isApi);
+    if (demoBloqueadoQa) return demoBloqueadoQa;
+    return continuarAutenticado(
+      {
+        userId: sesionQa.user.id,
+        tenantId: sesionQa.user.tenantId,
+        sessionId: "qa-autologin",
+        role: sesionQa.user.role,
+      },
+      sesionQa.setCookie
+    );
   }
 
-  if (!lookup.ok) {
-    return rejectUnauthenticated(request, isApi, pathname, clearedCookie);
-  }
-
-  // 4. Modo demostración: solo lectura sobre las APIs.
-  const demoBlocked = demoReadOnlyResponse(isApi);
-  if (demoBlocked) return demoBlocked;
-
-  // 5. Identidad derivada del SERVIDOR, inyectada para los route handlers.
-  //    El tenant procede del registro del usuario, nunca del cliente.
-  requestHeaders.set(AUTH_HEADER_USER_ID, lookup.user.id);
-  requestHeaders.set(AUTH_HEADER_TENANT_ID, lookup.user.tenantId);
-  requestHeaders.set(AUTH_HEADER_SESSION_ID, lookup.session.id);
-  requestHeaders.set(AUTH_HEADER_ROLE, lookup.user.role);
-
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  return rejectUnauthenticated(request, isApi, pathname, clearedCookie);
 }
 
 /**
