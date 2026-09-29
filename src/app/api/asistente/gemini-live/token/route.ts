@@ -10,14 +10,12 @@ export async function POST(request: NextRequest) {
   const auth = await requireSession(request);
   if (!auth.ok) return auth.response;
 
-  if (process.env.ENABLE_GEMINI_LIVE !== "true") {
-    return NextResponse.json(
-      { error: "GEMINI_LIVE_DISABLED" },
-      { status: 503, headers: { "Cache-Control": "no-store" } }
-    );
-  }
-
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  // Gemini Live queda habilitado automáticamente cuando existe una credencial
+  // server-side válida. Evitamos depender de un segundo flag de despliegue que
+  // podía dejar la UI permanentemente en "desconectado" aun teniendo la clave.
+  const apiKey =
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.GOOGLE_API_KEY?.trim();
   const configuredModel = process.env.GEMINI_LIVE_MODEL?.trim() || DEFAULT_MODEL;
   const model = ALLOWED_MODELS.has(configuredModel) ? configuredModel : DEFAULT_MODEL;
   if (!apiKey) {
