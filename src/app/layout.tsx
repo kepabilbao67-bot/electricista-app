@@ -21,7 +21,7 @@ const navItems = [
     label: m.label,
     iconKey: m.iconKey,
   })),
-  { href: "/pedidos-voz", label: "Pedido por voz", iconKey: "mic" },
+  { href: "/faltantes-obra", label: "Faltantes de obra", iconKey: "mic" },
 ];
 
 const sidebarBrand = {
