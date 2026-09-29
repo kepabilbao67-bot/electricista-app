@@ -36,6 +36,8 @@ interface Zone {
   collapsed: boolean;
 }
 
+const BUDGET_DRAFT_KEY = "electricista360_budget_draft_v1";
+
 const PREDEFINED_ZONES = [
   "Cuadro electrico",
   "Cocina",
@@ -75,11 +77,85 @@ export default function NuevoPresupuestoPage() {
   const [autoRooms, setAutoRooms] = useState(2);
   const [autoBathrooms, setAutoBathrooms] = useState(1);
   const [autoKitchen, setAutoKitchen] = useState(true);
+  const [draftHydrated, setDraftHydrated] = useState(false);
 
   useEffect(() => {
     fetch("/api/clients").then((r) => r.json()).then(setClients);
     fetch("/api/catalog").then((r) => r.json()).then(setCatalog);
   }, []);
+
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(BUDGET_DRAFT_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as {
+          clientId?: string;
+          date?: string;
+          validUntil?: string;
+          notes?: string;
+          notesColor?: string;
+          zones?: Zone[];
+          autoType?: "piso" | "chalet" | "local";
+          autoRooms?: number;
+          autoBathrooms?: number;
+          autoKitchen?: boolean;
+        };
+
+        if (typeof saved.clientId === "string") setClientId(saved.clientId);
+        if (typeof saved.date === "string" && saved.date) setDate(saved.date);
+        if (typeof saved.validUntil === "string") setValidUntil(saved.validUntil);
+        if (typeof saved.notes === "string") setNotes(saved.notes);
+        if (typeof saved.notesColor === "string") setNotesColor(saved.notesColor);
+        if (Array.isArray(saved.zones) && saved.zones.length > 0) setZones(saved.zones);
+        if (saved.autoType === "piso" || saved.autoType === "chalet" || saved.autoType === "local") {
+          setAutoType(saved.autoType);
+        }
+        if (typeof saved.autoRooms === "number") setAutoRooms(saved.autoRooms);
+        if (typeof saved.autoBathrooms === "number") setAutoBathrooms(saved.autoBathrooms);
+        if (typeof saved.autoKitchen === "boolean") setAutoKitchen(saved.autoKitchen);
+      }
+    } catch {
+      window.localStorage.removeItem(BUDGET_DRAFT_KEY);
+    } finally {
+      setDraftHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(
+        BUDGET_DRAFT_KEY,
+        JSON.stringify({
+          clientId,
+          date,
+          validUntil,
+          notes,
+          notesColor,
+          zones,
+          autoType,
+          autoRooms,
+          autoBathrooms,
+          autoKitchen,
+        })
+      );
+    }, 150);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    draftHydrated,
+    clientId,
+    date,
+    validUntil,
+    notes,
+    notesColor,
+    zones,
+    autoType,
+    autoRooms,
+    autoBathrooms,
+    autoKitchen,
+  ]);
 
   const generateAutoBudget = () => {
     const newZones: Zone[] = [];
@@ -379,6 +455,7 @@ export default function NuevoPresupuestoPage() {
 
     if (res.ok) {
       const budget = await res.json();
+      window.localStorage.removeItem(BUDGET_DRAFT_KEY);
       showToast("success", `Presupuesto ${budget.number} creado`);
       router.push(`/presupuestos/${budget.id}`);
     } else {
