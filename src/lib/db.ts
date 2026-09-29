@@ -350,6 +350,16 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "updated_at", def: "TEXT" },
   ]);
 
+  // Índices sobre las columnas que se acaban de asegurar. Van AQUÍ (y no con el
+  // resto de CREATE INDEX) porque en una base de datos antigua las columnas no
+  // existían todavía: ver el comentario en `initializeDatabase`.
+  await db.execute(
+    "CREATE INDEX IF NOT EXISTS idx_purchase_orders_parte_id ON purchase_orders(parte_id, created_at);"
+  );
+  await db.execute(
+    "CREATE INDEX IF NOT EXISTS idx_purchase_order_items_status ON purchase_order_items(status, order_id);"
+  );
+
   await ensureColumns(db, "feedback_submissions", [
     { name: "type", def: "TEXT NOT NULL DEFAULT 'sugerencia'" },
     { name: "subject", def: "TEXT NOT NULL DEFAULT ''" },
@@ -749,10 +759,18 @@ export async function initializeDatabase(client?: Client): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_purchase_orders_needed_date
       ON purchase_orders(needed_date, status);
-    CREATE INDEX IF NOT EXISTS idx_purchase_orders_parte_id
-      ON purchase_orders(parte_id, created_at);
-    CREATE INDEX IF NOT EXISTS idx_purchase_order_items_status
-      ON purchase_order_items(status, order_id);
+
+    /* OJO: los índices sobre columnas NUEVAS (purchase_orders.parte_id,
+       purchase_order_items.status) NO se crean aquí.
+
+       Estas sentencias corren ANTES de migrateSchema(), que es quien añade las
+       columnas que falten. En una base de datos YA EXISTENTE (la de Preview, sin
+       ir más lejos) la tabla purchase_orders se creó sin parte_id, así que un
+       CREATE INDEX sobre (parte_id, ...) en este punto fallaría con
+       "no such column: parte_id" e initializeDatabase() lanzaría: TODAS las rutas
+       que la llaman (presupuestos, partes, faltantes de obra, dashboard…)
+       devolverían 500. Se crean al final de migrateSchema(), cuando la columna ya
+       existe. */
 
     CREATE TABLE IF NOT EXISTS feedback_submissions (
       id TEXT PRIMARY KEY,
