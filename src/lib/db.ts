@@ -214,6 +214,10 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "created_at", def: "TEXT" },
     { name: "updated_at", def: "TEXT" },
     { name: "notes_color", def: "TEXT" },
+    // BORRADOR-IDEMPOTENTE (P0-2): clave de idempotencia del guardado. Si el
+    // usuario pulsa dos veces "Crear presupuesto" (o la red reintenta), el
+    // servidor reconoce el mismo `client_ref` y NO crea un segundo presupuesto.
+    { name: "client_ref", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "budget_items", [
@@ -390,6 +394,14 @@ async function migrateSchema(db: Client): Promise<void> {
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_source_part_id_unique ON invoices(source_part_id) WHERE source_part_id IS NOT NULL;"
   );
 
+  // Índice ÚNICO parcial del `client_ref` (P0-2): la garantía de que un doble clic
+  // o un reintento no pueden crear dos presupuestos idénticos, incluso si dos
+  // peticiones llegan a la vez. Los presupuestos antiguos no tienen el valor
+  // (NULL) y quedan fuera del índice.
+  await db.execute(
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_client_ref_unique ON budgets(client_ref) WHERE client_ref IS NOT NULL;"
+  );
+
   // Migración de budgets.client_id NOT NULL → nullable (BUD-SINCLIENTE-001):
   // En bases NUEVAS, CREATE TABLE ya define client_id TEXT (nullable).
   // En bases EXISTENTES con client_id NOT NULL, ejecutar manualmente:
@@ -490,6 +502,30 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       sort_order INTEGER DEFAULT 0,
       FOREIGN KEY (budget_id) REFERENCES budgets(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS budget_drafts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      payload TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_budget_drafts_user ON budget_drafts(user_id);
+
+    CREATE TABLE IF NOT EXISTS faltantes_obra (
+      id TEXT PRIMARY KEY,
+      parte_id TEXT NOT NULL,
+      producto TEXT NOT NULL,
+      cantidad REAL DEFAULT 1,
+      unidad TEXT DEFAULT 'ud',
+      estado TEXT NOT NULL DEFAULT 'pendiente',
+      origen_texto TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_faltantes_obra_parte ON faltantes_obra(parte_id);
 
     CREATE TABLE IF NOT EXISTS communications (
       id TEXT PRIMARY KEY,

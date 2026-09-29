@@ -21,7 +21,11 @@ const navItems = [
     label: m.label,
     iconKey: m.iconKey,
   })),
-  { href: "/pedidos-voz", label: "Pedido por voz", iconKey: "mic" },
+  // FALTANTES DE OBRA (P0-3): el flujo de "qué me falta para este trabajo" por
+  // voz, asociado a una obra/parte real. Sustituye en el menú al antiguo "Pedido
+  // por voz" (pedido a proveedor), que sigue existiendo en /pedidos-voz pero NO
+  // es este flujo.
+  { href: "/faltantes-obra", label: "FALTANTES DE OBRA", iconKey: "mic" },
 ];
 
 const sidebarBrand = {
