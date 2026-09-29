@@ -328,6 +328,7 @@ async function migrateSchema(db: Client): Promise<void> {
 
 
   await ensureColumns(db, "purchase_orders", [
+    { name: "parte_id", def: "TEXT" },
     { name: "source", def: "TEXT DEFAULT 'voice'" },
     { name: "original_text", def: "TEXT" },
     { name: "needed_date", def: "TEXT" },
@@ -339,12 +340,14 @@ async function migrateSchema(db: Client): Promise<void> {
 
   await ensureColumns(db, "purchase_order_items", [
     { name: "order_id", def: "TEXT" },
+    { name: "status", def: "TEXT DEFAULT 'pendiente'" },
     { name: "product", def: "TEXT" },
     { name: "quantity", def: "REAL" },
     { name: "unit", def: "TEXT" },
     { name: "observations", def: "TEXT" },
     { name: "sort_order", def: "INTEGER DEFAULT 0" },
     { name: "created_at", def: "TEXT" },
+    { name: "updated_at", def: "TEXT" },
   ]);
 
   await ensureColumns(db, "feedback_submissions", [
@@ -720,6 +723,7 @@ export async function initializeDatabase(client?: Client): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS purchase_orders (
       id TEXT PRIMARY KEY,
+      parte_id TEXT,
       source TEXT DEFAULT 'voice',
       original_text TEXT,
       needed_date TEXT,
@@ -732,17 +736,23 @@ export async function initializeDatabase(client?: Client): Promise<void> {
     CREATE TABLE IF NOT EXISTS purchase_order_items (
       id TEXT PRIMARY KEY,
       order_id TEXT NOT NULL,
+      status TEXT DEFAULT 'pendiente',
       product TEXT NOT NULL,
       quantity REAL NOT NULL,
       unit TEXT NOT NULL,
       observations TEXT,
       sort_order INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE
     );
 
     CREATE INDEX IF NOT EXISTS idx_purchase_orders_needed_date
       ON purchase_orders(needed_date, status);
+    CREATE INDEX IF NOT EXISTS idx_purchase_orders_parte_id
+      ON purchase_orders(parte_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_purchase_order_items_status
+      ON purchase_order_items(status, order_id);
 
     CREATE TABLE IF NOT EXISTS feedback_submissions (
       id TEXT PRIMARY KEY,
