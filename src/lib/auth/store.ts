@@ -86,6 +86,22 @@ export async function findUserByEmail(
   return { ...mapUserRow(row), passwordHash: toText(row.password_hash) };
 }
 
+/** Primer usuario activo por rol. Uso acotado a flujos internos de sesión. */
+export async function findFirstActiveUserByRole(
+  role: string,
+  db: Client = getDbClient()
+): Promise<AuthUser | null> {
+  const res = await db.execute({
+    sql: `SELECT * FROM app_users
+          WHERE role = ? AND is_active = 1
+          ORDER BY created_at ASC
+          LIMIT 1`,
+    args: [role],
+  });
+  if (res.rows.length === 0) return null;
+  return mapUserRow(res.rows[0] as unknown as Record<string, unknown>);
+}
+
 /**
  * Crea un usuario. Pensado para la migración/semilla y para las pruebas.
  *

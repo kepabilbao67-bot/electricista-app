@@ -21,6 +21,7 @@ import {
 import { findValidSessionByToken } from "@/lib/auth/store";
 import { ensureAuthSchema } from "@/lib/auth/bootstrap";
 import { intentarSesionQa } from "@/lib/auth/qa-autologin";
+import { intentarSesionMovil } from "@/lib/auth/mobile-autologin";
 
 /**
  * ELECTRICISTA360 — PUERTA DE AUTENTICACIÓN (Fase 1)
@@ -292,7 +293,23 @@ async function handleSessionPath(
     }
   }
 
-  // 3.b ACCESO AUTOMÁTICO DE QA (SOLO DESARROLLO).
+  // 3.b ACCESO AUTOMÁTICO TEMPORAL DE LA APK.
+  const sesionMovil = await intentarSesionMovil(request);
+  if (sesionMovil) {
+    const demoBloqueadoMovil = demoReadOnlyResponse(isApi);
+    if (demoBloqueadoMovil) return demoBloqueadoMovil;
+    return continuarAutenticado(
+      {
+        userId: sesionMovil.user.id,
+        tenantId: sesionMovil.user.tenantId,
+        sessionId: sesionMovil.sessionId,
+        role: sesionMovil.user.role,
+      },
+      sesionMovil.setCookie
+    );
+  }
+
+  // 3.c ACCESO AUTOMÁTICO DE QA (SOLO DESARROLLO).
   //
   // Se llega aquí sólo cuando NO hay sesión válida (cookie ausente, firma inválida,
   // sesión revocada/caducada o usuario inactivo). Si el acceso de QA está habilitado
@@ -350,6 +367,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   } catch {
     if (!isPublicPath(pathname)) {
       return unavailableResponse(isApiPath(pathname));
+    }
+  }
+
+  // Si la APK cayó en /login antes de recibir cookie, crea la sesión móvil.
+  if (pathname === "/login") {
+    const sesionMovil = await intentarSesionMovil(request);
+    if (sesionMovil) {
+      const requestedNext = request.nextUrl.searchParams.get("next") || "/";
+      const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+        ? requestedNext
+        : "/";
+      const response = NextResponse.redirect(new URL(safeNext, request.url));
+      response.headers.set("Set-Cookie", sesionMovil.setCookie);
+      response.headers.set("Cache-Control", "no-store");
+      return response;
     }
   }
 
