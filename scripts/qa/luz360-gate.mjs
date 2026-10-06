@@ -23,7 +23,6 @@ const required = [
   "src/lib/__tests__/luz360.test.ts",
   "src/lib/__tests__/luz360-plugin.test.ts",
   "src/lib/__tests__/luz360-heatmap.test.ts",
-  ".agents/tasks/task-luz360-quality-gate/task.json",
   "node_modules/tsx/dist/cli.mjs",
   "node_modules/typescript/bin/tsc",
   "node_modules/next/dist/bin/next",
