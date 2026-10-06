@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
@@ -40,6 +40,36 @@ if (!existsSync(gradle)) {
   console.error("[ANDROID][FAIL] No se encontró Gradle wrapper en android/.");
   process.exit(1);
 }
+
+const mainActivity = resolve(
+  androidDir,
+  "app",
+  "src",
+  "main",
+  "java",
+  "com",
+  "electricista360",
+  "app",
+  "MainActivity.java",
+);
+if (!existsSync(mainActivity)) {
+  console.error("[ANDROID][FAIL] No se encontró MainActivity.java.");
+  process.exit(1);
+}
+const mainActivitySource = readFileSync(mainActivity, "utf8");
+const bridgeRequirements = [
+  'addJavascriptInterface(nativeStt, "AndroidSTT")',
+  'addJavascriptInterface(nativeTts, "AndroidTTS")',
+  'addJavascriptInterface(nativeLightSensor, "AndroidLightSensor")',
+  "webView.post(webView::reload)",
+];
+for (const required of bridgeRequirements) {
+  if (!mainActivitySource.includes(required)) {
+    console.error(`[ANDROID][FAIL] Falta contrato de primer arranque: ${required}`);
+    process.exit(1);
+  }
+}
+console.log("[ANDROID][PASS] Puentes STT/TTS/Luz + recarga inicial presentes.");
 
 console.log(`[ANDROID][INFO] JDK ${javaMajor(javaHome)}: ${javaHome}`);
 const args = [

@@ -85,6 +85,12 @@ public class MainActivity extends BridgeActivity {
             webView.addJavascriptInterface(nativeStt, "AndroidSTT");
             webView.addJavascriptInterface(nativeTts, "AndroidTTS");
             webView.addJavascriptInterface(nativeLightSensor, "AndroidLightSensor");
+
+            // Android expone objetos añadidos con addJavascriptInterface de forma
+            // fiable al siguiente contexto de página. Como este bloque solo se
+            // ejecuta al registrar un WebView nuevo, esta recarga ocurre UNA vez
+            // y deja voz, TTS y sensor disponibles desde el primer uso.
+            webView.post(webView::reload);
         } catch (Throwable ignored) {
             // Sin puente nativo: el dictado quedará como no disponible y la
             // pantalla ofrecerá el teclado; la respuesta se leerá en pantalla.
