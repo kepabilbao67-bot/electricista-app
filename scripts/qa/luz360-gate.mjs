@@ -65,7 +65,8 @@ if (!page.includes("<LuxHeatmap")) fail("La pantalla no integra el heatmap.");
 if (!page.includes("<LuxReport")) fail("La pantalla no integra el informe.");
 if (!lightSensor.includes("Sensor.TYPE_LIGHT")) fail("Falta el sensor de luz nativo Android.");
 if (!mainActivity.includes('addJavascriptInterface(nativeLightSensor, "AndroidLightSensor")')) fail("Falta exponer AndroidLightSensor al WebView.");
-if (!nextConfig.includes("ambient-light-sensor=(self)")) fail("Permissions-Policy no permite el sensor de luz en el propio origen.");
+if (!nextConfig.includes("camera=(self)") || !nextConfig.includes("microphone=(self)")) fail("Permissions-Policy debe mantener cámara y micrófono del propio origen.");
+if (nextConfig.includes("ambient-light-sensor=") || nextConfig.includes("payment=") || nextConfig.includes("usb=")) fail("Permissions-Policy contiene directivas no soportadas por Android WebView.");
 
 run("tests Luz360 + navegación", [
   tsxCli,
