@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "tsx --test",
-    "audit:isolation": "node scripts/audit-isolation.cjs"
+    "audit:isolation": "node scripts/audit-isolation.cjs",
+    "qa:luz360": "node scripts/qa/luz360-gate.mjs",
+    "qa:luz360:full": "node scripts/qa/luz360-gate.mjs --full",
+    "qa:mediciones360": "node scripts/qa/mediciones360-gate.mjs",
+    "qa:mediciones360:full": "node scripts/qa/mediciones360-gate.mjs --full",
+    "qa:android": "node scripts/qa/android-electricista-gate.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",

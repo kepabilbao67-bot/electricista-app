@@ -59,6 +59,8 @@ const ELECTRICISTA_MODULES: ModuleId[] = [
   "budgets",
   "work_orders",
   "jobs",
+  "measurements",
+  "luz360",
   "expenses",
   "communications",
   "schedule",

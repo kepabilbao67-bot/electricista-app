@@ -182,3 +182,46 @@ export function convertVolume(value: number, from: VolumeUnit, to: VolumeUnit): 
   const baseMm3 = value * factors[from];
   return baseMm3 / factors[to];
 }
+
+
+// --- Medición visual calibrada (reutilizada desde Mediciones360) ---
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/**
+ * Calcula la escala en cm/píxel usando una referencia de longitud conocida.
+ * Requiere que la referencia y el objeto estén aproximadamente en el mismo plano.
+ */
+export function scaleFromReference(refPx: number, refRealCm: number): number {
+  if (refPx <= 0) throw new Error("La referencia en píxeles debe ser mayor que cero.");
+  if (refRealCm <= 0) throw new Error("La longitud real de referencia debe ser mayor que cero.");
+  return refRealCm / refPx;
+}
+
+/** Calcula la distancia euclídea entre dos puntos y la expresa en centímetros. */
+export function distanceCm(a: Point, b: Point, cmPerPx: number): number {
+  if (cmPerPx <= 0) throw new Error("La escala debe ser mayor que cero.");
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  return Math.sqrt(dx * dx + dy * dy) * cmPerPx;
+}
+
+/**
+ * Advierte de perspectiva significativa si lados opuestos de una referencia
+ * cuadrilateral difieren más de un 5 %.
+ */
+export function perspectiveWarning(corners: [Point, Point, Point, Point]): boolean {
+  const [tl, tr, br, bl] = corners;
+  const side = (p1: Point, p2: Point) => Math.hypot(p2.x - p1.x, p2.y - p1.y);
+  const top = side(tl, tr);
+  const bottom = side(bl, br);
+  const left = side(tl, bl);
+  const right = side(tr, br);
+  const horizontalBase = Math.max(top, bottom);
+  const verticalBase = Math.max(left, right);
+  if (horizontalBase === 0 || verticalBase === 0) return true;
+  return Math.abs(top - bottom) / horizontalBase > 0.05 || Math.abs(left - right) / verticalBase > 0.05;
+}

@@ -82,6 +82,7 @@ export type ModuleId =
   | "export"
   | "assistant"
   | "measurements"
+  | "luz360"
   | "signatures"
   | "email"
   | "help"

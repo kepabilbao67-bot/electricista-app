@@ -166,3 +166,34 @@ describe("measurements: edge cases", () => {
     assert.ok(Math.abs(area - 10.5) < 0.0001);
   });
 });
+
+
+describe("measurements: medición visual calibrada", () => {
+  test("escala de referencia: 100 px = 10 cm", async () => {
+    const { scaleFromReference } = await import("../autonomo360/measurements");
+    assert.equal(scaleFromReference(100, 10), 0.1);
+  });
+
+  test("distancia 3-4-5 con escala 0.5 cm/px = 2.5 cm", async () => {
+    const { distanceCm } = await import("../autonomo360/measurements");
+    assert.equal(distanceCm({ x: 0, y: 0 }, { x: 3, y: 4 }, 0.5), 2.5);
+  });
+
+  test("referencia inválida falla de forma explícita", async () => {
+    const { scaleFromReference } = await import("../autonomo360/measurements");
+    assert.throws(() => scaleFromReference(0, 10), /mayor que cero/);
+  });
+
+  test("detecta perspectiva superior al 5%", async () => {
+    const { perspectiveWarning } = await import("../autonomo360/measurements");
+    assert.equal(
+      perspectiveWarning([
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 90, y: 100 },
+        { x: 0, y: 100 },
+      ]),
+      true,
+    );
+  });
+});

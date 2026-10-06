@@ -34,6 +34,8 @@ import {
   Target,
   LineChart,
   Mic,
+  Ruler,
+  Sun,
 } from "lucide-react";
 
 /**
@@ -74,6 +76,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "target": Target,
   "line-chart": LineChart,
   "mic": Mic,
+  "ruler": Ruler,
+  "sun": Sun,
 };
 
 /**

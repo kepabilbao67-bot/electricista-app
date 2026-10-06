@@ -41,6 +41,38 @@ export const APP_MODULES: AppModule[] = [
     warnings: ["DEMO_MODE usa almacenamiento temporal aislado, bloquea escrituras y muestra la etiqueta DEMO / SIN VALIDEZ FISCAL."],
   },
   {
+    name: "Mediciones360",
+    route: "/mediciones360",
+    status: "PARCIAL",
+    description: "Medición de obra con calculadora geométrica, conteo eléctrico y medición visual calibrada desde cámara o fotografía.",
+    features: [
+      "Perímetros, superficies, volúmenes, suma de longitudes y reserva de cable",
+      "Conteo rápido de puntos eléctricos, mecanismos, cajas y registros",
+      "Captura de foto mediante la cámara del sistema y calibración con referencia conocida",
+      "Guardado de mediciones e historial asociado opcionalmente a un parte de trabajo",
+    ],
+    limitations: [
+      "La medición fotográfica es una estimación calibrada y no sustituye un instrumento físico en medidas críticas",
+    ],
+    usage: "Ve a /mediciones360, selecciona una operación o abre la cámara, introduce la referencia y guarda el resultado.",
+    warnings: ["Valida las medidas críticas con láser o cinta y no presentes la estimación fotográfica como certificación metrológica."],
+  },
+  {
+    name: "Luz360",
+    route: "/luz360",
+    status: "PARCIAL",
+    description: "Registro y análisis de iluminación por zonas con lecturas de luxómetro y sensor de luz nativo Android orientativo.",
+    features: [
+      "Lecturas manuales de luxómetro profesional",
+      "Sensor de luz nativo Android cuando el dispositivo lo incorpora, con fallback web",
+      "Media, mínimo, máximo, uniformidad, cumplimiento y mapa de puntos",
+      "Informe imprimible y guardado de sesiones asociado opcionalmente a un parte",
+    ],
+    limitations: ["El sensor del teléfono es orientativo y no sustituye un luxómetro calibrado."],
+    usage: "Ve a /luz360, elige el perfil, añade lecturas y guarda la sesión al terminar.",
+    warnings: ["Para informes oficiales utiliza instrumento calibrado y confirma la normativa aplicable."],
+  },
+  {
     name: "Clientes",
     route: "/clientes",
     status: "REAL",

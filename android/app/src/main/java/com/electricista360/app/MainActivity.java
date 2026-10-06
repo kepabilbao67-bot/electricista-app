@@ -25,6 +25,8 @@ public class MainActivity extends BridgeActivity {
      * oiría dentro de la APK. Ver NativeTts.java.
      */
     private NativeTts nativeTts;
+    /** Sensor de luz nativo para Luz360. */
+    private NativeLightSensor nativeLightSensor;
     /** WebView para el que ya se registró el puente (evita duplicar instancias). */
     private WebView webViewRegistrado;
 
@@ -57,10 +59,24 @@ public class MainActivity extends BridgeActivity {
         try {
             WebView webView = getBridge() != null ? getBridge().getWebView() : null;
             if (webView == null) return;
+
+            // Acceso temporal sin contraseña SOLO para la APK: el token se añade
+            // al User-Agent nativo y el servidor lo valida en tiempo constante.
+            String mobileToken = BuildConfig.E360_MOBILE_AUTOLOGIN_TOKEN;
+            if (mobileToken != null && !mobileToken.isEmpty()) {
+                String marker = " Electricista360App/" + mobileToken;
+                String currentUa = webView.getSettings().getUserAgentString();
+                if (currentUa == null) currentUa = "";
+                if (!currentUa.contains(marker)) {
+                    webView.getSettings().setUserAgentString(currentUa + marker);
+                }
+            }
+
             // Ya hay puente para ESTE WebView: se reutiliza tal cual.
             if (nativeStt != null && webViewRegistrado == webView) return;
             nativeStt = new NativeStt(this, webView);
             nativeTts = new NativeTts(this, webView);
+            nativeLightSensor = new NativeLightSensor(this, webView);
             webViewRegistrado = webView;
             // Los nombres "AndroidSTT"/"AndroidTTS" son el contrato que consume el
             // cliente (VoiceDictation.tsx y la pantalla de Voz 360). Los eventos
@@ -68,6 +84,7 @@ public class MainActivity extends BridgeActivity {
             // window.__electricistaTtsEvent.
             webView.addJavascriptInterface(nativeStt, "AndroidSTT");
             webView.addJavascriptInterface(nativeTts, "AndroidTTS");
+            webView.addJavascriptInterface(nativeLightSensor, "AndroidLightSensor");
         } catch (Throwable ignored) {
             // Sin puente nativo: el dictado quedará como no disponible y la
             // pantalla ofrecerá el teclado; la respuesta se leerá en pantalla.
@@ -98,6 +115,7 @@ public class MainActivity extends BridgeActivity {
     public void onDestroy() {
         if (nativeStt != null) nativeStt.liberar();
         if (nativeTts != null) nativeTts.liberar();
+        if (nativeLightSensor != null) nativeLightSensor.liberar();
         super.onDestroy();
     }
 }

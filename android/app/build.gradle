@@ -7,9 +7,16 @@ android {
         applicationId "com.electricista360.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Token temporal de acceso sin contraseña SOLO para la APK.
+        // Se inyecta por entorno al compilar; nunca se escribe en el repositorio.
+        def mobileAutologinToken = System.getenv("E360_MOBILE_AUTOLOGIN_TOKEN") ?: (project.findProperty("e360MobileAutologinToken") ?: "")
+        def escapedMobileAutologinToken = mobileAutologinToken.replace("\\", "\\\\").replace("\"", "\\\"")
+        buildConfigField "String", "E360_MOBILE_AUTOLOGIN_TOKEN", "\"${escapedMobileAutologinToken}\""
+
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -54,6 +61,9 @@ android {
                 signingConfig signingConfigs.release
             }
         }
+    }
+    buildFeatures {
+        buildConfig true
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
