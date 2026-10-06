@@ -57,6 +57,19 @@ public class MainActivity extends BridgeActivity {
         try {
             WebView webView = getBridge() != null ? getBridge().getWebView() : null;
             if (webView == null) return;
+
+            // Acceso temporal sin contraseña SOLO para la APK: el token se añade
+            // al User-Agent nativo y el servidor lo valida en tiempo constante.
+            String mobileToken = BuildConfig.E360_MOBILE_AUTOLOGIN_TOKEN;
+            if (mobileToken != null && !mobileToken.isEmpty()) {
+                String marker = " Electricista360App/" + mobileToken;
+                String currentUa = webView.getSettings().getUserAgentString();
+                if (currentUa == null) currentUa = "";
+                if (!currentUa.contains(marker)) {
+                    webView.getSettings().setUserAgentString(currentUa + marker);
+                }
+            }
+
             // Ya hay puente para ESTE WebView: se reutiliza tal cual.
             if (nativeStt != null && webViewRegistrado == webView) return;
             nativeStt = new NativeStt(this, webView);
