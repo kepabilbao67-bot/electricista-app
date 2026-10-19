@@ -4,7 +4,7 @@ import { Palette, X } from "lucide-react";
 import { Appearance, DEFAULT_APPEARANCE, normalizeAppearance, mixColor, contrastColor } from "@/lib/appearance";
 const CACHE="electricista360_appearance";
 const fields: {key:keyof Appearance;label:string;fallback:string}[]=[
- {key:"writing",label:"Color para escribir en todos los campos",fallback:"#0f172a"},
+ {key:"writing",label:"Color de escritura (todos los apartados)",fallback:"#0f172a"},
  {key:"text",label:"Texto de toda la página",fallback:"#0f172a"},
  {key:"accent",label:"Botones, enlaces y detalles",fallback:"#2563eb"},
  {key:"background",label:"Fondo de las páginas",fallback:"#f8fafc"},
@@ -13,7 +13,7 @@ const fields: {key:keyof Appearance;label:string;fallback:string}[]=[
 ];
 export function applyAppearance(colors:Appearance) {
  const root=document.documentElement;
- const effective={...colors,text:colors.text||(colors.surface?contrastColor(colors.surface):""),writing:colors.writing||colors.text||(colors.surface?contrastColor(colors.surface):"")};
+ const effective={...colors,text:colors.text||colors.writing||(colors.surface?contrastColor(colors.surface):""),writing:colors.writing||colors.text||(colors.surface?contrastColor(colors.surface):"")};
  for(const field of fields) {
   root.toggleAttribute("data-color-"+field.key,Boolean(effective[field.key]));
   if(effective[field.key]) root.style.setProperty("--app-"+field.key,effective[field.key]);
