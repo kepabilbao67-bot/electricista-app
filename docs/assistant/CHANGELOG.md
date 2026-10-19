@@ -1,5 +1,10 @@
 # Changelog del Asistente
 
+## 2026-10-19-v1 - Preparacion de entrega sobre la version publicada
+- Integradas las correcciones de decimales y obra/direccion sin sustituir el acceso ni las funciones existentes.
+- El borrador conserva tambien el nombre y la direccion de la obra al navegar o recargar.
+
+
 ## 2026-10-18-v3 — Nueva obra del mismo cliente (local)
 - Duplicar conserva cliente y conceptos, deja obra/dirección vacías y abre edición para indicar el nuevo destino.
 

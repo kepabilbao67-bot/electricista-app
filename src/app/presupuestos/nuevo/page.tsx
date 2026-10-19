@@ -140,6 +140,8 @@ export default function NuevoPresupuestoPage() {
       if (raw) {
         const saved = JSON.parse(raw) as {
           clientId?: string;
+          workName?: string;
+          workAddress?: string;
           date?: string;
           validUntil?: string;
           notes?: string;
@@ -152,6 +154,8 @@ export default function NuevoPresupuestoPage() {
         };
 
         if (typeof saved.clientId === "string") setClientId(saved.clientId);
+        if (typeof saved.workName === "string") setWorkName(saved.workName);
+        if (typeof saved.workAddress === "string") setWorkAddress(saved.workAddress);
         if (typeof saved.date === "string" && saved.date) setDate(saved.date);
         if (typeof saved.validUntil === "string") setValidUntil(saved.validUntil);
         if (typeof saved.notes === "string") setNotes(saved.notes);
@@ -178,6 +182,8 @@ export default function NuevoPresupuestoPage() {
         BUDGET_DRAFT_KEY,
         JSON.stringify({
           clientId,
+          workName,
+          workAddress,
           date,
           validUntil,
           notes,
@@ -195,6 +201,8 @@ export default function NuevoPresupuestoPage() {
   }, [
     draftHydrated,
     clientId,
+    workName,
+    workAddress,
     date,
     validUntil,
     notes,
