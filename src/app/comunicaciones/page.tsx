@@ -18,6 +18,8 @@ interface Client {
 }
 
 interface Communication {
+  subject_color?: string | null;
+  message_color?: string | null;
   id: string;
   client_id: string;
   client_name: string;
@@ -265,8 +267,8 @@ export default function ComunicacionesPage() {
                     {new Date(comm.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
-                {comm.subject && <p className="text-xs font-medium text-slate-600 mb-1">{comm.subject}</p>}
-                <p className="text-xs text-slate-500 line-clamp-3 whitespace-pre-line">{comm.message}</p>
+                {comm.subject && <p className={getTextColorClass(comm.subject_color)+" text-xs font-medium text-slate-600 mb-1"}>{comm.subject}</p>}
+                <p className={getTextColorClass(comm.message_color)+" text-xs text-slate-500 line-clamp-3 whitespace-pre-line"}>{comm.message}</p>
               </div>
             ))}
             {filteredCommunications.length === 0 && (
