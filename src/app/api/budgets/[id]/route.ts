@@ -116,7 +116,7 @@ export async function PUT(
           client_id = COALESCE(?, client_id),
           date = COALESCE(?, date),
           valid_until = ?, notes = ?, notes_color = ?,
-          work_name = COALESCE(?, work_name), work_address = COALESCE(?, work_address),
+          work_name = COALESCE(?, work_name), work_address = COALESCE(?, work_address), text_color = COALESCE(?, text_color),
           subtotal = ?, tax_rate = ?, tax_amount = ?, total = ?,
           updated_at = datetime('now')
           WHERE id = ?`,
@@ -128,6 +128,7 @@ export async function PUT(
           body.notes_color || null,
           body.work_name === undefined ? null : (work.data.work_name ?? ""),
           body.work_address === undefined ? null : (work.data.work_address ?? ""),
+          body.text_color === undefined ? null : (work.data.text_color ?? "default"),
           subtotal,
           taxRate,
           taxAmount,

@@ -82,6 +82,8 @@ export default function PresupuestosPage() {
           date: new Date().toISOString().split("T")[0],
           valid_until: null,
           notes: detail.notes || "",
+          notes_color: detail.notes_color || "default",
+          text_color: detail.text_color || "default",
           work_name: "",
           work_address: "",
           tax_rate: detail.tax_rate || 21,

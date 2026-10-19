@@ -65,3 +65,8 @@ Facturas, presupuestos (alta y edición), catálogo/calculadora, gastos, CRM y p
 ## Obras en presupuestos — 2026-10-18
 
 Nombre del trabajo y dirección de obra independientes del cliente, visibles en listado móvil/escritorio y detalle/PDF. Editables; al duplicar se conserva el cliente y se pide una nueva obra y dirección; los históricos muestran “sin indicar” hasta completarlos.
+
+## Escritura en colores (2026-10-19)
+- Presupuestos: conceptos y obra con selector propio, notas independientes; conservados en borrador, duplicado, edición y PDF.
+- Facturas: conceptos y notas al crear y desde el detalle; persistencia y conversión desde presupuesto.
+- Selectores existentes de clientes, catálogo, agenda, comunicaciones, leads y partes: contraste adaptado al tema y a impresión.

@@ -1,4 +1,5 @@
 "use client";
+import { getTextColorClass } from "@/lib/text-colors";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -37,6 +38,8 @@ interface BudgetDetail {
   tax_amount: number;
   total: number;
   notes: string;
+  notes_color?: string | null;
+  text_color?: string | null;
   converted_invoice_id: string | null;
   items: BudgetItem[];
 }
@@ -371,9 +374,9 @@ export default function PresupuestoDetailPage() {
 
           <div className="mb-8 p-4 border border-gray-200 rounded-lg break-inside-avoid">
             <p className="text-sm font-medium text-gray-500 mb-1">Obra / trabajo a realizar:</p>
-            <p className="font-semibold">{budget.work_name || "Obra sin indicar"}</p>
+            <p className={getTextColorClass(budget.text_color) + " font-semibold"}>{budget.work_name || "Obra sin indicar"}</p>
             <p className="text-sm font-medium text-gray-500 mt-3 mb-1">Dirección de la obra:</p>
-            <p className="text-sm text-gray-700 whitespace-pre-line">{budget.work_address || "Dirección de obra sin indicar"}</p>
+            <p className={getTextColorClass(budget.text_color) + " text-sm text-gray-700 whitespace-pre-line"}>{budget.work_address || "Dirección de obra sin indicar"}</p>
           </div>
 
           {zoneGroups ? (
@@ -398,7 +401,7 @@ export default function PresupuestoDetailPage() {
                         const { desc } = parseZoneFromDescription(item.description);
                         return (
                           <tr key={item.id}>
-                            <td className="py-1.5">{desc}</td>
+                            <td className={getTextColorClass(budget.text_color) + " py-1.5"}>{desc}</td>
                             <td className="py-1.5 text-right">{item.quantity}</td>
                             <td className="py-1.5 text-right">{item.unit_price.toFixed(2)} EUR</td>
                             <td className="py-1.5 text-right">{item.total.toFixed(2)} EUR</td>
@@ -423,7 +426,7 @@ export default function PresupuestoDetailPage() {
               <tbody className="divide-y divide-gray-100">
                 {budget.items.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-2">{item.description}</td>
+                    <td className={getTextColorClass(budget.text_color) + " py-2"}>{item.description}</td>
                     <td className="py-2 text-right">{item.quantity}</td>
                     <td className="py-2 text-right">{item.unit_price.toFixed(2)} EUR</td>
                     <td className="py-2 text-right">{item.total.toFixed(2)} EUR</td>
@@ -441,7 +444,7 @@ export default function PresupuestoDetailPage() {
 
           {budget.notes && (
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-sm text-slate-600">{budget.notes}</p>
+              <p className={getTextColorClass(budget.notes_color) + " text-sm text-slate-600 whitespace-pre-line"}>{budget.notes}</p>
             </div>
           )}
         </div>

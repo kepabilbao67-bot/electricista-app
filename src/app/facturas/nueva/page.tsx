@@ -1,4 +1,6 @@
 "use client";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 import { DecimalInput } from "@/components/DecimalInput";
 
@@ -33,6 +35,8 @@ export default function NuevaFacturaPage() {
   const [clientId, setClientId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
+  const [notesColor, setNotesColor] = useState("default");
+  const [textColor, setTextColor] = useState("default");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
   const [items, setItems] = useState<InvoiceItem[]>([
     { description: "", quantity: 1, unit_price: 0, discount: 0, discount_type: "percent" },
@@ -121,6 +125,8 @@ export default function NuevaFacturaPage() {
         client_id: clientId,
         date,
         notes,
+        text_color: textColor,
+        notes_color: notesColor,
         tax_rate: 21,
         payment_method: paymentMethod,
         items: items.filter((i) => i.description && i.unit_price > 0).map((i) => ({
@@ -165,6 +171,7 @@ export default function NuevaFacturaPage() {
         <div className="card-static">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Datos generales</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="col-span-full flex items-center gap-3"><span>Color de conceptos</span><ColorSelect label="Color de conceptos" value={textColor} onChange={setTextColor} /></div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
               <select
@@ -202,11 +209,12 @@ export default function NuevaFacturaPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Notas</label>
+              <ColorSelect label="Color de notas" value={notesColor} onChange={setNotesColor} />
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="input-field"
+                className={`input-field ${getTextColorClass(notesColor)}`}
               />
             </div>
           </div>
@@ -260,7 +268,7 @@ export default function NuevaFacturaPage() {
                     placeholder="Descripcion"
                     value={item.description}
                     onChange={(e) => updateItem(index, "description", e.target.value)}
-                    className="input-field"
+                    className={`input-field ${getTextColorClass(textColor)}`}
                   />
                 </div>
                 <div className="w-16">

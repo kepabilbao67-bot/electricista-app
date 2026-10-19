@@ -1,3 +1,4 @@
+import { normalizeTextColor } from "@/lib/text-colors";
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase, generateInvoiceNumber } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -119,8 +120,8 @@ export async function POST(request: NextRequest) {
     const paymentMethod = body.payment_method || "transferencia";
 
     await db.execute({
-      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, payment_method, ticketbai_description, ticketbai_tipo_operacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, payment_method, ticketbai_description, ticketbai_tipo_operacion, text_color, notes_color)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         number,
@@ -136,6 +137,8 @@ export async function POST(request: NextRequest) {
         paymentMethod,
         ticketbaiDescription,
         ticketbaiTipoOperacion,
+        normalizeTextColor(body.text_color),
+        normalizeTextColor(body.notes_color),
       ],
     });
 

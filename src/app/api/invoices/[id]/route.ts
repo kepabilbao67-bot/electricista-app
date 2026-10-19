@@ -1,3 +1,4 @@
+import { normalizeTextColor } from "@/lib/text-colors";
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 
@@ -50,6 +51,10 @@ export async function PUT(
     await initializeDatabase();
     const db = getDbClient();
     const body = await request.json();
+
+    if (body.text_color !== undefined || body.notes_color !== undefined) {
+      await db.execute({sql: "UPDATE invoices SET text_color = COALESCE(?, text_color), notes_color = COALESCE(?, notes_color) WHERE id = ?", args: [body.text_color === undefined ? null : normalizeTextColor(body.text_color), body.notes_color === undefined ? null : normalizeTextColor(body.notes_color), id]});
+    }
 
     if (body.status) {
       await db.execute({

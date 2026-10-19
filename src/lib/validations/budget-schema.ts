@@ -14,6 +14,7 @@ export const budgetItemSchema = z.object({
 });
 
 export const budgetWorkSchema = z.object({
+  text_color: z.enum(["default","red","blue","green","orange","purple"]).nullable().optional(),
   work_name: z.string().trim().max(200).nullable().optional(),
   work_address: z.string().trim().max(500).nullable().optional(),
 });

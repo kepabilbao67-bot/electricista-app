@@ -362,3 +362,25 @@
     page-break-inside: avoid;
   }
 }
+
+/* User-selected writing colors: readable in both themes and on white printouts. */
+.writing-color-red { color: #b91c1c !important; }
+.dark .writing-color-red { color: #fca5a5 !important; }
+@media print { .writing-color-red, .dark .writing-color-red { color: #b91c1c !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+.writing-color-blue { color: #1d4ed8 !important; }
+.dark .writing-color-blue { color: #93c5fd !important; }
+@media print { .writing-color-blue, .dark .writing-color-blue { color: #1d4ed8 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+.writing-color-green { color: #15803d !important; }
+.dark .writing-color-green { color: #86efac !important; }
+@media print { .writing-color-green, .dark .writing-color-green { color: #15803d !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+.writing-color-orange { color: #c2410c !important; }
+.dark .writing-color-orange { color: #fdba74 !important; }
+@media print { .writing-color-orange, .dark .writing-color-orange { color: #c2410c !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+.writing-color-purple { color: #7e22ce !important; }
+.dark .writing-color-purple { color: #d8b4fe !important; }
+@media print { .writing-color-purple, .dark .writing-color-purple { color: #7e22ce !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+.budget-print .writing-color-red, .dark .budget-print .writing-color-red, .document-writing-colors .writing-color-red, .dark .document-writing-colors .writing-color-red { color: #b91c1c !important; }
+.budget-print .writing-color-blue, .dark .budget-print .writing-color-blue, .document-writing-colors .writing-color-blue, .dark .document-writing-colors .writing-color-blue { color: #1d4ed8 !important; }
+.budget-print .writing-color-green, .dark .budget-print .writing-color-green, .document-writing-colors .writing-color-green, .dark .document-writing-colors .writing-color-green { color: #15803d !important; }
+.budget-print .writing-color-orange, .dark .budget-print .writing-color-orange, .document-writing-colors .writing-color-orange, .dark .document-writing-colors .writing-color-orange { color: #c2410c !important; }
+.budget-print .writing-color-purple, .dark .budget-print .writing-color-purple, .document-writing-colors .writing-color-purple, .dark .document-writing-colors .writing-color-purple { color: #7e22ce !important; }

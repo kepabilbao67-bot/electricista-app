@@ -12,19 +12,8 @@ import { CATALOGO_TRABAJOS, UNIDADES_TRABAJO } from "@/lib/catalogo-trabajos";
 import { CATALOGO_MATERIALES, UNIDADES_MATERIAL } from "@/lib/catalogo-materiales";
 import { normalizeUnitPriceInput } from "@/lib/normalize-unit-price";
 
-export const TRABAJO_COLORS = [
-  { value: "default", label: "Normal", className: "text-slate-900" },
-  { value: "red", label: "Rojo", className: "text-red-700" },
-  { value: "orange", label: "Naranja", className: "text-orange-700" },
-  { value: "blue", label: "Azul", className: "text-blue-700" },
-  { value: "green", label: "Verde", className: "text-green-700" },
-  { value: "purple", label: "Morado", className: "text-purple-700" },
-] as const;
-
-export function getTrabajoColorClass(color?: string | null): string {
-  const found = TRABAJO_COLORS.find((c) => c.value === color);
-  return found ? found.className : "text-slate-900";
-}
+import { TEXT_COLORS as TRABAJO_COLORS, getTextColorClass as getTrabajoColorClass } from "@/lib/text-colors";
+export { TRABAJO_COLORS, getTrabajoColorClass };
 
 export interface TrabajoLine {
   id: string;

@@ -1,0 +1,38 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { NextRequest } from "next/server";
+import { useIsolatedTestDb } from "./test-db";
+import { getDbClient, initializeDatabase } from "../db";
+import { POST as createBudget } from "@/app/api/budgets/route";
+import { PUT as editBudget } from "@/app/api/budgets/[id]/route";
+import { POST as convertBudget } from "@/app/api/budgets/convert/route";
+import { POST as createInvoice } from "@/app/api/invoices/route";
+import { PUT as editInvoice, GET as getInvoice } from "@/app/api/invoices/[id]/route";
+import { normalizeTextColor, getTextColorClass } from "../text-colors";
+useIsolatedTestDb();
+const req=(path:string,body:object)=>new NextRequest("http://localhost"+path,{method:"POST",body:JSON.stringify(body)});
+test("colors survive create, edit, conversion and reload without changing amounts",async()=>{
+ const db=getDbClient();
+ await db.execute("INSERT INTO clients (id,name) VALUES ('color-client','Prueba colores')");
+ const payload={client_id:"color-client",date:"2026-10-19",work_name:"Obra A",work_address:"Calle A",text_color:"red",notes_color:"blue",notes:"Notas",items:[{description:"Cable",quantity:2,unit_price:1.49}]};
+ const response=await createBudget(req("/api/budgets",payload)); assert.equal(response.status,201);
+ const budget=await response.json(); assert.equal(budget.text_color,"red"); assert.equal(budget.notes_color,"blue"); assert.equal(budget.subtotal,2.98);
+ const edit=await editBudget(req("/api/budgets/"+budget.id,{...payload,text_color:"green"}),{params:Promise.resolve({id:budget.id})}); assert.equal(edit.status,200);
+ const converted=await convertBudget(req("/api/budgets/convert",{budget_id:budget.id})); assert.equal(converted.status,201);
+ const invoice=await converted.json(); assert.equal(invoice.text_color,"green"); assert.equal(invoice.notes_color,"blue");
+ const context={params:Promise.resolve({id:invoice.id})};
+ const colorChange=await editInvoice(req("/api/invoices/"+invoice.id,{text_color:"purple",notes_color:"orange"}),context); assert.equal(colorChange.status,200);
+ const reloaded=await (await getInvoice(req("/api/invoices/"+invoice.id,{}),context)).json();
+ assert.equal(reloaded.text_color,"purple"); assert.equal(reloaded.notes_color,"orange"); assert.equal(reloaded.total,invoice.total); assert.equal(reloaded.status,invoice.status); assert.equal(reloaded.items[0].unit_price,1.49);
+ await initializeDatabase();
+ const stored=await db.execute({sql:"SELECT text_color FROM invoices WHERE id=?",args:[invoice.id]}); assert.equal(stored.rows[0].text_color,"purple");
+ const direct=await createInvoice(req("/api/invoices",{...payload,text_color:"blue",notes_color:"green",auto_generate_tbai:false}));
+ assert.equal(direct.status,201); const second=await direct.json(); assert.equal(second.text_color,"blue"); assert.equal(second.notes_color,"green");
+ const invalid=await createInvoice(req("/api/invoices",{...payload,text_color:"url(bad)",auto_generate_tbai:false}));
+ assert.equal(invalid.status,201); assert.equal((await invalid.json()).text_color,"default");
+});
+test("unknown colors never become CSS classes",()=>{
+ assert.equal(normalizeTextColor("url(bad)"),"default");
+ assert.equal(getTextColorClass("url(bad)"),"");
+ assert.equal(getTextColorClass("red"),"writing-color-red");
+});

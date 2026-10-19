@@ -1,5 +1,10 @@
 # Changelog del Asistente
 
+## 2026-10-19-v2 - Escritura en colores
+- Selectores de conceptos/obra y notas en presupuestos y facturas, persistencia e impresión; cambios de color en el detalle de factura.
+- Paleta compartida con contraste para tema claro/oscuro e impresión. Migraciones aditivas de metadatos, sin cambiar cálculos ni TicketBAI.
+
+
 ## 2026-10-19-v1 - Preparacion de entrega sobre la version publicada
 - Integradas las correcciones de decimales y obra/direccion sin sustituir el acceso ni las funciones existentes.
 - El borrador conserva tambien el nombre y la direccion de la obra al navegar o recargar.

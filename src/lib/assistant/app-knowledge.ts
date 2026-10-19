@@ -98,6 +98,7 @@ export const APP_MODULES: AppModule[] = [
     description: "Creación y gestión de presupuestos con generador automático por zonas/estancias.",
     features: [
       "Precios con céntimos (coma o punto, hasta dos decimales)",
+      "Color de conceptos y obra, notas con color independiente, guardado en borrador y documento/PDF",
       "Nombre y dirección propios de cada obra en alta, edición, listado y PDF; independientes de la dirección del cliente",
       "Generador automático por tipo de vivienda (piso, chalet, local) con habitaciones y baños",
       "Zonas predefinidas con circuitos REBT",
@@ -121,6 +122,7 @@ export const APP_MODULES: AppModule[] = [
     description: "Facturación completa con descuentos, estados y TicketBAI (territorios históricos de Euskadi).",
     features: [
       "Precios con céntimos (coma o punto, hasta dos decimales)",
+      "Color de conceptos y notas: crear y cambiar en el detalle, persistencia e impresión; conserva los colores al convertir presupuesto",
       "Crear facturas con líneas, descuentos por línea (% o EUR) y métodos de pago",
       "Estados: borrador, enviada, cobrada, vencida",
       "Marcar como cobrada",

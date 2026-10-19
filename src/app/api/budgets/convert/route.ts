@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
 
       await tx.execute({
         sql: `INSERT INTO invoices (
-          id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, text_color, notes_color, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           invoiceId,
           invoiceNumber,
@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
           taxAmount,
           total,
           budget.notes || `Factura generada desde presupuesto ${budget.number}`,
+          budget.text_color || "default",
+          budget.notes_color || "default",
           now,
           now,
         ],

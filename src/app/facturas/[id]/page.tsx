@@ -1,4 +1,6 @@
 "use client";
+import ColorSelect from "@/components/ColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -28,6 +30,8 @@ interface InvoiceDetail {
   tax_amount: number;
   total: number;
   notes: string;
+  notes_color?: string | null;
+  text_color?: string | null;
   payment_method: string | null;
   ticketbai_id: string | null;
   ticketbai_qr: string | null;
@@ -71,6 +75,20 @@ export default function FacturaDetailPage() {
   const router = useRouter();
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [colorSaving, setColorSaving] = useState(false);
+  const [colorError, setColorError] = useState("");
+
+  async function saveColor(field: "text_color" | "notes_color", value: string) {
+    if (!invoice || colorSaving) return;
+    setColorSaving(true); setColorError("");
+    try {
+      const response = await fetch("/api/invoices/" + invoice.id, {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({[field]:value})});
+      if (!response.ok) throw new Error("No se pudo guardar el color.");
+      const saved = await response.json();
+      setInvoice(current => current ? {...current,text_color:saved.text_color,notes_color:saved.notes_color} : current);
+    } catch { setColorError("No se pudo guardar el color. Vuelve a intentarlo."); }
+    finally {setColorSaving(false);}
+  }
   const [generating, setGenerating] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmData, setConfirmData] = useState({ ticketbai_id: "", ticketbai_signature: "", ticketbai_qr: "" });
@@ -193,6 +211,8 @@ export default function FacturaDetailPage() {
           client_id: invoice.id,
           date: new Date().toISOString().split("T")[0],
           notes: invoice.notes || "",
+          notes_color: invoice.notes_color || "default",
+          text_color: invoice.text_color || "default",
           tax_rate: invoice.tax_rate || 21,
           items: (invoice.items || []).map((item) => ({
             description: item.description,
@@ -269,6 +289,8 @@ export default function FacturaDetailPage() {
           </button>
         </div>
       </div>
+
+      <div className="card-static mb-4 flex flex-wrap items-center gap-3 print:hidden" aria-label="Colores de la factura"><span>Conceptos</span><ColorSelect label="Color de conceptos" value={invoice.text_color || "default"} disabled={colorSaving} onChange={value => saveColor("text_color",value)} /><span>Notas</span><ColorSelect label="Color de notas" value={invoice.notes_color || "default"} disabled={colorSaving} onChange={value => saveColor("notes_color",value)} />{colorSaving && <span role="status">Guardando color...</span>}{colorError && <span role="alert">{colorError}</span>}</div>
 
       {/* FLUJO BATUZ */}
       <div className="card-static mb-6 border-blue-200 bg-gradient-to-br from-blue-50/50 to-white no-print print:hidden">
@@ -405,6 +427,7 @@ export default function FacturaDetailPage() {
       )}
 
       {/* Factura imprimible */}
+      <div className="document-writing-colors">
       <div className="card-static p-8 print:p-0 print:shadow-none print:border-none print:w-full relative overflow-hidden">
         {/* Watermark for print */}
         {watermarkText && (
@@ -455,7 +478,7 @@ export default function FacturaDetailPage() {
         {invoice.notes && (
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 print:border-slate-300 print:break-inside-avoid">
             <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">Descripcion</p>
-            <p className="text-sm text-blue-800">{invoice.notes}</p>
+            <p className={getTextColorClass(invoice.notes_color) + " text-sm text-blue-800 whitespace-pre-line"}>{invoice.notes}</p>
           </div>
         )}
 
@@ -499,7 +522,7 @@ export default function FacturaDetailPage() {
                       <tbody className="divide-y divide-slate-50 print:divide-slate-200">
                         {group.items.map((item) => (
                           <tr key={item.id} className="print:break-inside-avoid break-inside-avoid">
-                            <td className="py-2 text-slate-700">{item.description}</td>
+                            <td className={getTextColorClass(invoice.text_color) + " py-2 text-slate-700"}>{item.description}</td>
                             <td className="py-2 text-right text-slate-600">{item.quantity}</td>
                             <td className="py-2 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
                             <td className="py-2 text-right font-medium text-slate-900">{item.total.toFixed(2)} EUR</td>
@@ -533,7 +556,7 @@ export default function FacturaDetailPage() {
                       : "-";
                     return (
                       <tr key={item.id} className="print:break-inside-avoid break-inside-avoid">
-                        <td className="px-4 py-3 text-slate-700">{item.description}</td>
+                        <td className={getTextColorClass(invoice.text_color) + " px-4 py-3 text-slate-700"}>{item.description}</td>
                         <td className="px-4 py-3 text-right text-slate-600">{item.quantity.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
                         <td className="px-4 py-3 text-right text-slate-400">{discountDisplay}</td>
@@ -581,6 +604,7 @@ export default function FacturaDetailPage() {
         <div className="mt-6 pt-4 border-t border-slate-100 print:border-slate-200 print:break-inside-avoid break-inside-avoid">
           <p className="text-xs text-slate-400">{APP_CONFIG.company.bankName}: {APP_CONFIG.company.iban}</p>
         </div>
+      </div>
       </div>
     </div>
   );

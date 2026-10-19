@@ -73,6 +73,7 @@ export default function NuevoPresupuestoPage() {
   });
   const [notes, setNotes] = useState("");
   const [notesColor, setNotesColor] = useState("default");
+  const [textColor, setTextColor] = useState("default");
   const [zones, setZones] = useState<Zone[]>([
     { name: "Instalacion general", items: [{ description: "", quantity: 1, unit_price: 0 }], collapsed: false },
   ]);
@@ -146,6 +147,7 @@ export default function NuevoPresupuestoPage() {
           validUntil?: string;
           notes?: string;
           notesColor?: string;
+          textColor?: string;
           zones?: Zone[];
           autoType?: "piso" | "chalet" | "local";
           autoRooms?: number;
@@ -160,6 +162,7 @@ export default function NuevoPresupuestoPage() {
         if (typeof saved.validUntil === "string") setValidUntil(saved.validUntil);
         if (typeof saved.notes === "string") setNotes(saved.notes);
         if (typeof saved.notesColor === "string") setNotesColor(saved.notesColor);
+        if (typeof saved.textColor === "string") setTextColor(saved.textColor);
         if (Array.isArray(saved.zones) && saved.zones.length > 0) setZones(saved.zones);
         if (saved.autoType === "piso" || saved.autoType === "chalet" || saved.autoType === "local") {
           setAutoType(saved.autoType);
@@ -188,6 +191,7 @@ export default function NuevoPresupuestoPage() {
           validUntil,
           notes,
           notesColor,
+          textColor,
           zones,
           autoType,
           autoRooms,
@@ -207,6 +211,7 @@ export default function NuevoPresupuestoPage() {
     validUntil,
     notes,
     notesColor,
+    textColor,
     zones,
     autoType,
     autoRooms,
@@ -505,6 +510,7 @@ export default function NuevoPresupuestoPage() {
         valid_until: validUntil || null,
         notes,
         notes_color: notesColor,
+        text_color: textColor,
         work_name: workName,
         work_address: workAddress,
         tax_rate: 21,
@@ -546,7 +552,8 @@ export default function NuevoPresupuestoPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BudgetWorkFields workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
+            <div className="col-span-full flex items-center gap-3"><span>Color de conceptos y obra</span><ColorSelect label="Color de conceptos y obra" value={textColor} onChange={setTextColor} /></div>
+            <BudgetWorkFields textColor={textColor} workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
             <div>
               <label className="block text-sm font-medium text-slate-200 mb-1.5">Cliente</label>
               <select
@@ -680,7 +687,7 @@ export default function NuevoPresupuestoPage() {
                           placeholder="Descripcion"
                           value={item.description}
                           onChange={(e) => updateItem(zoneIndex, itemIndex, "description", e.target.value)}
-                          className="input-field"
+                          className={`input-field ${getTextColorClass(textColor)}`}
                         />
                       </div>
                       <div className="w-20">
