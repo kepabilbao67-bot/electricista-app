@@ -26,6 +26,7 @@ import {
   Tag,
 } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { getTextColorClass } from "@/lib/text-colors";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -39,6 +40,8 @@ import {
 } from "@/lib/crm";
 
 interface ClientDetail {
+  address_color?:string|null;
+  notes_color?:string|null;
   id: string;
   name: string;
   first_name?: string;
@@ -584,7 +587,7 @@ export default function ClienteDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <span className="text-slate-400 font-bold">Dirección:</span>
-                  <p className="text-slate-200">{client.address || "No especificada"}</p>
+                  <p className={getTextColorClass(client.address_color)+" text-slate-200"}>{client.address || "No especificada"}</p>
                 </div>
                 <div className="space-y-1">
                   <span className="text-slate-400 font-bold">Ciudad / Población:</span>
@@ -610,7 +613,7 @@ export default function ClienteDetailPage() {
                 Notas y Diagnóstico Patrimonial
               </h2>
               {client.notes ? (
-                <p className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed bg-[#0c182c] p-4 rounded-xl border border-slate-800">
+                <p className={getTextColorClass(client.notes_color)+" text-xs text-slate-300 whitespace-pre-wrap leading-relaxed bg-[#0c182c] p-4 rounded-xl border border-slate-800"}>
                   {client.notes}
                 </p>
               ) : (

@@ -7,6 +7,7 @@ import { PUBLIC_ROUTE_HEADER } from "@/lib/auth/config";
 import { MobileNav } from "@/components/MobileNav";
 import { ToastContainer } from "@/components/Toast";
 import ThemeToggle from "@/components/ThemeToggle";
+import AppearanceControl from "@/components/AppearanceControl";
 import { loadVerticalConfig } from "@/lib/core/vertical-loader";
 import { getActiveModules } from "@/lib/core/modules";
 import { loadCompanyProfile } from "@/lib/core/company";
@@ -201,6 +202,7 @@ export default async function RootLayout({
           </div>
         )}
         <ToastContainer />
+        {!isPublicRoute && <AppearanceControl />}
         <script
           dangerouslySetInnerHTML={{
             __html: `

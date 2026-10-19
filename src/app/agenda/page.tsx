@@ -429,7 +429,7 @@ export default function AgendaPage() {
                           className={`rounded-md border px-2 py-1.5 cursor-pointer transition-all hover:shadow-sm ${st.bg}`}
                           onClick={() => handleEdit(visit)}
                         >
-                          <p className={`text-[11px] font-semibold truncate ${st.color}`}>{visit.title}</p>
+                          <p className={`text-[11px] font-semibold truncate ${getTextColorClass(visit.title_color) || st.color}`}>{visit.title}</p>
                           {visit.time && (
                             <p className="text-[10px] text-slate-500">{visit.time}</p>
                           )}
@@ -457,7 +457,7 @@ export default function AgendaPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <h3 className="font-semibold text-slate-100">{visit.title}</h3>
+                      <h3 className={getTextColorClass(visit.title_color)+" font-semibold text-slate-900"}>{visit.title}</h3>
                       <span className={`badge ${status.bg} ${status.color} border`}>
                         {status.label}
                       </span>
@@ -484,13 +484,13 @@ export default function AgendaPage() {
                           className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 hover:underline"
                         >
                           <MapPin className="h-3.5 w-3.5" />
-                          {visit.address}
+                          <span className={getTextColorClass(visit.address_color)}>{visit.address}</span>
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       )}
                     </div>
                     {visit.description && (
-                      <p className="text-xs text-slate-400 mt-2">{visit.description}</p>
+                      <p className={getTextColorClass(visit.description_color)+" text-xs text-slate-400 mt-2"}>{visit.description}</p>
                     )}
                   </div>
                   <div className="flex gap-1 ml-4">

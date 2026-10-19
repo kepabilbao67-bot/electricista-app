@@ -11,6 +11,9 @@ import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 
 interface CatalogItem {
+  name_color?: string | null;
+  description_color?: string | null;
+  category_color?: string | null;
   id: string;
   name: string;
   description: string | null;
@@ -229,7 +232,7 @@ export default function CatalogoPage() {
             <div key={category}>
               <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wide mb-2 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
-                {category}
+                <span className={getTextColorClass(categoryItems[0]?.category_color)}>{category}</span>
                 <span className="text-xs font-normal text-slate-400">({categoryItems.length})</span>
               </h3>
               <div className="overflow-hidden rounded-lg border border-slate-200">
@@ -257,8 +260,8 @@ export default function CatalogoPage() {
                       return (
                         <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 py-2.5">
-                            <p className="font-medium text-slate-900">{item.name}</p>
-                            {item.description && <p className="text-xs text-slate-400">{item.description}</p>}
+                            <p className={getTextColorClass(item.name_color)+" font-medium text-slate-900"}>{item.name}</p>
+                            {item.description && <p className={getTextColorClass(item.description_color)+" text-xs text-slate-400"}>{item.description}</p>}
                             {item.supplier && <p className="text-xs text-slate-500">Proveedor: {item.supplier}</p>}
                             {item.supplier_reference && <p className="text-xs text-slate-500">Referencia: {item.supplier_reference}</p>}
                             {item.supplier_price_date && <p className="text-xs text-slate-500">Fecha precio proveedor: {new Date(`${item.supplier_price_date}T00:00:00`).toLocaleDateString("es-ES")}</p>}

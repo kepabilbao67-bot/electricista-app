@@ -70,3 +70,6 @@ Nombre del trabajo y dirección de obra independientes del cliente, visibles en 
 - Presupuestos: conceptos y obra con selector propio, notas independientes; conservados en borrador, duplicado, edición y PDF.
 - Facturas: conceptos y notas al crear y desde el detalle; persistencia y conversión desde presupuesto.
 - Selectores existentes de clientes, catálogo, agenda, comunicaciones, leads y partes: contraste adaptado al tema y a impresión.
+
+## Colores generales (2026-10-19)
+REAL: botón Colores disponible en todos los módulos, con escritura, texto, botones, fondo, formularios y menú. Guardado compartido y vista previa; los colores propios de cada documento tienen prioridad. Catálogo, agenda y leads conservan los colores también al mostrar sus registros.

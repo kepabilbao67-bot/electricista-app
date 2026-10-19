@@ -220,3 +220,5 @@
 - Fallback offline mejorado con conocimiento de la app.
 - Detección de consultas peligrosas con respuesta de seguridad.
 - Protección delegada a Basic Auth global (eliminado checkAiSecret redundante).
+
+- 2026-10-19: colores generales y escritura en todos los apartados; se conservan al guardar y se respetan colores por documento. Corregida representación de colores en catálogo, agenda y leads.

@@ -10,6 +10,10 @@ import VoiceDictation from "@/components/VoiceDictation";
 import { getTextColorClass } from "@/lib/text-colors";
 
 interface Lead {
+  name_color?: string | null;
+  source_color?: string | null;
+  interest_color?: string | null;
+  message_color?: string | null;
   id: string;
   name: string;
   email: string | null;
@@ -350,7 +354,7 @@ export default function LeadsPage() {
               {leads.map((lead) => (
                 <tr key={lead.id} className="table-row">
                   <td className="px-4 py-3.5">
-                    <span className="font-semibold text-slate-900">{lead.name}</span>
+                    <span className={getTextColorClass(lead.name_color)+" font-semibold text-slate-900"}>{lead.name}</span>
                   </td>
                   <td className="px-4 py-3.5 hidden sm:table-cell">
                     <div className="space-y-0.5">
@@ -360,10 +364,10 @@ export default function LeadsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3.5 hidden md:table-cell">
-                    <span className="text-xs text-slate-600">{lead.source || "-"}</span>
+                    <span className={getTextColorClass(lead.source_color)+" text-xs text-slate-600"}>{lead.source || "-"}</span>
                   </td>
                   <td className="px-4 py-3.5 hidden lg:table-cell">
-                    <span className="text-xs text-slate-600">{lead.interest || "-"}</span>
+                    <span className={getTextColorClass(lead.interest_color)+" text-xs text-slate-600"}>{lead.interest || "-"}</span>
                   </td>
                   <td className="px-4 py-3.5">
                     <select

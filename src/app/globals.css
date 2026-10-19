@@ -384,3 +384,23 @@
 .budget-print .writing-color-green, .dark .budget-print .writing-color-green, .document-writing-colors .writing-color-green, .dark .document-writing-colors .writing-color-green { color: #15803d !important; }
 .budget-print .writing-color-orange, .dark .budget-print .writing-color-orange, .document-writing-colors .writing-color-orange, .dark .document-writing-colors .writing-color-orange { color: #c2410c !important; }
 .budget-print .writing-color-purple, .dark .budget-print .writing-color-purple, .document-writing-colors .writing-color-purple, .dark .document-writing-colors .writing-color-purple { color: #7e22ce !important; }
+/* Shared appearance preferences apply to every module and native writing field. */
+html[data-color-background] body, html[data-color-background] .app-shell, html[data-color-background] .app-main { background:var(--app-background)!important; }
+html[data-color-surface] .app-main [class*="bg-white"], html[data-color-surface] .app-main .card, html[data-color-surface] .app-main .card-static,
+html[data-color-surface] .app-content>header, html[data-color-surface] .app-main input, html[data-color-surface] .app-main textarea, html[data-color-surface] .app-main select { background-color:var(--app-surface)!important; }
+html[data-color-text] body, html[data-color-text] .app-main :is([class*="text-slate-"],[class*="text-gray-"],[class*="text-zinc-"]):not([class*="writing-color-"]) { color:var(--app-text)!important; }
+html[data-color-writing] .app-main :is(input,textarea,select):not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([class*="writing-color-"]) { color:var(--app-writing)!important; caret-color:var(--app-writing); }
+html[data-color-writing] .budget-print :is(p,td,th,span):not([class*="writing-color-"]),html[data-color-writing] .document-writing-colors :is(p,td,th,span):not([class*="writing-color-"]) { color:var(--app-writing)!important; }
+html[data-color-sidebar] aside,html[data-color-sidebar] .mobile-navigation nav { background:var(--app-sidebar)!important; color:var(--app-sidebar-ink)!important; }
+html[data-color-sidebar] aside *,html[data-color-sidebar] .mobile-navigation nav * { color:var(--app-sidebar-ink); }
+html[data-color-accent] :is(.btn-primary,[class~="bg-blue-600"],[class~="bg-blue-700"],[class~="bg-blue-800"],[class~="bg-indigo-600"]) { color:var(--app-accent-ink)!important; }
+.appearance-control { position:fixed;right:16px;bottom:20px;z-index:80;color:#0f172a!important;font-size:14px; }
+.appearance-trigger { display:flex;align-items:center;gap:8px;border:1px solid #cbd5e1;border-radius:999px;padding:12px 16px;background:#fff;color:#0f172a!important;box-shadow:0 3px 14px #0002; }
+.appearance-panel { position:absolute;bottom:58px;right:0;width:min(410px,calc(100vw - 32px));max-height:calc(100dvh - 130px);overflow:auto;background:#fff!important;color:#0f172a!important;border:1px solid #cbd5e1;border-radius:16px;padding:18px;box-shadow:0 8px 30px #0003; }
+.appearance-panel p { font-size:12px;margin:12px 0;color:#475569!important; }
+.appearance-panel button { padding:6px;cursor:pointer; }
+.appearance-color-row { display:flex;align-items:center;gap:8px;border-top:1px solid #e2e8f0;padding:10px 0;font-size:13px;color:#0f172a!important; }
+.appearance-color-row span { flex:1; }
+.appearance-color-row input { width:44px;height:36px;cursor:pointer; }
+.appearance-save { background:#1d4ed8;color:white!important;border-radius:8px;padding:9px 12px!important; }
+@media print { .appearance-control { display:none!important; } html[data-color-surface] .app-main input,html[data-color-surface] .app-main textarea,html[data-color-surface] .app-main [class*="bg-white"] { background:white!important; } }

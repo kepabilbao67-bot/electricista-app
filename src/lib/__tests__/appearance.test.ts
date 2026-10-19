@@ -1,0 +1,22 @@
+import {test} from "node:test";
+import assert from "node:assert/strict";
+import {NextRequest} from "next/server";
+import {useIsolatedTestDb} from "./test-db";
+import {getDbClient} from "../db";
+import {GET,POST} from "@/app/api/appearance/route";
+import {DEFAULT_APPEARANCE,normalizeAppearance,contrastColor} from "../appearance";
+useIsolatedTestDb();
+test("global colors persist, sanitize input and reset without touching company identity",async()=>{
+ const db=getDbClient();
+ const before=await db.execute("SELECT * FROM company_settings");
+ const body={accent:"#14532d",writing:"#b91c1c",text:"#172554",background:"#f0fdf4",surface:"#ffffff",sidebar:"#052e16"};
+ const response=await POST(new NextRequest("http://localhost/api/appearance",{method:"POST",body:JSON.stringify(body)}));
+ assert.equal(response.status,200);
+ assert.deepEqual(await (await GET()).json(),body);
+ assert.deepEqual((await db.execute("SELECT * FROM company_settings")).rows,before.rows);
+ const sanitized=normalizeAppearance({...body,writing:"url(evil)",accent:"red",unexpected:"#ffffff"});
+ assert.equal(sanitized.writing,"");assert.equal(sanitized.accent,"");assert.equal(Object.keys(sanitized).length,6);
+ await POST(new NextRequest("http://localhost/api/appearance",{method:"POST",body:JSON.stringify({})}));
+ assert.deepEqual(await (await GET()).json(),DEFAULT_APPEARANCE);
+ assert.equal(contrastColor("#ffffff"),"#111827");assert.equal(contrastColor("#000000"),"#ffffff");
+});

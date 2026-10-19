@@ -356,6 +356,7 @@ export const APP_MODULES: AppModule[] = [
     status: "REAL",
     description: "Personalización White-Label de datos de empresa, fiscales, bancarios y series de facturación.",
     features: [
+      "Colores generales y de escritura desde cualquier página, guardados para toda la app",
       "Edición de nombre comercial, razón social, NIF y titular",
       "Configuración de dirección, teléfono y email de contacto",
       "Definición de cuenta bancaria e IBAN para cobros en facturas",
@@ -397,7 +398,7 @@ export function buildAppKnowledgeContext(): string {
     const limitText = m.limitations.length > 0 ? ` Limitaciones: ${m.limitations.join("; ")}` : "";
     return `- ${m.name} (${m.route}) ${statusTag}: ${m.description}${limitText}`;
   });
-  return `Módulos de la aplicación:\n${lines.join("\n")}`;
+  return `Módulos de la aplicación:\n${lines.join("\n")}\nColores: el botón Colores está en todas las páginas; permite guardar texto, escritura, fondos, botones y menú para toda la app. Los colores propios de los documentos tienen prioridad.`;
 }
 
 /**
