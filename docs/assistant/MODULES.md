@@ -57,3 +57,11 @@ Variable de servidor `DEMO_MODE=true` que activa datos ficticios para demostraci
 - Agenda (solo GET con context=dashboard-demo): 4 visitas demo.
 
 Las páginas /facturas y /agenda NO muestran datos ficticios. Solo el Dashboard consume los datos demo.
+
+## Precios decimales — 2026-10-18
+
+Facturas, presupuestos (alta y edición), catálogo/calculadora, gastos, CRM y partes: coma o punto, hasta dos decimales; céntimos inferiores a un euro conservados. Totales calculados desde las líneas. Sin cambios impositivos ni de emisión fiscal.
+
+## Obras en presupuestos — 2026-10-18
+
+Nombre del trabajo y dirección de obra independientes del cliente, visibles en listado móvil/escritorio y detalle/PDF. Editables; al duplicar se conserva el cliente y se pide una nueva obra y dirección; los históricos muestran “sin indicar” hasta completarlos.

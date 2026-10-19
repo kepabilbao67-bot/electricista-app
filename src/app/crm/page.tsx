@@ -1,4 +1,5 @@
 "use client";
+import { DecimalInput } from "@/components/DecimalInput";
 
 import { useEffect, useState, useCallback, FormEvent } from "react";
 import Link from "next/link";
@@ -782,12 +783,10 @@ export default function CRMCommercialPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-300">Valor Estimado (€):</label>
-                  <input
-                    type="number"
-                    step="any"
+                  <DecimalInput
                     placeholder="0.00"
                     value={newOppForm.estimated_value}
-                    onChange={(e) => setNewOppForm({ ...newOppForm, estimated_value: e.target.value })}
+                    onValueChange={(value, normalized) => setNewOppForm({ ...newOppForm, estimated_value: normalized })}
                     className="input-field text-xs w-full mt-1"
                   />
                 </div>

@@ -1,5 +1,20 @@
 # Changelog del Asistente
 
+## 2026-10-18-v3 — Nueva obra del mismo cliente (local)
+- Duplicar conserva cliente y conceptos, deja obra/dirección vacías y abre edición para indicar el nuevo destino.
+
+
+## 2026-10-18-v2 — Obra y dirección por presupuesto (local, sin PR)
+- Datos independientes del domicilio del cliente: alta, edición, listado, duplicado y detalle/PDF.
+- Columnas opcionales añadidas mediante migración idempotente; sin rellenar direcciones históricas por suposición.
+
+
+## 2026-10-18-v1 — Precios decimales (cambio local, sin PR)
+- Campos monetarios: conservan el separador durante la escritura y permiten céntimos.
+- Partes: eliminada la restricción de enteros en formulario y validación.
+- Totales derivados de cantidades y precios; sin cambios de impuestos, TicketBAI ni documentos guardados.
+
+
 ## 2026-09-21-v31 — Catálogo: precio de venta pendiente persistente
 - `db.ts`: la columna `catalog_items.sale_price_pending` se declara en `ensureColumns()`, el mecanismo de migración que ya usaba la tabla. Antes no existía ni en `CREATE TABLE` ni en `ensureColumns()`, así que crear o editar un material fallaba en runtime (`no such column`); los registros existentes quedan en `0` (precio normal).
 - Materiales con precio de venta pendiente: se muestran como "Precio pendiente" en `/catalogo`, no calculan margen y **no se pueden añadir a un presupuesto** hasta fijarles precio.
@@ -34,6 +49,7 @@
 - Endpoints de conversión atómica: `POST /api/budgets/[id]/create-parte` y `POST /api/partes-trabajo/[id]/convert` con control de duplicidad por `source_part_id` y transacciones en base de datos.
 - Carga dinámica de datos de empresa en las cabeceras imprimibles de Partes de Trabajo (`/partes-trabajo/[id]`) desde `/api/settings`.
 - Verificación suite de tests completa (`npm test`, 313 pasados, 0 fallados) y verificación estricta de tipos TypeScript (`npm run lint`, 0 errores).
+## 2026-08-30-v25 - Dashboard de Analiticas y Metricas de Negocio (Recharts)
 - Creación de la ruta interactiva `/dashboard` con KPIs de negocio (leads totales, variación mensual, tasa de conversión, facturación cobrada y partes ejecutados).
 - Integración de gráficos interactivos y ligeros con `recharts` (evolución semanal en líneas, pipeline por estado en barras y desglose de servicios en donut).
 - Creación del endpoint `GET /api/analytics` con agregación de métricas de base de datos en tiempo real.

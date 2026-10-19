@@ -1,5 +1,7 @@
 "use client";
 
+import { DecimalInput } from "@/components/DecimalInput";
+
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Loader2, CheckCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -466,7 +468,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="number" min="1" step="1" value={t.precio_unitario} onChange={(e) => updateTrabajo(t.id, "precio_unitario", e.target.value)} className="input-field !py-1 text-xs text-right w-full" placeholder="" />
+                          <DecimalInput min="0.01" value={t.precio_unitario} onValueChange={(value, normalized) => updateTrabajo(t.id, "precio_unitario", normalized)} className="input-field !py-1 text-xs text-right w-full" placeholder="" />
                         </td>
                         <td className="px-2 py-1.5 text-right font-medium text-slate-700">{importe > 0 ? importe.toFixed(2) : ""}</td>
                         <td className="px-1 py-1.5">
@@ -538,7 +540,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       </div>
                       <div>
                         <label className="text-xs text-slate-500">Precio</label>
-                        <input type="number" min="1" step="1" value={t.precio_unitario} onChange={(e) => updateTrabajo(t.id, "precio_unitario", e.target.value)} className="input-field text-sm text-right" placeholder="" />
+                        <DecimalInput min="0.01" value={t.precio_unitario} onValueChange={(value, normalized) => updateTrabajo(t.id, "precio_unitario", normalized)} className="input-field text-sm text-right" placeholder="" />
                       </div>
                       <div>
                         <label className="text-xs text-slate-500">Color</label>
@@ -615,7 +617,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="number" min="1" step="1" value={m.precio_unitario} onChange={(e) => updateMaterial(m.id, "precio_unitario", e.target.value)} className="input-field !py-1 text-xs text-right w-full" placeholder="" />
+                          <DecimalInput min="0.01" value={m.precio_unitario} onValueChange={(value, normalized) => updateMaterial(m.id, "precio_unitario", normalized)} className="input-field !py-1 text-xs text-right w-full" placeholder="" />
                         </td>
                         <td className="px-2 py-1.5 text-right font-medium text-slate-700">{importe > 0 ? importe.toFixed(2) : ""}</td>
                         <td className="px-1 py-1.5 text-center">
@@ -667,7 +669,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       </div>
                       <div>
                         <label className="text-xs text-slate-500">P. Venta</label>
-                        <input type="number" min="1" step="1" value={m.precio_unitario} onChange={(e) => updateMaterial(m.id, "precio_unitario", e.target.value)} className="input-field text-sm text-right" placeholder="" />
+                        <DecimalInput min="0.01" value={m.precio_unitario} onValueChange={(value, normalized) => updateMaterial(m.id, "precio_unitario", normalized)} className="input-field text-sm text-right" placeholder="" />
                       </div>
                     </div>
                     {importe > 0 && <p className="text-right text-sm font-semibold text-slate-800">Importe: {importe.toFixed(2)} €</p>}
@@ -704,7 +706,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
           <div className="flex justify-between items-center">
             <span className="text-slate-600">Descuento</span>
             <div className="flex items-center gap-1">
-              <input type="number" min="0" step="0.01" value={form.descuento} onChange={(e) => updateForm("descuento", e.target.value)}
+              <DecimalInput min="0" value={form.descuento} onValueChange={(value, normalized) => updateForm("descuento", normalized)}
                 className="input-field !py-1 text-xs text-right w-20" placeholder="0.00" />
               <span className="text-xs text-slate-500">€</span>
             </div>

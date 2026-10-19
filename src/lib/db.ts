@@ -203,6 +203,8 @@ async function migrateSchema(db: Client): Promise<void> {
   ]);
 
   await ensureColumns(db, "budgets", [
+    { name: "work_name", def: "TEXT" },
+    { name: "work_address", def: "TEXT" },
     { name: "valid_until", def: "TEXT" },
     { name: "status", def: "TEXT DEFAULT 'draft'" },
     { name: "subtotal", def: "REAL DEFAULT 0" },
