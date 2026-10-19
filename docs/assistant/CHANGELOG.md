@@ -1,5 +1,20 @@
 # Changelog del Asistente
 
+## 2026-10-18-v3 — Nueva obra del mismo cliente (local)
+- Duplicar conserva cliente y conceptos, deja obra/dirección vacías y abre edición para indicar el nuevo destino.
+
+
+## 2026-10-18-v2 — Obra y dirección por presupuesto (local, sin PR)
+- Datos independientes del domicilio del cliente: alta, edición, listado, duplicado y detalle/PDF.
+- Columnas opcionales añadidas mediante migración idempotente; sin rellenar direcciones históricas por suposición.
+
+
+## 2026-10-18-v1 — Precios decimales (cambio local, sin PR)
+- Campos monetarios: conservan el separador durante la escritura y permiten céntimos.
+- Partes: eliminada la restricción de enteros en formulario y validación.
+- Totales derivados de cantidades y precios; sin cambios de impuestos, TicketBAI ni documentos guardados.
+
+
 ## 2026-08-30-v25 — Dashboard de Analíticas y Métricas de Negocio (Recharts)
 - Creación de la ruta interactiva `/dashboard` con KPIs de negocio (leads totales, variación mensual, tasa de conversión, facturación cobrada y partes ejecutados).
 - Integración de gráficos interactivos y ligeros con `recharts` (evolución semanal en líneas, pipeline por estado en barras y desglose de servicios en donut).

@@ -1,5 +1,7 @@
 "use client";
 
+import { DecimalInput } from "@/components/DecimalInput";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ArrowLeft, Shield, FileCode } from "lucide-react";
@@ -273,24 +275,20 @@ export default function NuevaFacturaPage() {
                   />
                 </div>
                 <div className="w-24">
-                  <input
-                    type="number"
+                  <DecimalInput
                     min="0"
-                    step="1"
                     placeholder="Precio"
                     value={item.unit_price}
-                    onChange={(e) => updateItem(index, "unit_price", parseFloat(e.target.value) || 0)}
+                    onValueChange={(value) => updateItem(index, "unit_price", value)}
                     className="input-field text-center"
                   />
                 </div>
                 <div className="w-28 flex gap-1">
-                  <input
-                    type="number"
+                  <DecimalInput
                     min="0"
-                    step="0.01"
                     placeholder="Dto."
                     value={item.discount || ""}
-                    onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)}
+                    onValueChange={(value) => updateItem(index, "discount", value)}
                     className="input-field text-center !px-1 flex-1"
                   />
                   <select

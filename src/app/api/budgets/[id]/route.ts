@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { budgetWorkSchema } from "@/lib/validations/budget-schema";
 
 export async function GET(
   _request: NextRequest,
@@ -51,6 +52,8 @@ export async function PUT(
     await initializeDatabase();
     const db = getDbClient();
     const body = await request.json();
+    const work = budgetWorkSchema.safeParse(body);
+    if (!work.success) return NextResponse.json({ error: "Datos de obra no válidos", issues: work.error.issues }, { status: 400 });
 
     // Si solo cambia el status
     if (body.status && !body.items) {
@@ -80,6 +83,7 @@ export async function PUT(
       await db.execute({
         sql: `UPDATE budgets SET 
           client_id = ?, date = ?, valid_until = ?, notes = ?, notes_color = ?,
+          work_name = COALESCE(?, work_name), work_address = COALESCE(?, work_address),
           subtotal = ?, tax_rate = ?, tax_amount = ?, total = ?,
           updated_at = datetime('now')
           WHERE id = ?`,
@@ -89,6 +93,8 @@ export async function PUT(
           body.valid_until || null,
           body.notes || null,
           body.notes_color || null,
+          body.work_name === undefined ? null : (work.data.work_name ?? ""),
+          body.work_address === undefined ? null : (work.data.work_address ?? ""),
           subtotal,
           taxRate,
           taxAmount,

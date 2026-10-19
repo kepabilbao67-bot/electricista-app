@@ -13,7 +13,13 @@ export const budgetItemSchema = z.object({
     .nonnegative("El precio unitario no puede ser negativo"),
 });
 
+export const budgetWorkSchema = z.object({
+  work_name: z.string().trim().max(200).nullable().optional(),
+  work_address: z.string().trim().max(500).nullable().optional(),
+});
+
 export const budgetSchema = z.object({
+  ...budgetWorkSchema.shape,
   client_id: z
     .string()
     .trim()

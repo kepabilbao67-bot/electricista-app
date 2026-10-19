@@ -20,6 +20,8 @@ interface BudgetDetail {
   id: string;
   number: string;
   client_name: string;
+  work_name?: string | null;
+  work_address?: string | null;
   client_nif: string;
   client_address: string;
   client_city: string;
@@ -174,7 +176,7 @@ export default function PresupuestoDetailPage() {
 
     const subject = `Presupuesto ${budget.number} - ${COMPANY_PROFILE.tradeName}`;
     const validUntilLine = budget.valid_until ? `\nVálido hasta: ${budget.valid_until}` : "";
-    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nAdjunto el presupuesto en PDF para que puedas revisarlo con todos los conceptos, importes e IVA desglosados.\n\nResumen:\nPresupuesto: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}${validUntilLine}\n\nPuedes responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\n${COMPANY_PROFILE.ownerName}`;
+    const body = `Hola,\n\nTe envío el presupuesto solicitado.\n\nAdjunto el presupuesto en PDF para que puedas revisarlo con todos los conceptos, importes e IVA desglosados.\n\nResumen:\nPresupuesto: ${budget.number}\nFecha: ${budget.date}\nCliente: ${budget.client_name}\nObra: ${budget.work_name || "Sin indicar"}\nDirección de la obra: ${budget.work_address || "Sin indicar"}\nTotal: ${budget.total.toFixed(2)} €\nEstado: ${statusLabel}${validUntilLine}\n\nPuedes responder a este correo si estás conforme o necesitas algún ajuste.\n\nUn saludo,\n${COMPANY_PROFILE.ownerName}`;
 
     const gmailParams = new URLSearchParams({
       view: "cm",
@@ -315,6 +317,13 @@ export default function PresupuestoDetailPage() {
                 {budget.client_postal_code} {budget.client_city}, {budget.client_province}
               </p>
             )}
+          </div>
+
+          <div className="mb-8 p-4 border border-gray-200 rounded-lg break-inside-avoid">
+            <p className="text-sm font-medium text-gray-500 mb-1">Obra / trabajo a realizar:</p>
+            <p className="font-semibold">{budget.work_name || "Obra sin indicar"}</p>
+            <p className="text-sm font-medium text-gray-500 mt-3 mb-1">Dirección de la obra:</p>
+            <p className="text-sm text-gray-700 whitespace-pre-line">{budget.work_address || "Dirección de obra sin indicar"}</p>
           </div>
 
           {zoneGroups ? (

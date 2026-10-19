@@ -1,5 +1,9 @@
 "use client";
 
+import { BudgetWorkFields } from "@/components/BudgetWorkFields";
+
+import { DecimalInput } from "@/components/DecimalInput";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronDown, ChevronRight, Copy, ArrowLeft, Save } from "lucide-react";
@@ -24,6 +28,8 @@ export default function EditarPresupuestoPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [clientId, setClientId] = useState("");
+  const [workName, setWorkName] = useState("");
+  const [workAddress, setWorkAddress] = useState("");
   const [date, setDate] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
@@ -44,6 +50,8 @@ export default function EditarPresupuestoPage() {
         .then((r) => r.json())
         .then((data) => {
           setClientId(data.client_id);
+          setWorkName(data.work_name || "");
+          setWorkAddress(data.work_address || "");
           setDate(data.date);
           setValidUntil(data.valid_until || "");
           setNotes(data.notes || "");
@@ -180,6 +188,8 @@ export default function EditarPresupuestoPage() {
         valid_until: validUntil || null,
         notes,
         notes_color: notesColor,
+        work_name: workName,
+        work_address: workAddress,
         tax_rate: 21,
         items: allItems,
       }),
@@ -219,6 +229,7 @@ export default function EditarPresupuestoPage() {
         <div className="card">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Datos generales</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <BudgetWorkFields workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
               <select required value={clientId} onChange={(e) => setClientId(e.target.value)} className="input-field">
@@ -308,7 +319,7 @@ export default function EditarPresupuestoPage() {
                       <div key={itemIndex} className="flex gap-2 items-center">
                         <input type="text" placeholder="Descripcion" value={item.description} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "description", e.target.value)} className="input-field flex-1 !py-1.5 text-sm" />
                         <input type="number" min="1" step="1" value={item.quantity} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "quantity", parseFloat(e.target.value) || 0)} className="input-field w-16 !py-1.5 text-sm text-center" />
-                        <input type="number" min="0" step="1" value={item.unit_price} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "unit_price", parseFloat(e.target.value) || 0)} className="input-field w-20 !py-1.5 text-sm text-center" />
+                        <DecimalInput min="0" value={item.unit_price} onValueChange={(value) => updateItemInZone(zoneIndex, itemIndex, "unit_price", value)} className="input-field w-20 !py-1.5 text-sm text-center" />
                         <span className="text-xs font-medium text-slate-600 w-20 text-right">{(item.quantity * item.unit_price).toFixed(2)}€</span>
                         <button type="button" onClick={() => removeItemFromZone(zoneIndex, itemIndex)} className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600">
                           <Trash2 className="h-3.5 w-3.5" />

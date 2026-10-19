@@ -1,5 +1,9 @@
 "use client";
 
+import { BudgetWorkFields } from "@/components/BudgetWorkFields";
+
+import { DecimalInput } from "@/components/DecimalInput";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronDown, ChevronRight, Copy, Wand2, X } from "lucide-react";
@@ -53,6 +57,8 @@ export default function NuevoPresupuestoPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [clientId, setClientId] = useState("");
+  const [workName, setWorkName] = useState("");
+  const [workAddress, setWorkAddress] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [validUntil, setValidUntil] = useState(() => {
     const d = new Date();
@@ -351,6 +357,8 @@ export default function NuevoPresupuestoPage() {
         valid_until: validUntil || null,
         notes,
         notes_color: notesColor,
+        work_name: workName,
+        work_address: workAddress,
         tax_rate: 21,
         items: allItems,
       }),
@@ -387,6 +395,7 @@ export default function NuevoPresupuestoPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <BudgetWorkFields workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente</label>
               <select
@@ -522,13 +531,11 @@ export default function NuevoPresupuestoPage() {
                         />
                       </div>
                       <div className="w-28">
-                        <input
-                          type="number"
+                        <DecimalInput
                           min="0"
-                          step="1"
                           placeholder="Precio"
                           value={item.unit_price}
-                          onChange={(e) => updateItem(zoneIndex, itemIndex, "unit_price", parseFloat(e.target.value) || 0)}
+                          onValueChange={(value) => updateItem(zoneIndex, itemIndex, "unit_price", value)}
                           className="input-field"
                         />
                       </div>

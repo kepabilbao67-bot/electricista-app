@@ -15,6 +15,8 @@ interface Budget {
   number: string;
   client_id: string;
   client_name: string;
+  work_name?: string | null;
+  work_address?: string | null;
   date: string;
   valid_until: string;
   total: number;
@@ -80,6 +82,8 @@ export default function PresupuestosPage() {
           date: new Date().toISOString().split("T")[0],
           valid_until: null,
           notes: detail.notes || "",
+          work_name: "",
+          work_address: "",
           tax_rate: detail.tax_rate || 21,
           items: (detail.items || []).map((item: { description: string; quantity: number; unit_price: number }) => ({
             description: item.description,
@@ -91,8 +95,8 @@ export default function PresupuestosPage() {
 
       if (res.ok) {
         const newBudget = await res.json();
-        showToast("success", `Presupuesto duplicado: ${newBudget.number}`);
-        router.push(`/presupuestos/${newBudget.id}`);
+        showToast("success", `Presupuesto duplicado: ${newBudget.number}. Indica la nueva obra y su dirección.`);
+        router.push(`/presupuestos/${newBudget.id}/editar`);
       } else {
         showToast("error", "Error al duplicar el presupuesto");
       }
@@ -199,6 +203,8 @@ export default function PresupuestosPage() {
                     <div>
                       <span className="text-base font-extrabold text-blue-900">{budget.number}</span>
                       <p className="text-xs text-slate-600 font-medium mt-0.5">{budget.client_name || "Sin cliente"}</p>
+                      <p className="text-sm font-semibold mt-2">{budget.work_name || "Obra sin indicar"}</p>
+                      <p className="text-xs text-slate-500 whitespace-pre-line">{budget.work_address || "Dirección de obra sin indicar"}</p>
                     </div>
                     <Badge variant={statusVariant} size="sm">
                       {statusLabels[budget.status] || budget.status}
@@ -269,6 +275,7 @@ export default function PresupuestosPage() {
                 <tr>
                   <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Número</th>
                   <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Cliente</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Obra y dirección</th>
                   <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 hidden sm:table-cell">Fecha</th>
                   <th className="px-4 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500 hidden md:table-cell">Validez</th>
                   <th className="px-4 py-3.5 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Total</th>
@@ -289,6 +296,10 @@ export default function PresupuestosPage() {
                       </td>
                       <td className="px-4 py-4 text-slate-700 font-medium">
                         {budget.client_name || <span className="text-slate-400 italic">Sin cliente</span>}
+                      </td>
+                      <td className="px-4 py-4 text-sm">
+                        <p className="font-semibold text-slate-800">{budget.work_name || "Obra sin indicar"}</p>
+                        <p className="text-xs text-slate-500 whitespace-pre-line">{budget.work_address || "Dirección de obra sin indicar"}</p>
                       </td>
                       <td className="px-4 py-4 hidden sm:table-cell text-xs text-slate-500 font-medium">
                         {formatDate(budget.date)}

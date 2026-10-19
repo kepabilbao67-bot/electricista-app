@@ -1,5 +1,7 @@
 "use client";
 
+import { DecimalInput } from "@/components/DecimalInput";
+
 import { useEffect, useState } from "react";
 import { Plus, Receipt, TrendingDown, Search, Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toast";
@@ -277,8 +279,8 @@ export default function GastosPage() {
                     <input type="text" placeholder="Codigo" value={item.article_code} onChange={(e) => updateItem(index, "article_code", e.target.value)} className="input-field w-28 !py-1.5 text-xs" />
                     <input type="text" placeholder="Descripcion" value={item.description} onChange={(e) => updateItem(index, "description", e.target.value)} className="input-field flex-1 !py-1.5 text-xs" />
                     <input type="number" min="0.01" step="0.01" placeholder="Cant" value={item.quantity || ""} onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)} className="input-field w-16 !py-1.5 text-xs text-center" />
-                    <input type="number" min="0" step="1" placeholder="Precio" value={item.unit_price || ""} onChange={(e) => updateItem(index, "unit_price", parseFloat(e.target.value) || 0)} className="input-field w-20 !py-1.5 text-xs text-center" />
-                    <input type="number" min="0" max="100" step="1" placeholder="Dto%" value={item.discount || ""} onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)} className="input-field w-16 !py-1.5 text-xs text-center" />
+                    <DecimalInput min="0" placeholder="Precio" value={item.unit_price || ""} onValueChange={(value) => updateItem(index, "unit_price", value)} className="input-field w-20 !py-1.5 text-xs text-center" />
+                    <DecimalInput min="0" max="100" placeholder="Dto%" value={item.discount || ""} onValueChange={(value) => updateItem(index, "discount", value)} className="input-field w-16 !py-1.5 text-xs text-center" />
                     <span className="text-xs font-medium text-slate-600 w-20 text-right">{(item.quantity * item.unit_price * (1 - item.discount / 100)).toFixed(2)}€</span>
                     <button type="button" onClick={() => removeItem(index)} className="text-red-400 hover:text-red-600 text-xs">✕</button>
                   </div>

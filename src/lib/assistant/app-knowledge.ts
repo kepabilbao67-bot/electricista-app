@@ -64,6 +64,7 @@ export const APP_MODULES: AppModule[] = [
     status: "REAL",
     description: "Pipeline comercial desde nuevo contacto hasta cobro, con oportunidades, valor estimado, próxima acción, tareas e historial.",
     features: [
+      "Precios con céntimos (coma o punto, hasta dos decimales)",
       "Etapas: nuevo, contactado, visita, presupuesto, aceptado, trabajo, facturado y cobrado",
       "Valor estimado, origen, próxima acción y fecha",
       "Tareas y recordatorios",
@@ -96,13 +97,15 @@ export const APP_MODULES: AppModule[] = [
     status: "REAL",
     description: "Creación y gestión de presupuestos con generador automático por zonas/estancias.",
     features: [
+      "Precios con céntimos (coma o punto, hasta dos decimales)",
+      "Nombre y dirección propios de cada obra en alta, edición, listado y PDF; independientes de la dirección del cliente",
       "Generador automático por tipo de vivienda (piso, chalet, local) con habitaciones y baños",
       "Zonas predefinidas con circuitos REBT",
       "Integración con catálogo de materiales",
       "Estados: borrador, enviado, aceptado, rechazado",
       "Crear parte de trabajo directamente desde el listado o detalle",
       "Conversión a factura",
-      "Duplicar presupuesto",
+      "Duplicar presupuesto conservando cliente y conceptos; indicar nombre y dirección de la nueva obra",
       "Fecha de validez con detección de caducidad",
       "Vista imprimible/PDF",
       "Detección de estado offline y reintentos seguros",
@@ -117,6 +120,7 @@ export const APP_MODULES: AppModule[] = [
     status: "REAL",
     description: "Facturación completa con descuentos, estados y TicketBAI (territorios históricos de Euskadi).",
     features: [
+      "Precios con céntimos (coma o punto, hasta dos decimales)",
       "Crear facturas con líneas, descuentos por línea (% o EUR) y métodos de pago",
       "Estados: borrador, enviada, cobrada, vencida",
       "Marcar como cobrada",
@@ -140,6 +144,7 @@ export const APP_MODULES: AppModule[] = [
     status: "REAL",
     description: "Registro de intervenciones eléctricas con vista imprimible profesional.",
     features: [
+      "Precios con céntimos (coma o punto, hasta dos decimales)",
       "Lista de partes con búsqueda y estados (borrador, firmado, cerrado)",
       "Generar factura directamente desde el listado o detalle",
       "Formulario: datos generales, cliente, trabajos realizados, materiales, observaciones",
@@ -160,6 +165,7 @@ export const APP_MODULES: AppModule[] = [
     status: "REAL",
     description: "Registro de compras y gastos del negocio con categorías específicas de electricista.",
     features: [
+      "Precios con céntimos (coma o punto, hasta dos decimales)",
       "12 categorías rápidas: material, gasolina, dietas, peajes, herramientas, etc.",
       "Líneas de detalle con descuentos",
       "NIF del proveedor",
@@ -191,6 +197,7 @@ export const APP_MODULES: AppModule[] = [
     status: "REAL",
     description: "Materiales y servicios con precios de coste/venta y calculadora de márgenes.",
     features: [
+      "Precios con céntimos (coma o punto, hasta dos decimales)",
       "CRUD de materiales con nombre, precio de venta, categoría",
       "Precio de coste (compra) y cálculo automático de margen",
       "Búsqueda y filtro por categoría",

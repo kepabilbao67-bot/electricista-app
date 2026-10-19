@@ -3,6 +3,8 @@
  * Retorna null si la validación pasa, o un string con el mensaje de error.
  */
 
+import { normalizeUnitPriceInput } from "./normalize-unit-price";
+
 export interface PartePayload {
   cliente?: string;
   fecha?: string;
@@ -43,13 +45,13 @@ export interface MaterialPayload {
 
 function isValidNumber(val: unknown): boolean {
   if (val === undefined || val === null || val === "") return true; // optional
-  const n = typeof val === "number" ? val : parseFloat(String(val));
+  const n = typeof val === "number" ? val : parseFloat(String(val).replace(",", "."));
   return !isNaN(n) && isFinite(n);
 }
 
 function toNum(val: unknown): number {
   if (val === undefined || val === null || val === "") return 0;
-  return typeof val === "number" ? val : parseFloat(String(val)) || 0;
+  return typeof val === "number" ? val : parseFloat(String(val).replace(",", ".")) || 0;
 }
 
 export function validatePartePayload(body: PartePayload): string | null {
@@ -86,11 +88,12 @@ export function validatePartePayload(body: PartePayload): string | null {
       const precio = toNum(t.precio_unitario);
 
       if (cant < 0) return `Fila de trabajo ${i + 1}: la cantidad debe ser mayor o igual a 0`;
-      // Precio unitario: entero >= 1 obligatorio en filas utilizadas
+      // Precio unitario: decimal > 0 obligatorio en filas utilizadas
       const precioRaw = String(t.precio_unitario ?? "").trim();
-      const precioNum = Number(precioRaw);
-      if (precioRaw === "" || !Number.isFinite(precioNum) || !Number.isInteger(precioNum) || precioNum < 1) {
-        return `Fila de trabajo ${i + 1}: el precio por unidad debe ser un número entero igual o superior a 1 €`;
+      const normalizedPrice = normalizeUnitPriceInput(precioRaw);
+      const precioNum = normalizedPrice === null ? NaN : Number(normalizedPrice);
+      if (precioRaw === "" || !Number.isFinite(precioNum) || precioNum <= 0) {
+        return `Fila de trabajo ${i + 1}: el precio por unidad debe ser un importe mayor que 0 con un máximo de dos decimales`;
       }
 
       subtotalTrabajos += cant * precioNum;
@@ -112,11 +115,12 @@ export function validatePartePayload(body: PartePayload): string | null {
       const precioCoste = toNum(m.precio_coste);
 
       if (cant < 0) return `Fila de material ${i + 1}: la cantidad debe ser mayor o igual a 0`;
-      // Precio unitario de venta: entero >= 1 obligatorio en filas utilizadas
+      // Precio unitario de venta: decimal > 0 obligatorio en filas utilizadas
       const precioVentaRaw = String(m.precio_unitario ?? "").trim();
-      const precioVentaNum = Number(precioVentaRaw);
-      if (precioVentaRaw === "" || !Number.isFinite(precioVentaNum) || !Number.isInteger(precioVentaNum) || precioVentaNum < 1) {
-        return `Fila de material ${i + 1}: el precio por unidad debe ser un número entero igual o superior a 1 €`;
+      const normalizedPrice = normalizeUnitPriceInput(precioVentaRaw);
+      const precioVentaNum = normalizedPrice === null ? NaN : Number(normalizedPrice);
+      if (precioVentaRaw === "" || !Number.isFinite(precioVentaNum) || precioVentaNum <= 0) {
+        return `Fila de material ${i + 1}: el precio por unidad debe ser un importe mayor que 0 con un máximo de dos decimales`;
       }
       if (precioCoste < 0) return `Fila de material ${i + 1}: el precio de coste debe ser mayor o igual a 0`;
 
@@ -139,7 +143,7 @@ export function validatePartePayload(body: PartePayload): string | null {
 /** Safely parse a number, returning 0 for invalid/NaN/Infinity */
 export function safeNum(val: unknown): number {
   if (val === undefined || val === null || val === "") return 0;
-  const n = typeof val === "number" ? val : parseFloat(String(val));
+  const n = typeof val === "number" ? val : parseFloat(String(val).replace(",", "."));
   if (isNaN(n) || !isFinite(n)) return 0;
   return n;
 }

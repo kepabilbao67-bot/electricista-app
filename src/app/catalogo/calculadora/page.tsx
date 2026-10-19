@@ -1,5 +1,7 @@
 "use client";
 
+import { DecimalInput } from "@/components/DecimalInput";
+
 import { useEffect, useState } from "react";
 import { ArrowLeft, Calculator, TrendingUp, ArrowRight, Copy, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -176,13 +178,11 @@ export default function CalculadoraPage() {
               </div>
               <div className="col-span-4 md:col-span-2">
                 <div className="relative">
-                  <input
-                    type="number"
+                  <DecimalInput
                     min="0"
-                    step="1"
                     placeholder="Coste"
                     value={line.cost_price || ""}
-                    onChange={(e) => updateLine(line.id, "cost_price", parseFloat(e.target.value) || 0)}
+                    onValueChange={(value) => updateLine(line.id, "cost_price", value)}
                     className="input-field !py-1.5 text-sm text-center text-red-600 font-medium w-full"
                   />
                 </div>
