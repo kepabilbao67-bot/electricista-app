@@ -339,10 +339,10 @@ export default function PresupuestoDetailPage() {
 
             {/* Logo de empresa */}
             <div className="flex flex-col items-center mx-4">
-              <div className="flex items-center justify-center rounded-2xl bg-slate-900 shadow-md ring-1 ring-slate-200 p-2" style={{ width: "80px", height: "80px" }}>
-                <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-14 w-14 object-contain" />
+              <div className="flex items-center justify-center rounded-xl bg-white p-1" style={{ width: "100px", height: "110px" }}>
+                <img src={APP_CONFIG.company.logo || "/images/sh-electricas.svg"} alt="S&H Eléctricas" className="h-full w-full object-contain" />
               </div>
-              <span className="text-[11px] font-bold text-gray-800 mt-1.5 tracking-wider uppercase">{company.tradeName}</span>
+              
             </div>
 
             <div className="text-right">

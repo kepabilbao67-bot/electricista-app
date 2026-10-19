@@ -437,8 +437,8 @@ export default function FacturaDetailPage() {
         {/* Header */}
         <div className="flex justify-between mb-8 pb-6 border-b border-slate-100 print:border-slate-300 print:break-inside-avoid">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white shrink-0 print:border print:border-slate-300">
-              <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-9 w-9 object-contain" />
+            <div className="flex h-24 w-24 items-center justify-center bg-white shrink-0">
+              <img src={APP_CONFIG.company.logo || "/images/sh-electricas.svg"} alt="S&H Eléctricas" className="h-full w-full object-contain" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">{company.legalName}</h2>

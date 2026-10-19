@@ -277,8 +277,8 @@ function ParteTrabajoDetail() {
         {/* CABECERA — compact inline */}
         <div className="flex justify-between items-start border-b-2 border-slate-800 print:border-slate-900 pb-3 mb-3 print:break-inside-avoid break-inside-avoid">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white shrink-0 print:border print:border-slate-300">
-              <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-8 w-8 object-contain" />
+            <div className="flex h-16 w-16 items-center justify-center bg-white shrink-0">
+              <img src={APP_CONFIG.company.logo || "/images/sh-electricas.svg"} alt="S&H Eléctricas" className="h-full w-full object-contain" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">{company.tradeName}</h2>

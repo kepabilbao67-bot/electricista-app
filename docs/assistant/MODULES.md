@@ -73,3 +73,6 @@ Nombre del trabajo y dirección de obra independientes del cliente, visibles en 
 
 ## Colores generales (2026-10-19)
 REAL: botón Colores disponible en todos los módulos, con escritura, texto, botones, fondo, formularios y menú. Guardado compartido y vista previa; los colores propios de cada documento tienen prioridad. Catálogo, agenda y leads conservan los colores también al mostrar sus registros.
+
+## Identidad de documentos (2026-10-19)
+Logo S&H Eléctricas según referencia del usuario en presupuestos, facturas y partes, incluidos PDF y plantilla. La plantilla lee los datos guardados de empresa.

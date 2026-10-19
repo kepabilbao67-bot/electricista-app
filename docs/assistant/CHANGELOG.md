@@ -222,3 +222,5 @@
 - Protección delegada a Basic Auth global (eliminado checkAiSecret redundante).
 
 - 2026-10-19: colores generales y escritura en todos los apartados; se conservan al guardar y se respetan colores por documento. Corregida representación de colores en catálogo, agenda y leads.
+
+- 2026-10-19: logo S&H Eléctricas en documentos y plantilla; datos de la plantilla tomados de configuración.

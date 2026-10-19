@@ -357,6 +357,7 @@ export const APP_MODULES: AppModule[] = [
     description: "Personalización White-Label de datos de empresa, fiscales, bancarios y series de facturación.",
     features: [
       "Colores generales y de escritura desde cualquier página, guardados para toda la app",
+      "Logo S&H Eléctricas en presupuestos, facturas y partes; plantilla con datos de empresa guardados",
       "Edición de nombre comercial, razón social, NIF y titular",
       "Configuración de dirección, teléfono y email de contacto",
       "Definición de cuenta bancaria e IBAN para cobros en facturas",

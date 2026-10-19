@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {useEffect,useState} from "react";
 import { ArrowLeft, Printer } from "lucide-react";
 import { COMPANY_PROFILE } from "@/lib/company-profile";
 import { APP_CONFIG } from "@/config/app-config";
@@ -9,6 +10,8 @@ const ROWS_TRABAJOS = 22;
 const ROWS_MATERIALES = 22;
 
 export default function PlantillaParteTrabajoPage() {
+  const [company,setCompany]=useState(COMPANY_PROFILE);
+  useEffect(()=>{let active=true;fetch("/api/settings").then(r=>{if(!r.ok)throw Error();return r.json();}).then(d=>{if(active)setCompany(p=>({...p,tradeName:d.trade_name||p.tradeName,legalName:d.legal_name||p.legalName,ownerName:d.owner_name||p.ownerName,nif:d.nif||p.nif,addressLine1:d.address_line1||p.addressLine1,addressLine2:d.address_line2||p.addressLine2,phone:d.phone||p.phone,email:d.email||p.email}));}).catch(()=>{});return()=>{active=false;};},[]);
   const handlePrint = () => window.print();
 
   return (
@@ -40,13 +43,13 @@ export default function PlantillaParteTrabajoPage() {
         {/* CABECERA */}
         <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3 mb-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white shrink-0 print:border print:border-slate-300">
-              <img src={APP_CONFIG.company.logo || "/logo-generic.svg"} alt="Logo" className="h-8 w-8 object-contain" />
+            <div className="flex h-16 w-16 items-center justify-center bg-white shrink-0">
+              <img src={APP_CONFIG.company.logo || "/images/sh-electricas.svg"} alt="S&H Eléctricas" className="h-full w-full object-contain" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">{COMPANY_PROFILE.tradeName}</h2>
-              <p className="text-[10px] text-slate-700 mt-0.5">{COMPANY_PROFILE.ownerName || COMPANY_PROFILE.legalName} — Servicios Profesionales</p>
-              <p className="text-[10px] text-slate-700">Tel: {COMPANY_PROFILE.phone} · {COMPANY_PROFILE.email}</p>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">{company.tradeName}</h2>
+              <p className="text-[10px] text-slate-700 mt-0.5">{company.ownerName || company.legalName} — Servicios Profesionales</p>
+              <p className="text-[10px] text-slate-700">Tel: {company.phone} · {company.email}</p>
             </div>
           </div>
           <div className="text-right">
@@ -121,7 +124,7 @@ export default function PlantillaParteTrabajoPage() {
 
         {/* Mini cabecera repetida para la segunda página */}
         <div className="flex justify-between items-center border-b border-slate-400 pb-2 mb-4">
-          <p className="text-[10px] font-semibold text-slate-700">{COMPANY_PROFILE.tradeName} — Parte de Trabajo (continuación)</p>
+          <p className="text-[10px] font-semibold text-slate-700">{company.tradeName} — Parte de Trabajo (continuación)</p>
           <p className="text-[10px] text-slate-500">Nº Parte: __________ Fecha: __________</p>
         </div>
 
