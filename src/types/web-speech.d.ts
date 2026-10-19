@@ -47,4 +47,7 @@ interface SpeechRecognitionConstructor {
 interface Window {
   SpeechRecognition?: SpeechRecognitionConstructor;
   webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  AndroidExternal?: {
+    openUrl(url: string): boolean;
+  };
 }

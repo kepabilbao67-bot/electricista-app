@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Mic, Package, RotateCcw, Trash2 } from "lucide-react";
+import { Check, FileImage, Mic, Package, RotateCcw, Trash2 } from "lucide-react";
 import VoiceDictation from "@/components/VoiceDictation";
 import { showToast } from "@/components/Toast";
 import type { FaltanteObra, PartidaFaltante } from "@/lib/faltantes-obra";
@@ -53,6 +53,9 @@ export default function FaltantesObraPage() {
   const [resumen, setResumen] = useState<string[]>([]);
   const [texto, setTexto] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [leyendoImagen, setLeyendoImagen] = useState(false);
+  const [vistaFoto, setVistaFoto] = useState<string | null>(null);
+  const [textoFoto, setTextoFoto] = useState("");
   const [error, setError] = useState("");
 
   // ── Obras disponibles (partes de trabajo reales) ────────────────────────────
@@ -248,6 +251,42 @@ export default function FaltantesObraPage() {
           className="mt-2 w-full rounded-xl border border-slate-600 bg-slate-950 p-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-blue-500 disabled:opacity-60"
         />
         <div className="mt-3 flex flex-wrap items-center gap-3">
+          <label
+            htmlFor="foto-faltantes"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-cyan-500 bg-cyan-950/70 px-5 py-3 font-semibold text-cyan-100 hover:bg-cyan-900"
+          >
+            <FileImage className="h-5 w-5" />
+            {leyendoImagen ? "Analizando imagen…" : "Foto / archivo de faltantes"}
+          </label>
+          <input
+            id="foto-faltantes"
+            type="file"
+            accept="image/*,.pdf,.txt,.md,.csv,.doc,.docx,.xls,.xlsx"
+            className="sr-only"
+            disabled={cargando || leyendoImagen || !parteId}
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              setLeyendoImagen(true);
+              setError("");
+              setTextoFoto("");
+              setVistaFoto((anterior) => { if (anterior) URL.revokeObjectURL(anterior); return file.type.startsWith("image/") ? URL.createObjectURL(file) : null; });
+              try {
+                const form = new FormData();
+                form.append("archivo", file);
+                const response = await fetch("/api/asistente/leer-documento", { method: "POST", body: form });
+                const result = await response.json() as { texto?: string; error?: string };
+                if (!response.ok || !result.texto) throw new Error(result.error || "No se pudo analizar el archivo.");
+                setTextoFoto(result.texto);
+                await enviarDictado(`Me faltan estos materiales para la obra: ${result.texto}`);
+              } catch (cause) {
+                setError(cause instanceof Error ? cause.message : "No se pudo analizar el archivo.");
+              } finally {
+                setLeyendoImagen(false);
+                event.target.value = "";
+              }
+            }}
+          />
           <VoiceDictation
             onTranscriptComplete={(t) => void enviarDictado(t)}
             disabled={cargando || partes.length === 0 || !parteId}
@@ -263,6 +302,8 @@ export default function FaltantesObraPage() {
             {cargando ? "Aplicando…" : "Aplicar"}
           </button>
         </div>
+        {vistaFoto && <div className="mt-4 rounded-xl border border-slate-600 bg-slate-950 p-3"><p className="mb-2 text-sm font-semibold text-white">Foto de la obra</p><img src={vistaFoto} alt="Foto seleccionada para faltantes" className="max-h-[65vh] w-full rounded-lg object-contain" /></div>}
+        {textoFoto && <div className="mt-3 rounded-xl border border-emerald-600 bg-slate-900 p-3"><p className="mb-2 font-semibold text-emerald-200">Materiales leídos de la imagen</p><textarea value={textoFoto} onChange={(e) => setTextoFoto(e.target.value)} rows={5} className="w-full rounded-lg bg-slate-950 p-3 text-white" aria-label="Editar materiales detectados" /><button type="button" onClick={() => { window.sessionStorage.setItem("electricista360:presupuesto-desde-foto", JSON.stringify({ parteId, obra: obraActual?.numero ?? "", materiales: textoFoto })); window.location.href = "/presupuestos/nuevo"; }} className="mt-2 rounded-lg bg-emerald-700 px-4 py-3 font-bold text-white">Preparar presupuesto desde esta foto</button><p className="mt-2 text-xs text-slate-300">Revisa cantidades y precios antes de guardar. No crea una factura ni presupuesto automáticamente.</p></div>}
         <p className="mt-2 text-xs text-slate-400">
           Frases que entiende: «me faltan 20 metros de cable, dos cajas, diez tornillos y silicona» ·
           «ya tengo las cajas y los tornillos» · «¿qué me falta para esta obra?»

@@ -25,6 +25,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Voz360TtsGuard, esperaLocucionMs } from "@/lib/assistant/voz360-audio-core";
 import { defaultGeminiLiveClient } from "@/lib/assistant/gemini-live-client";
 import { SesionLivePcm, clasificarErrorPcm, type DiagnosticoPcm } from "@/lib/assistant/gemini-live-pcm";
+import { openExternalCommunicationUrl } from "@/lib/open-external";
 import type { EstadoPcm } from "@/lib/assistant/pcm-audio";
 import type { Voice360Draft, Voice360Item, Voice360PendingAction } from "@/lib/assistant/types";
 
@@ -94,8 +95,12 @@ interface Message {
 
 const SUGGESTIONS = [
   "Presupuesto para Juan Pérez: 4 enchufes a 18 euros y 2 horas de trabajo a 50 euros",
+  "Me faltan 3 enchufes y 2 conmutadores",
+  "Apunta que mañana tengo que revisar el cuadro de la segunda planta",
+  "Llama a Juan Prueba",
+  "Manda un WhatsApp a Juan Prueba diciendo llego a las cinco",
+  "Manda un email a Juan Prueba diciendo te envío el presupuesto",
   "¿Qué partes de trabajo tengo?",
-  "Busca el cliente García",
   "¿Qué facturas tengo pendientes?",
 ];
 
@@ -107,6 +112,32 @@ function nuevoId(prefijo: string): string {
 
 function euros(valor: number): string {
   return `${valor.toFixed(2).replace(".", ",")} €`;
+}
+
+type DestinoDocumento = "presupuesto" | "parte" | "faltantes";
+
+function detectarDestinoDocumento(texto: string): DestinoDocumento {
+  const normalizado = texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (/\b(?:faltan|faltante|pendiente de comprar|material pendiente|por comprar|no disponible)\b/.test(normalizado)) {
+    return "faltantes";
+  }
+  if (/\b(?:parte de trabajo|orden de trabajo|hoja de trabajo|trabajo realizado|servicio realizado|tecnico)\b/.test(normalizado)) {
+    return "parte";
+  }
+  return "presupuesto";
+}
+
+function ordenParaDocumento(nombre: string, texto: string, destino: DestinoDocumento): string {
+  const instrucciones: Record<DestinoDocumento, string> = {
+    presupuesto: "Crea un borrador de presupuesto con los datos del documento. Conserva conceptos, cantidades, precios e IVA. No inventes datos ilegibles y déjalos marcados como pendientes.",
+    parte: "Crea un parte de trabajo en borrador con el cliente, fecha, trabajos, materiales y observaciones del documento. No inventes datos ilegibles.",
+    faltantes: "Extrae los materiales faltantes del documento. Si se identifica una obra o parte, prepara la lista de faltantes para esa obra; si no, pregunta solo qué parte de trabajo debo usar.",
+  };
+  return [`Archivo recibido: ${nombre}`, instrucciones[destino], "", texto].join("\n");
 }
 
 /**
@@ -150,6 +181,8 @@ export default function Voice360Page() {
   const [totals, setTotals] = useState<Totals | null>(null);
   const [pending, setPending] = useState<Voice360PendingAction | null>(null);
   const [loading, setLoading] = useState(false);
+  const [leyendoArchivo, setLeyendoArchivo] = useState(false);
+  const [archivoLeido, setArchivoLeido] = useState("");
   const [error, setError] = useState("");
   /**
    * Respuesta hablada ACTIVADA por defecto.
@@ -578,6 +611,41 @@ export default function Voice360Page() {
    * abrir la puerta) junto con el token. El servidor recalcula los importes y
    * consume el token UNA sola vez: repetir la llamada no duplica el presupuesto.
    */
+  async function openExternalCommunication() {
+    if (!pending || loading) return;
+    if (pending.action !== "open_whatsapp" && pending.action !== "open_email") return;
+
+    const rawUrl = typeof pending.payload?.url === "string" ? pending.payload.url : "";
+    const communicationId =
+      typeof pending.payload?.communicationId === "string" ? pending.payload.communicationId : "";
+    const validUrl =
+      (pending.action === "open_whatsapp" && /^https:\/\/wa\.me\//i.test(rawUrl)) ||
+      (pending.action === "open_email" && /^mailto:/i.test(rawUrl));
+
+    if (!validUrl) {
+      setError("El enlace de comunicación no es válido.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (communicationId) {
+        await fetch("/api/communications", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: communicationId, status: "opened_external" }),
+        });
+      }
+      setPending(null);
+      setFase(draft && draft.items.length > 0 ? "DRAFT_READY" : "IDLE");
+      openExternalCommunicationUrl(rawUrl);
+    } catch {
+      setError("No se pudo abrir la aplicación de comunicación.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function confirmAction() {
     // Cerrojo síncrono: una confirmación como máximo, aunque se pulse varias
     // veces en el mismo tick o el navegador reintente la petición.
@@ -604,14 +672,19 @@ export default function Voice360Page() {
         throw new Error(data.error || "No se pudo confirmar la acción");
       }
 
+      const esPresupuesto = action.action === "create_budget";
       setPending(null);
       setEditando(false);
-      setFase("SAVED");
+      setFase(esPresupuesto ? "SAVED" : draft && draft.items.length > 0 ? "DRAFT_READY" : "IDLE");
       anadirMensajeAsistente(data.answer, data.result, "engine");
-      // El borrador ya está guardado: se retira de pantalla para no confundir.
-      setDraft(null);
-      setTotals(null);
-      setShowDraft(false);
+
+      // Solo guardar un presupuesto consume su borrador. Confirmar una llamada
+      // es una acción independiente y no puede borrar trabajo que siga en pantalla.
+      if (esPresupuesto) {
+        setDraft(null);
+        setTotals(null);
+        setShowDraft(false);
+      }
       readAloud(data.answer);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Error al confirmar");
@@ -849,6 +922,21 @@ export default function Voice360Page() {
     sesionLiveRef.current = null;
     setEstadoLive("DISCONNECTED");
     setAvisoLive("");
+  }
+
+  function pararTodo() {
+    // Interrupción explícita de TODOS los motores, incluso si el estado visual
+    // de "speaking" aún no se ha actualizado.
+    cancelarVueltaAEscuchar();
+    manosLibresRef.current = false;
+    setManosLibres(false);
+    setAvisoManosLibres("Audio y dictado detenidos.");
+    sesionLiveRef.current?.cancelar();
+    sesionLiveRef.current = null;
+    setEstadoLive("DISCONNECTED");
+    stopSpeaking();
+    window.dispatchEvent(new Event("electricista360:parar-dictado"));
+    try { (window as any).AndroidSTT?.cancel?.(); } catch { /* sin puente nativo */ }
   }
 
   function reset() {
@@ -1091,28 +1179,40 @@ export default function Voice360Page() {
       {pending && (
         <div className="rounded-xl border border-amber-600 bg-amber-950/40 p-3">
           <p className="text-xs font-bold uppercase text-amber-300 mb-1">
-            ⚠️ Confirmación requerida — todavía NO se ha guardado
+            ⚠️ Confirmación requerida — todavía NO se ha ejecutado
           </p>
           <p className="text-sm text-white mb-3 whitespace-pre-line">{pending.label}</p>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               disabled={loading}
-              onClick={() => void confirmAction()}
+              onClick={() =>
+                void (pending.action === "open_whatsapp" || pending.action === "open_email"
+                  ? openExternalCommunication()
+                  : confirmAction())
+              }
               className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-sm font-bold text-white disabled:opacity-50 active:scale-95 transition-transform"
             >
               <Check className="h-4 w-4" />
-              Confirmar y guardar
+              {pending.action === "create_budget"
+                ? "Confirmar y guardar"
+                : pending.action === "call_client"
+                  ? "Confirmar llamada"
+                  : pending.action === "open_whatsapp"
+                    ? "Abrir WhatsApp"
+                    : pending.action === "open_email"
+                      ? "Abrir Email"
+                      : "Confirmar"}
             </button>
             <button
               type="button"
               onClick={() => {
                 setPending(null);
-                setFase("DRAFT_READY");
+                setFase(draft && draft.items.length > 0 ? "DRAFT_READY" : "IDLE");
               }}
               className="min-h-[48px] rounded-xl border border-slate-600 px-3 text-sm text-slate-200 active:scale-95 transition-transform"
             >
-              No guardar
+              {pending.action === "create_budget" ? "No guardar" : "Cancelar"}
             </button>
           </div>
         </div>
@@ -1135,7 +1235,7 @@ export default function Voice360Page() {
             Voz 360
           </h1>
           <p className="mt-0.5 text-xs text-slate-400">
-            Electricista360 · Nada se guarda sin tu confirmación
+            Electricista360 · Nada se guarda ni se ejecuta sin tu confirmación
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1148,6 +1248,15 @@ export default function Voice360Page() {
             {online ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
             <span className="hidden sm:inline">{online ? "Online" : "Sin conexión"}</span>
           </span>
+
+          <button
+            type="button"
+            onClick={pararTodo}
+            className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-red-700 px-4 py-2 text-sm font-black text-white shadow-lg active:bg-red-900"
+            aria-label="PARAR TODO: Gemini, voz y dictado"
+          >
+            <Square className="h-5 w-5" /> PARAR TODO
+          </button>
 
           {/* TTS toggle */}
           <button
@@ -1429,6 +1538,52 @@ export default function Voice360Page() {
               )}
             </div>
           )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Herramientas de edición y archivos">
+            <button type="button" onClick={() => textareaRef.current?.focus()} className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-600 px-4 text-sm text-slate-200">
+              <Pencil className="h-4 w-4" /> Editar texto
+            </button>
+            <label htmlFor="archivo-ia-electricista" className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-sky-700 bg-sky-950/50 px-4 text-sm font-semibold text-sky-200">
+              📎 Adjuntar foto o documento
+            </label>
+            <input
+              id="archivo-ia-electricista"
+              aria-label="Adjuntar foto, presupuesto, parte o documento"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.txt,.md,.csv,.json,.xml,.doc,.docx,.xls,.xlsx,application/pdf,image/*,text/*,application/json,application/xml,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              disabled={leyendoArchivo || loading}
+              className="sr-only"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                setLeyendoArchivo(true);
+                setError("");
+                setArchivoLeido("");
+                try {
+                  const form = new FormData();
+                  form.append("archivo", file);
+                  const response = await fetch("/api/asistente/leer-documento", { method: "POST", body: form });
+                  const result = await response.json() as { texto?: string; error?: string; nombre?: string };
+                  if (!response.ok || !result.texto) throw new Error(result.error || "No se pudo leer el archivo.");
+                  const nombre = result.nombre || file.name;
+                  const destino = detectarDestinoDocumento(result.texto);
+                  setArchivoLeido(`${nombre} → ${destino}`);
+                  setInput("");
+                  await send(ordenParaDocumento(nombre, result.texto, destino));
+                } catch (cause) {
+                  setError(cause instanceof Error ? cause.message : "No se pudo leer el archivo.");
+                } finally {
+                  setLeyendoArchivo(false);
+                  event.target.value = "";
+                }
+              }}
+            />
+            {leyendoArchivo ? (
+              <p className="w-full text-sm text-amber-200">Leyendo y clasificando documento…</p>
+            ) : archivoLeido ? (
+              <p className="w-full text-sm text-emerald-300">✓ {archivoLeido}. Borrador preparado automáticamente para revisión.</p>
+            ) : null}
+          </div>
 
           {/* Formulario */}
           <form

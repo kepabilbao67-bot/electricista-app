@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import CambiarContrasena from "@/components/CambiarContrasena";
 import { Button } from "@/components/ui/Button";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { showToast } from "@/components/Toast";
@@ -114,7 +115,13 @@ export default function ConfiguracionPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pb-12">
       <Breadcrumbs items={[{ label: "Configuración", href: "/configuracion" }]} />
+      <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-slate-900">
+        <p className="mb-2 font-semibold">Actualizaciones de Electricista360</p>
+        <p className="mb-3 text-sm">La aplicación carga las mejoras publicadas al volver a abrirla. Si no ves los cambios, actualiza aquí sin eliminar tus datos ni cerrar la sesión.</p>
+        <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-blue-700 px-4 py-3 font-semibold text-white">Actualizar ahora</button>
+      </div>
 
+      <CambiarContrasena />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
         <div>

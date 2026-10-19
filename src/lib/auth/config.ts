@@ -18,8 +18,8 @@ export const SESSION_SECRET_MIN_LENGTH = 32;
 /** Duración absoluta de la sesión (por defecto 30 días). */
 export const DEFAULT_SESSION_TTL_HOURS = 24 * 30;
 
-/** Caducidad por inactividad (por defecto 12 horas). */
-export const DEFAULT_SESSION_IDLE_HOURS = 12;
+/** Caducidad por inactividad (por defecto 7 días, sin dejar sesiones ilimitadas). */
+export const DEFAULT_SESSION_IDLE_HOURS = 24 * 7;
 
 /** Cabeceras inyectadas por el proxy. El cliente NUNCA puede aportarlas. */
 export const AUTH_HEADER_USER_ID = "x-auth-user-id";

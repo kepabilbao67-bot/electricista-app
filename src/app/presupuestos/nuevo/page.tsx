@@ -9,6 +9,7 @@ import TextAssistantButton from "@/components/TextAssistantButton";
 import ColorSelect from "@/components/ColorSelect";
 import { getTextColorClass } from "@/lib/text-colors";
 import { canAddCatalogItem } from "@/lib/catalog-pricing";
+import { extraerPartidasPresupuesto } from "@/lib/presupuesto-desde-foto";
 
 interface Client {
   id: string;
@@ -78,6 +79,48 @@ export default function NuevoPresupuestoPage() {
   const [autoBathrooms, setAutoBathrooms] = useState(1);
   const [autoKitchen, setAutoKitchen] = useState(true);
   const [draftHydrated, setDraftHydrated] = useState(false);
+  const [fotoPendiente, setFotoPendiente] = useState<{ obra: string; materiales: string } | null>(null);
+  const [cargandoFoto, setCargandoFoto] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const [errorFoto, setErrorFoto] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = window.sessionStorage.getItem("electricista360:presupuesto-desde-foto");
+      if (raw) {
+        const parsed = JSON.parse(raw) as { obra?: string; materiales?: string };
+        if (typeof parsed.materiales === "string" && parsed.materiales.trim()) {
+          setFotoPendiente({ obra: String(parsed.obra ?? ""), materiales: parsed.materiales.slice(0, 12000) });
+        }
+      }
+    } catch { /* no importar datos corruptos */ }
+  }, []);
+
+  async function leerFoto(file: File) {
+    if (!file) return;
+    setCargandoFoto(true); setErrorFoto("");
+    setFotoUrl((anterior) => { if (anterior) URL.revokeObjectURL(anterior); return file.type.startsWith("image/") ? URL.createObjectURL(file) : null; });
+    try {
+      const form = new FormData(); form.append("archivo", file); form.append("modo","presupuesto");
+      const response = await fetch("/api/asistente/leer-documento", { method: "POST", body: form });
+      const result = await response.json() as { texto?: string; error?: string };
+      if (!response.ok || !result.texto) throw new Error(result.error || "No se ha podido leer el documento.");
+      setFotoPendiente({ obra: "Presupuesto manuscrito", materiales: result.texto });
+    } catch (err) {
+      setErrorFoto(err instanceof Error ? err.message : "Falló la lectura de la imagen.");
+    } finally { setCargandoFoto(false); }
+  }
+
+  function importarFoto() {
+    if (!fotoPendiente) return;
+    const lineas = extraerPartidasPresupuesto(fotoPendiente.materiales);
+    if (!lineas.length) {setErrorFoto("No encuentro partidas con cantidad y precio en formato CONCEPTO | CANTIDAD | PRECIO. Revisa y corrige el texto antes de importar.");return;}
+    // Solo se añaden conceptos como borrador, sin inventar precios.
+    setZones((prev) => [...prev, { name: "Materiales de foto - " + (fotoPendiente.obra || "Obra"), collapsed: false, items: lineas }]);
+    setNotes((prev) => [prev, "Origen: foto de obra " + fotoPendiente.obra + ". Revisar mediciones, cantidades y precios."].filter(Boolean).join("\n"));
+    window.sessionStorage.removeItem("electricista360:presupuesto-desde-foto");
+    setFotoPendiente(null);
+  }
 
   useEffect(() => {
     fetch("/api/clients").then((r) => r.json()).then(setClients);
@@ -471,6 +514,8 @@ export default function NuevoPresupuestoPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="page-title mb-6">Nuevo presupuesto</h1>
+      <section className="mb-4 rounded-xl border border-blue-600 bg-slate-900 p-4 text-white"><h2 className="mb-2 font-bold">Leer un presupuesto en foto o PDF</h2><p className="mb-3 text-sm">Selecciona una foto manuscrita. Se mostrará aquí y podrás revisar los conceptos antes de guardarlos.</p><div className="flex flex-wrap gap-3"><label htmlFor="capturar-presupuesto" className="cursor-pointer rounded-lg bg-blue-700 px-4 py-3 font-bold text-white">📷 Hacer foto</label><input id="capturar-presupuesto" type="file" accept="image/*" capture="environment" disabled={cargandoFoto} onChange={(e) => { const file=e.target.files?.[0]; if(file)void leerFoto(file); e.target.value=""; }} className="sr-only" aria-label="Hacer foto con cámara trasera" /><label htmlFor="elegir-presupuesto" className="cursor-pointer rounded-lg border border-slate-400 px-4 py-3 font-semibold text-white">📁 Elegir foto o PDF</label><input id="elegir-presupuesto" type="file" accept="image/*,.pdf" disabled={cargandoFoto} onChange={(e) => { const file=e.target.files?.[0]; if(file)void leerFoto(file); e.target.value=""; }} className="sr-only" aria-label="Elegir fotografía o presupuesto escaneado" /></div>{cargandoFoto&&<p role="status" className="mt-2 text-sm">Leyendo la foto…</p>}{errorFoto&&<p role="alert" className="mt-2 text-rose-300">{errorFoto}</p>}{fotoUrl&&<img src={fotoUrl} alt="Vista previa del presupuesto seleccionado" className="mt-3 max-h-[65vh] w-full rounded-lg bg-white object-contain" />}</section>
+      {fotoPendiente && <div className="mb-5 rounded-xl border border-emerald-600 bg-slate-900 p-4 text-white"><h2 className="font-bold">Foto de la obra: {fotoPendiente.obra || "sin referencia"}</h2><p className="my-2 text-sm">He leído el documento. Revisa estos materiales antes de incorporarlos al presupuesto. Los precios quedarán a cero hasta que los introduzcas.</p><textarea aria-label="Corregir texto leído de la fotografía" rows={8} className="w-full rounded-lg bg-slate-950 p-3 text-sm text-white" value={fotoPendiente.materiales} onChange={(e) => setFotoPendiente({ ...fotoPendiente, materiales: e.target.value })} /><p className="mt-1 text-xs">Formato para cada partida: Concepto | cantidad | precio unitario. Ej.: Cable de 2,5 mm | 100 | 0,80</p><button type="button" onClick={importarFoto} className="mt-3 rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white">Añadir conceptos al borrador</button><button type="button" onClick={() => { window.sessionStorage.removeItem("electricista360:presupuesto-desde-foto"); setFotoPendiente(null); }} className="ml-3 rounded-lg border border-slate-600 px-3 py-3 text-sm text-white">Descartar importación</button></div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="card">

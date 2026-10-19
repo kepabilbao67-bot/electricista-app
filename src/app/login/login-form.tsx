@@ -27,6 +27,7 @@ function safeNextPath(raw: string | null): string {
 export default function LoginForm({ nextPath }: { nextPath: string | null }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -95,7 +96,7 @@ export default function LoginForm({ nextPath }: { nextPath: string | null }) {
         <input
           id="password"
           name="password"
-          type="password"
+          type={mostrarPassword ? "text" : "password"}
           required
           autoComplete="current-password"
           value={password}
@@ -104,6 +105,8 @@ export default function LoginForm({ nextPath }: { nextPath: string | null }) {
           placeholder="••••••••"
         />
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={mostrarPassword} onChange={(e) => setMostrarPassword(e.target.checked)} /> Mostrar contraseña</label>
 
       {error ? (
         <p

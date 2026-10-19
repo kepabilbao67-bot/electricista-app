@@ -1787,6 +1787,13 @@ export default function VoiceDictation({
     onListeningEndRef.current?.();
   };
 
+  // Permite al botón PARAR TODO del asistente cancelar también el dictado.
+  useEffect(() => {
+    const onPararTodo = () => descartarEscucha();
+    window.addEventListener("electricista360:parar-dictado", onPararTodo);
+    return () => window.removeEventListener("electricista360:parar-dictado", onPararTodo);
+  });
+
   const toggleListening = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isListening) {

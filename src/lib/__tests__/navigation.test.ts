@@ -18,6 +18,7 @@ const ORIGINAL_NAV_ELECTRICISTA = [
   { href: "/facturas", label: "Facturas" },
   { href: "/presupuestos", label: "Presupuestos" },
   { href: "/partes-trabajo", label: "Partes de trabajo" },
+  { href: "/faltantes-obra", label: "Faltantes de obra" },
   { href: "/trabajos", label: "Centro de Trabajos" },
   { href: "/gastos", label: "Gastos" },
   { href: "/comunicaciones", label: "Comunicaciones" },
