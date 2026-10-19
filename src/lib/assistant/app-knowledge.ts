@@ -220,6 +220,7 @@ export const APP_MODULES: AppModule[] = [
     status: "PARCIAL",
     description: "Plantillas de mensajes y generación de comunicaciones por WhatsApp, email y SMS.",
     features: [
+      "El asunto y el mensaje conservan sus colores en el historial guardado",
       "Plantillas predefinidas para recordatorios, presupuestos, etc.",
       "Generación de enlace WhatsApp directo",
       "Copia de texto al portapapeles",

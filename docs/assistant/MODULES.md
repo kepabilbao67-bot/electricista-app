@@ -76,3 +76,5 @@ REAL: botón Colores disponible en todos los módulos, con escritura, texto, bot
 
 ## Identidad de documentos (2026-10-19)
 Logo S&H Eléctricas según referencia del usuario en presupuestos, facturas y partes, incluidos PDF y plantilla. La plantilla lee los datos guardados de empresa.
+
+Comunicaciones (REAL): asunto y mensaje respetan su color guardado en el historial.

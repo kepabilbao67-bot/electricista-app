@@ -224,3 +224,5 @@
 - 2026-10-19: colores generales y escritura en todos los apartados; se conservan al guardar y se respetan colores por documento. Corregida representación de colores en catálogo, agenda y leads.
 
 - 2026-10-19: logo S&H Eléctricas en documentos y plantilla; datos de la plantilla tomados de configuración.
+
+- 2026-10-19: corregidos colores del asunto y mensaje al consultar comunicaciones guardadas.
