@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 390" role="img" aria-labelledby="title">
 <title id="title">S&amp;H Eléctricas</title>
+<rect width="360" height="390" fill="#ffffff"/>
 <circle cx="180" cy="168" r="151" fill="#ffffff" stroke="#382d3c" stroke-width="8"/>
 <circle cx="180" cy="168" r="136" fill="none" stroke="#983942" stroke-width="4"/>
 <text x="180" y="162" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="74" fill="#8f8b8f">S&amp;H</text>

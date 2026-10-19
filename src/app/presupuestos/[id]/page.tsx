@@ -342,7 +342,7 @@ export default function PresupuestoDetailPage() {
               <div className="flex items-center justify-center rounded-xl bg-white p-1" style={{ width: "100px", height: "110px" }}>
                 <img src={APP_CONFIG.company.logo || "/images/sh-electricas.svg"} alt="S&H Eléctricas" className="h-full w-full object-contain" />
               </div>
-              
+
             </div>
 
             <div className="text-right">
