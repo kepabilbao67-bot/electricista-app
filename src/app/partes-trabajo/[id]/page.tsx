@@ -47,6 +47,8 @@ interface ParteDetalle {
   telefono: string | null;
   direccion: string | null;
   direccion_color?: string | null;
+  tecnico_color?: string | null;
+  cliente_color?: string | null;
   observaciones: string | null;
   observaciones_color?: string | null;
   estado: string;
@@ -122,7 +124,7 @@ function ParteTrabajoDetail() {
     const formData: ParteFormData = {
       fecha: parte.fecha, tecnico: parte.tecnico || "", horaInicio: parte.hora_inicio || "",
       horaFin: parte.hora_fin || "", cliente: parte.cliente, client_id: "",
-      direccion: parte.direccion || "", direccion_color: parte.direccion_color || "default",
+      direccion: parte.direccion || "", direccion_color: parte.direccion_color || "default", tecnico_color: parte.tecnico_color || "default", cliente_color: parte.cliente_color || "default",
       observaciones: parte.observaciones || "", observaciones_color: parte.observaciones_color || "default",
       estado: parte.estado, iva_rate: String(parte.iva_rate ?? 21),
       descuento: String(parte.descuento ?? 0), budget_id: "", visit_id: "",
