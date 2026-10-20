@@ -11,6 +11,7 @@ import { APP_CONFIG } from "@/config/app-config";
 interface BudgetItem {
   id: string;
   description: string;
+  description_color?: string;
   quantity: number;
   unit_price: number;
   total: number;
@@ -37,6 +38,7 @@ interface BudgetDetail {
   tax_amount: number;
   total: number;
   notes: string;
+  notes_color?: string;
   converted_invoice_id: string | null;
   items: BudgetItem[];
 }
@@ -373,7 +375,7 @@ export default function PresupuestoDetailPage() {
               <tbody className="divide-y divide-gray-100">
                 {budget.items.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-2">{item.description}</td>
+                    <td className="py-2" style={{ color: item.description_color === "red" ? "#b91c1c" : item.description_color === "blue" ? "#1d4ed8" : item.description_color === "green" ? "#15803d" : "#111827" }}>{item.description}</td>
                     <td className="py-2 text-right">{item.quantity}</td>
                     <td className="py-2 text-right">{item.unit_price.toFixed(2)} EUR</td>
                     <td className="py-2 text-right">{item.total.toFixed(2)} EUR</td>
@@ -391,7 +393,7 @@ export default function PresupuestoDetailPage() {
 
           {budget.notes && (
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500">{budget.notes}</p>
+              <p className="text-sm" style={{ color: budget.notes_color === "red" ? "#b91c1c" : budget.notes_color === "blue" ? "#1d4ed8" : budget.notes_color === "green" ? "#15803d" : "#111827" }}>{budget.notes}</p>
             </div>
           )}
         </div>
