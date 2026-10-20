@@ -148,6 +148,7 @@ async function migrateSchema(db: Client): Promise<void> {
   ]);
 
   await ensureColumns(db, "budget_items", [
+    { name: "zone_color", def: "TEXT DEFAULT 'default'" },
     { name: "description_color", def: "TEXT DEFAULT 'default'" },
     { name: "sort_order", def: "INTEGER DEFAULT 0" },
   ]);
