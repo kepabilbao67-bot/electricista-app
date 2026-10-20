@@ -131,7 +131,7 @@ function ParteTrabajoDetail() {
       : Array.from({ length: 20 }, (_, i) => ({ id: `t${i}_${Date.now()}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default" }));
     while (formTrabajos.length < 20) formTrabajos.push({ id: `t${formTrabajos.length}_${Date.now() + formTrabajos.length}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default" });
     const formMateriales: MaterialLine[] = parte.materiales.length > 0
-      ? parte.materiales.map((m, i) => ({ id: `m${i}_${Date.now()}`, nombre_material: m.nombre_material || "", referencia: m.referencia || "", descripcion: m.descripcion, cantidad: m.cantidad ? String(m.cantidad) : "", unidad: m.unidad || "unidad", precio_coste: m.precio_coste ? String(m.precio_coste) : "", precio_unitario: m.precio_unitario ? String(m.precio_unitario) : "" }))
+      ? parte.materiales.map((m, i) => ({ id: `m${i}_${Date.now()}`, nombre_material: m.nombre_material || "", referencia: m.referencia || "", descripcion: m.descripcion, description_color: m.description_color || "default", cantidad: m.cantidad ? String(m.cantidad) : "", unidad: m.unidad || "unidad", precio_coste: m.precio_coste ? String(m.precio_coste) : "", precio_unitario: m.precio_unitario ? String(m.precio_unitario) : "" }))
       : Array.from({ length: 20 }, (_, i) => ({ id: `m${i}_${Date.now()}`, nombre_material: "", referencia: "", descripcion: "", cantidad: "", unidad: "unidad", precio_coste: "", precio_unitario: "" }));
     while (formMateriales.length < 20) formMateriales.push({ id: `m${formMateriales.length}_${Date.now() + formMateriales.length}`, nombre_material: "", referencia: "", descripcion: "", cantidad: "", unidad: "unidad", precio_coste: "", precio_unitario: "" });
 
@@ -327,7 +327,7 @@ function ParteTrabajoDetail() {
                   return (
                     <tr key={m.id} className="border-t border-slate-100 print:border-t print:border-slate-200 print:break-inside-avoid break-inside-avoid">
                       <td className="px-1 py-1 text-slate-400">{idx + 1}</td>
-                      <td className="px-1 py-1 text-slate-800">{m.nombre_material && <span className="font-medium">{m.nombre_material}: </span>}{m.descripcion}</td>
+                      <td className={`px-1 py-1 ${getTrabajoColorClass(m.description_color)}`}>{m.nombre_material && <span className="font-medium">{m.nombre_material}: </span>}{m.descripcion}</td>
                       <td className="px-1 py-1 text-center text-slate-700">{m.cantidad || ""}</td>
                       <td className="px-1 py-1 text-center text-slate-600">{UNIDAD_LABELS[m.unidad] || m.unidad}</td>
                       <td className="px-1 py-1 text-right text-slate-700">{m.precio_unitario ? `${m.precio_unitario.toFixed(2)}` : ""}</td>
