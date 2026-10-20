@@ -30,6 +30,8 @@ export default function EditarPresupuestoPage() {
   const [clientId, setClientId] = useState("");
   const [workName, setWorkName] = useState("");
   const [workAddress, setWorkAddress] = useState("");
+  const [workNameColor, setWorkNameColor] = useState("default");
+  const [workAddressColor, setWorkAddressColor] = useState("default");
   const [date, setDate] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
@@ -56,6 +58,8 @@ export default function EditarPresupuestoPage() {
           setValidUntil(data.valid_until || "");
           setNotes(data.notes || "");
           setNotesColor(data.notes_color || "default");
+      setWorkNameColor(data.work_name_color || "default");
+      setWorkAddressColor(data.work_address_color || "default");
           setBudgetNumber(data.number);
 
           // Parse items into zones
@@ -191,6 +195,8 @@ export default function EditarPresupuestoPage() {
         notes_color: notesColor,
         work_name: workName,
         work_address: workAddress,
+        work_name_color: workNameColor,
+        work_address_color: workAddressColor,
         tax_rate: 21,
         items: allItems,
       }),
@@ -230,7 +236,7 @@ export default function EditarPresupuestoPage() {
         <div className="card">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Datos generales</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <BudgetWorkFields workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
+            <BudgetWorkFields workName={workName} workAddress={workAddress} workNameColor={workNameColor} workAddressColor={workAddressColor} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} onWorkNameColorChange={setWorkNameColor} onWorkAddressColorChange={setWorkAddressColor} />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
               <select required value={clientId} onChange={(e) => setClientId(e.target.value)} className="input-field">
