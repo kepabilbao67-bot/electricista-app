@@ -208,6 +208,8 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "iva_rate", def: "REAL DEFAULT 21" },
     { name: "descuento", def: "REAL DEFAULT 0" },
     { name: "direccion_color", def: "TEXT" },
+    { name: "tecnico_color", def: "TEXT DEFAULT 'default'" },
+    { name: "cliente_color", def: "TEXT DEFAULT 'default'" },
     { name: "observaciones_color", def: "TEXT" },
   ]);
 
