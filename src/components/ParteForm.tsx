@@ -41,6 +41,7 @@ export interface TrabajoLine {
 export interface MaterialLine {
   id: string;
   nombre_material: string;
+  description_color?: string;
   referencia: string;
   descripcion: string;
   cantidad: string;
@@ -81,7 +82,7 @@ function createEmptyTrabajo(idx: number): TrabajoLine {
 }
 
 function createEmptyMaterial(idx: number): MaterialLine {
-  return { id: `m${idx}_${Date.now()}`, nombre_material: "", referencia: "", descripcion: "", cantidad: "", unidad: "unidad", precio_coste: "", precio_unitario: "" };
+  return { id: `m${idx}_${Date.now()}`, description_color: "default", nombre_material: "", referencia: "", descripcion: "", cantidad: "", unidad: "unidad", precio_coste: "", precio_unitario: "" };
 }
 
 function generateInitialTrabajos(): TrabajoLine[] {
@@ -606,7 +607,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                           </select>
                         </td>
                         <td className="px-1 py-1.5">
-                          <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateMaterial(m.id, "descripcion", c); }} className="input-field !py-1 text-xs w-full" placeholder="Descripción o referencia" />
+                          <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateMaterial(m.id, "descripcion", c); }} className={`input-field !py-1 text-xs w-full ${getTrabajoColorClass(m.description_color)}`} placeholder="Descripción o referencia" /><select aria-label="Color de descripción del material" value={m.description_color || "default"} onChange={(e) => updateMaterial(m.id, "description_color", e.target.value)} className="input-field text-xs">{TRABAJO_COLORS.filter((c) => ["default", "blue", "red", "green"].includes(c.value)).map((c) => <option key={c.value} value={c.value}>{c.label === "Normal" ? "Negro" : c.label}</option>)}</select>
                         </td>
                         <td className="px-1 py-1.5">
                           <input type="number" min="0" step="1" value={m.cantidad} onChange={(e) => updateMaterial(m.id, "cantidad", e.target.value)} className="input-field !py-1 text-xs text-center w-full" placeholder="0" />
@@ -655,7 +656,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
                       <option value="">Seleccionar material...</option>
                       {CATALOGO_MATERIALES.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                     </select>
-                    <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateMaterial(m.id, "descripcion", c); }} className="input-field text-sm w-full" placeholder="Descripción o referencia" />
+                    <input type="text" spellCheck={true} lang="es" value={m.descripcion} onChange={(e) => updateMaterial(m.id, "descripcion", autocorrectSpanishOnBoundary(e.target.value))} onBlur={(e) => { const c = autocorrectSpanishText(e.target.value); if (c !== e.target.value) updateMaterial(m.id, "descripcion", c); }} className={`input-field text-sm w-full ${getTrabajoColorClass(m.description_color)}`} placeholder="Descripción o referencia" /><select aria-label="Color de descripción del material" value={m.description_color || "default"} onChange={(e) => updateMaterial(m.id, "description_color", e.target.value)} className="input-field text-xs">{TRABAJO_COLORS.filter((c) => ["default", "blue", "red", "green"].includes(c.value)).map((c) => <option key={c.value} value={c.value}>{c.label === "Normal" ? "Negro" : c.label}</option>)}</select>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="text-xs text-slate-500">Cant.</label>
