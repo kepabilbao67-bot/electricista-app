@@ -34,6 +34,7 @@ interface BudgetItem {
 
 interface Zone {
   name: string;
+  color?: string;
   items: BudgetItem[];
   collapsed: boolean;
 }
@@ -341,6 +342,7 @@ export default function NuevoPresupuestoPage() {
         .map((item) => ({
           description: `[${zone.name}] ${item.description}`,
           description_color: item.description_color || "default",
+          zone_color: zone.color || "default",
           quantity: item.quantity,
           unit_price: item.unit_price,
         }))
@@ -463,7 +465,7 @@ export default function NuevoPresupuestoPage() {
                 ) : (
                   <ChevronDown className="h-4 w-4 text-slate-400" />
                 )}
-                <h2 className="text-base font-semibold text-slate-900">{zone.name}</h2>
+                <h2 className={`text-base font-semibold ${getTextColorClass(zone.color)}`}>{zone.name}</h2><ColorSelect value={zone.color || "default"} onChange={(color) => setZones(zones.map((z, i) => i === zoneIndex ? { ...z, color } : z))} />
                 <span className="text-sm text-slate-500 ml-2">
                   ({zone.items.filter((i) => i.description).length} items)
                 </span>
