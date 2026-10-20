@@ -13,7 +13,7 @@ import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client { id: string; name: string; }
 interface CatalogItem { id: string; name: string; unit_price: number; category: string; }
-interface BudgetItem { description: string; quantity: number; unit_price: number; }
+interface BudgetItem { description: string; description_color?: string; quantity: number; unit_price: number; }
 interface Zone { name: string; items: BudgetItem[]; collapsed: boolean; }
 
 const PREDEFINED_ZONES = [
@@ -65,7 +65,7 @@ export default function EditarPresupuestoPage() {
             const zoneName = match ? match[1] : "General";
             const desc = match ? match[2] : item.description;
             if (!zoneMap.has(zoneName)) zoneMap.set(zoneName, []);
-            zoneMap.get(zoneName)!.push({ description: desc, quantity: item.quantity, unit_price: item.unit_price });
+            zoneMap.get(zoneName)!.push({ description: desc, description_color: item.description_color || "default", quantity: item.quantity, unit_price: item.unit_price });
           }
 
           if (zoneMap.size === 0) {
@@ -174,6 +174,7 @@ export default function EditarPresupuestoPage() {
         .filter((i) => i.description && i.unit_price > 0)
         .map((i) => ({
           description: zones.length > 1 || zone.name !== "General" ? `[${zone.name}] ${i.description}` : i.description,
+          description_color: i.description_color || "default",
           quantity: i.quantity,
           unit_price: i.unit_price,
         }))
@@ -317,7 +318,7 @@ export default function EditarPresupuestoPage() {
                   <div className="space-y-2">
                     {zone.items.map((item, itemIndex) => (
                       <div key={itemIndex} className="flex gap-2 items-center">
-                        <input type="text" placeholder="Descripcion" value={item.description} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "description", e.target.value)} className="input-field flex-1 !py-1.5 text-sm" />
+                        <input type="text" placeholder="Descripcion" value={item.description} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "description", e.target.value)} className={`input-field flex-1 !py-1.5 text-sm ${getTextColorClass(item.description_color)}`} /><ColorSelect value={item.description_color || "default"} onChange={(color) => updateItemInZone(zoneIndex, itemIndex, "description_color", color)} />
                         <input type="number" min="1" step="1" value={item.quantity} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "quantity", parseFloat(e.target.value) || 0)} className="input-field w-16 !py-1.5 text-sm text-center" />
                         <DecimalInput min="0" value={item.unit_price} onValueChange={(value) => updateItemInZone(zoneIndex, itemIndex, "unit_price", value)} className="input-field w-20 !py-1.5 text-sm text-center" />
                         <span className="text-xs font-medium text-slate-600 w-20 text-right">{(item.quantity * item.unit_price).toFixed(2)}€</span>
