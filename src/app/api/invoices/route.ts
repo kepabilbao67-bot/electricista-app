@@ -109,10 +109,12 @@ export async function POST(request: NextRequest) {
     const ticketbaiTipoOperacion = body.ticketbai_tipo_operacion || null;
     const autoGenerateTbai = body.auto_generate_tbai || false;
     const paymentMethod = body.payment_method || "transferencia";
+    const validColors = new Set(["default", "blue", "red", "green"]);
+    const safeColor = (value: unknown) => typeof value === "string" && validColors.has(value) ? value : "default";
 
     await db.execute({
-      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, payment_method, ticketbai_description, ticketbai_tipo_operacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, notes_color, payment_method, ticketbai_description, ticketbai_tipo_operacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         number,
@@ -125,6 +127,7 @@ export async function POST(request: NextRequest) {
         taxAmount,
         total,
         body.notes || null,
+        safeColor(body.notes_color),
         paymentMethod,
         ticketbaiDescription,
         ticketbaiTipoOperacion,
@@ -143,8 +146,8 @@ export async function POST(request: NextRequest) {
         }
       }
       await db.execute({
-        sql: `INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, total, discount, discount_type, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO invoice_items (id, invoice_id, description, quantity, unit_price, total, discount, discount_type, description_color, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           uuidv4(),
           id,
@@ -154,6 +157,7 @@ export async function POST(request: NextRequest) {
           itemTotal,
           item.discount || 0,
           item.discount_type || "percent",
+          safeColor(item.description_color),
           i,
         ],
       });
