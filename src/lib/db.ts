@@ -109,6 +109,7 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "tax_amount", def: "REAL DEFAULT 0" },
     { name: "total", def: "REAL DEFAULT 0" },
     { name: "notes", def: "TEXT" },
+    { name: "notes_color", def: "TEXT DEFAULT 'default'" },
     { name: "payment_method", def: "TEXT DEFAULT 'transferencia'" },
     { name: "source_part_id", def: "TEXT" },
     { name: "ticketbai_id", def: "TEXT" },
@@ -121,6 +122,7 @@ async function migrateSchema(db: Client): Promise<void> {
   ]);
 
   await ensureColumns(db, "invoice_items", [
+    { name: "description_color", def: "TEXT DEFAULT 'default'" },
     { name: "discount", def: "REAL DEFAULT 0" },
     { name: "discount_type", def: "TEXT DEFAULT 'percent'" },
     { name: "sort_order", def: "INTEGER DEFAULT 0" },
