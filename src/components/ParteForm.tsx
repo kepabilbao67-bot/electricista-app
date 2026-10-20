@@ -59,6 +59,8 @@ export interface ParteFormData {
   client_id: string;
   direccion: string;
   direccion_color: string;
+  tecnico_color?: string;
+  cliente_color?: string;
   observaciones: string;
   observaciones_color: string;
   estado: string;
@@ -109,6 +111,8 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
     client_id: "",
     direccion: "",
     direccion_color: "default",
+    tecnico_color: "default",
+    cliente_color: "default",
     observaciones: "",
     observaciones_color: "default",
     estado: "borrador",
@@ -299,6 +303,8 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
         cliente: form.cliente,
         client_id: form.client_id || null,
         direccion: form.direccion,
+        tecnico_color: form.tecnico_color || "default",
+        cliente_color: form.cliente_color || "default",
         direccion_color: form.direccion_color && form.direccion_color !== "default" ? form.direccion_color : null,
         observaciones: form.observaciones,
         observaciones_color: form.observaciones_color && form.observaciones_color !== "default" ? form.observaciones_color : null,
@@ -359,7 +365,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Operario</label>
-            <input type="text" value={form.tecnico} onChange={(e) => updateForm("tecnico", e.target.value)} className="input-field" placeholder="Nombre del operario" />
+            <input type="text" value={form.tecnico} onChange={(e) => updateForm("tecnico", e.target.value)} className={`input-field ${getTrabajoColorClass(form.tecnico_color)}`} placeholder="Nombre del operario" /><select aria-label="Color del operario" value={form.tecnico_color || "default"} onChange={(e) => updateForm("tecnico_color", e.target.value)} className="input-field">{TRABAJO_COLORS.filter(c => ["default","red","green","blue"].includes(c.value)).map(c => <option key={c.value} value={c.value}>{c.label === "Normal" ? "Negro" : c.label}</option>)}</select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Hora inicio</label>
@@ -386,7 +392,7 @@ export default function ParteForm({ parteId, initialData, initialTrabajos, initi
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
-            <input type="text" required value={form.cliente} onChange={(e) => updateForm("cliente", e.target.value)} className="input-field" placeholder="Nombre o razón social" />
+            <input type="text" required value={form.cliente} onChange={(e) => updateForm("cliente", e.target.value)} className={`input-field ${getTrabajoColorClass(form.cliente_color)}`} placeholder="Nombre o razón social" /><select aria-label="Color del cliente" value={form.cliente_color || "default"} onChange={(e) => updateForm("cliente_color", e.target.value)} className="input-field">{TRABAJO_COLORS.filter(c => ["default","red","green","blue"].includes(c.value)).map(c => <option key={c.value} value={c.value}>{c.label === "Normal" ? "Negro" : c.label}</option>)}</select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Dirección</label>
