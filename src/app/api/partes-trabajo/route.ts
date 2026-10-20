@@ -117,8 +117,8 @@ export async function POST(request: NextRequest) {
         const m = body.materiales[i];
         if (!m.descripcion?.trim() && !m.nombre_material?.trim()) continue;
         statements.push({
-          sql: `INSERT INTO parte_materiales (id, parte_id, nombre_material, referencia, descripcion, cantidad, unidad, precio_coste, precio_unitario, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sql: `INSERT INTO parte_materiales (id, parte_id, nombre_material, referencia, descripcion, cantidad, unidad, precio_coste, precio_unitario, description_color, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           args: [
             uuidv4(),
             id,
