@@ -110,6 +110,7 @@ async function migrateSchema(db: Client): Promise<void> {
     { name: "total", def: "REAL DEFAULT 0" },
     { name: "notes", def: "TEXT" },
     { name: "notes_color", def: "TEXT DEFAULT 'default'" },
+    { name: "ticketbai_description_color", def: "TEXT DEFAULT 'default'" },
     { name: "payment_method", def: "TEXT DEFAULT 'transferencia'" },
     { name: "source_part_id", def: "TEXT" },
     { name: "ticketbai_id", def: "TEXT" },
