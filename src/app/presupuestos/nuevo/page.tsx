@@ -27,6 +27,7 @@ interface CatalogItem {
 
 interface BudgetItem {
   description: string;
+  description_color?: string;
   quantity: number;
   unit_price: number;
 }
@@ -337,6 +338,7 @@ export default function NuevoPresupuestoPage() {
         .filter((item) => item.description && item.unit_price > 0)
         .map((item) => ({
           description: `[${zone.name}] ${item.description}`,
+          description_color: item.description_color || "default",
           quantity: item.quantity,
           unit_price: item.unit_price,
         }))
@@ -516,8 +518,9 @@ export default function NuevoPresupuestoPage() {
                           placeholder="Descripcion"
                           value={item.description}
                           onChange={(e) => updateItem(zoneIndex, itemIndex, "description", e.target.value)}
-                          className="input-field"
+                          className={`input-field ${getTextColorClass(item.description_color)}`}
                         />
+                        <ColorSelect value={item.description_color || "default"} onChange={(color) => updateItem(zoneIndex, itemIndex, "description_color", color)} />
                       </div>
                       <div className="w-20">
                         <input
