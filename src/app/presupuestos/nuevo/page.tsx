@@ -60,6 +60,8 @@ export default function NuevoPresupuestoPage() {
   const [clientId, setClientId] = useState("");
   const [workName, setWorkName] = useState("");
   const [workAddress, setWorkAddress] = useState("");
+  const [workNameColor, setWorkNameColor] = useState("default");
+  const [workAddressColor, setWorkAddressColor] = useState("default");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [validUntil, setValidUntil] = useState(() => {
     const d = new Date();
@@ -361,6 +363,8 @@ export default function NuevoPresupuestoPage() {
         notes_color: notesColor,
         work_name: workName,
         work_address: workAddress,
+        work_name_color: workNameColor,
+        work_address_color: workAddressColor,
         tax_rate: 21,
         items: allItems,
       }),
@@ -397,7 +401,7 @@ export default function NuevoPresupuestoPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BudgetWorkFields workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
+            <BudgetWorkFields workName={workName} workAddress={workAddress} workNameColor={workNameColor} workAddressColor={workAddressColor} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} onWorkNameColorChange={setWorkNameColor} onWorkAddressColorChange={setWorkAddressColor} />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente</label>
               <select
