@@ -264,11 +264,11 @@ function ParteTrabajoDetail() {
         {/* DATOS GENERALES + CLIENTE — single compact row */}
         <div className="grid grid-cols-6 gap-2 mb-3 text-xs border border-slate-200 print:border-slate-300 rounded p-2 print:break-inside-avoid break-inside-avoid">
           <div><span className="font-semibold text-slate-500 block">Fecha</span><span className="text-slate-900">{formatDate(parte.fecha)}</span></div>
-          <div><span className="font-semibold text-slate-500 block">Operario</span><span className="text-slate-900">{parte.tecnico || "—"}</span></div>
+          <div><span className="font-semibold text-slate-500 block">Operario</span><span className={getTrabajoColorClass(parte.tecnico_color)}>{parte.tecnico || "—"}</span></div>
           <div><span className="font-semibold text-slate-500 block">Inicio</span><span className="text-slate-900">{parte.hora_inicio || "—"}</span></div>
           <div><span className="font-semibold text-slate-500 block">Fin</span><span className="text-slate-900">{parte.hora_fin || "—"}</span></div>
-          <div><span className="font-semibold text-slate-500 block">Cliente</span><span className="text-slate-900 font-medium">{parte.cliente}</span></div>
-          <div><span className="font-semibold text-slate-500 block">Dirección</span><span className={`${getTrabajoColorClass(parte.direccion_color)} text-slate-900`}>{parte.direccion || "—"}</span></div>
+          <div><span className="font-semibold text-slate-500 block">Cliente</span><span className={`font-medium ${getTrabajoColorClass(parte.cliente_color)}`}>{parte.cliente}</span></div>
+          <div><span className="font-semibold text-slate-500 block">Dirección</span><span className={getTrabajoColorClass(parte.direccion_color)}>{parte.direccion || "—"}</span></div>
         </div>
 
         {/* TRABAJOS — always visible on screen if active tab, always visible in print */}
