@@ -26,6 +26,7 @@ interface TrabajoDB {
 
 interface MaterialDB {
   id: string;
+  description_color?: string | null;
   nombre_material: string | null;
   referencia: string | null;
   descripcion: string;
