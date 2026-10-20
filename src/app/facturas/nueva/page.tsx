@@ -45,6 +45,7 @@ export default function NuevaFacturaPage() {
 
   // TicketBAI fields
   const [ticketbaiDescription, setTicketbaiDescription] = useState("Servicios electricos");
+  const [ticketbaiDescriptionColor, setTicketbaiDescriptionColor] = useState<WritingColor>("default");
   const [ticketbaiTipoOperacion, setTicketbaiTipoOperacion] = useState("prestacion_servicios");
   const [autoGenerateTbai, setAutoGenerateTbai] = useState(false);
 
@@ -138,6 +139,7 @@ export default function NuevaFacturaPage() {
           discount_type: i.discount_type,
         })),
         ticketbai_description: ticketbaiDescription,
+        ticketbai_description_color: ticketbaiDescriptionColor,
         ticketbai_tipo_operacion: ticketbaiTipoOperacion,
         auto_generate_tbai: autoGenerateTbai,
       }),
@@ -352,8 +354,9 @@ export default function NuevaFacturaPage() {
                 value={ticketbaiDescription}
                 onChange={(e) => setTicketbaiDescription(e.target.value)}
                 placeholder="Servicios electricos"
-                className="input-field"
+                className={`input-field ${getTextColorClass(ticketbaiDescriptionColor)}`}
               />
+              <WritingColorSelect value={ticketbaiDescriptionColor} onChange={setTicketbaiDescriptionColor} />
               <p className="text-xs text-slate-400 mt-1">Se incluira en el XML de TicketBAI como descripcion de la factura</p>
             </div>
             <div>
