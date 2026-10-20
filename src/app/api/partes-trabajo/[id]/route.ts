@@ -88,7 +88,7 @@ export async function PUT(
         cliente = ?, client_id = ?, direccion = ?, telefono = ?,
         persona_contacto = ?, observaciones = ?, estado = ?,
         iva_rate = ?, descuento = ?, budget_id = ?, visit_id = ?,
-        direccion_color = ?, observaciones_color = ?, updated_at = ?
+        direccion_color = ?, observaciones_color = ?, tecnico_color = ?, cliente_color = ?, updated_at = ?
         WHERE id = ?`,
       args: [
         body.fecha,
@@ -108,6 +108,8 @@ export async function PUT(
         body.visit_id || null,
         body.direccion_color || null,
         body.observaciones_color || null,
+        ["default","blue","red","green"].includes(body.tecnico_color) ? body.tecnico_color : "default",
+        ["default","blue","red","green"].includes(body.cliente_color) ? body.cliente_color : "default",
         now,
         id,
       ],
