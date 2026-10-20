@@ -99,12 +99,13 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < data.items.length; i++) {
       const item = data.items[i];
       await db.execute({
-        sql: `INSERT INTO budget_items (id, budget_id, description, quantity, unit_price, total, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO budget_items (id, budget_id, description, description_color, quantity, unit_price, total, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           uuidv4(),
           id,
           item.description,
+          ["default", "blue", "red", "green"].includes(item.description_color) ? item.description_color : "default",
           item.quantity,
           item.unit_price,
           item.quantity * item.unit_price,
