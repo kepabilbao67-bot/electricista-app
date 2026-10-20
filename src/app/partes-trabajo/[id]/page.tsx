@@ -26,6 +26,7 @@ interface TrabajoDB {
 
 interface MaterialDB {
   id: string;
+  description_color?: string | null;
   nombre_material: string | null;
   referencia: string | null;
   descripcion: string;
@@ -46,6 +47,8 @@ interface ParteDetalle {
   telefono: string | null;
   direccion: string | null;
   direccion_color?: string | null;
+  tecnico_color?: string | null;
+  cliente_color?: string | null;
   observaciones: string | null;
   observaciones_color?: string | null;
   estado: string;
@@ -121,7 +124,7 @@ function ParteTrabajoDetail() {
     const formData: ParteFormData = {
       fecha: parte.fecha, tecnico: parte.tecnico || "", horaInicio: parte.hora_inicio || "",
       horaFin: parte.hora_fin || "", cliente: parte.cliente, client_id: "",
-      direccion: parte.direccion || "", direccion_color: parte.direccion_color || "default",
+      direccion: parte.direccion || "", direccion_color: parte.direccion_color || "default", tecnico_color: parte.tecnico_color || "default", cliente_color: parte.cliente_color || "default",
       observaciones: parte.observaciones || "", observaciones_color: parte.observaciones_color || "default",
       estado: parte.estado, iva_rate: String(parte.iva_rate ?? 21),
       descuento: String(parte.descuento ?? 0), budget_id: "", visit_id: "",
@@ -131,7 +134,7 @@ function ParteTrabajoDetail() {
       : Array.from({ length: 20 }, (_, i) => ({ id: `t${i}_${Date.now()}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default" }));
     while (formTrabajos.length < 20) formTrabajos.push({ id: `t${formTrabajos.length}_${Date.now() + formTrabajos.length}`, nombre_trabajo: "", hora: "", descripcion: "", cantidad: "", unidad: "unidad", precio_unitario: "", estado: "completado", color: "default" });
     const formMateriales: MaterialLine[] = parte.materiales.length > 0
-      ? parte.materiales.map((m, i) => ({ id: `m${i}_${Date.now()}`, nombre_material: m.nombre_material || "", referencia: m.referencia || "", descripcion: m.descripcion, cantidad: m.cantidad ? String(m.cantidad) : "", unidad: m.unidad || "unidad", precio_coste: m.precio_coste ? String(m.precio_coste) : "", precio_unitario: m.precio_unitario ? String(m.precio_unitario) : "" }))
+      ? parte.materiales.map((m, i) => ({ id: `m${i}_${Date.now()}`, nombre_material: m.nombre_material || "", referencia: m.referencia || "", descripcion: m.descripcion, description_color: m.description_color || "default", cantidad: m.cantidad ? String(m.cantidad) : "", unidad: m.unidad || "unidad", precio_coste: m.precio_coste ? String(m.precio_coste) : "", precio_unitario: m.precio_unitario ? String(m.precio_unitario) : "" }))
       : Array.from({ length: 20 }, (_, i) => ({ id: `m${i}_${Date.now()}`, nombre_material: "", referencia: "", descripcion: "", cantidad: "", unidad: "unidad", precio_coste: "", precio_unitario: "" }));
     while (formMateriales.length < 20) formMateriales.push({ id: `m${formMateriales.length}_${Date.now() + formMateriales.length}`, nombre_material: "", referencia: "", descripcion: "", cantidad: "", unidad: "unidad", precio_coste: "", precio_unitario: "" });
 
@@ -261,11 +264,11 @@ function ParteTrabajoDetail() {
         {/* DATOS GENERALES + CLIENTE — single compact row */}
         <div className="grid grid-cols-6 gap-2 mb-3 text-xs border border-slate-200 print:border-slate-300 rounded p-2 print:break-inside-avoid break-inside-avoid">
           <div><span className="font-semibold text-slate-500 block">Fecha</span><span className="text-slate-900">{formatDate(parte.fecha)}</span></div>
-          <div><span className="font-semibold text-slate-500 block">Operario</span><span className="text-slate-900">{parte.tecnico || "—"}</span></div>
+          <div><span className="font-semibold text-slate-500 block">Operario</span><span className={getTrabajoColorClass(parte.tecnico_color)}>{parte.tecnico || "—"}</span></div>
           <div><span className="font-semibold text-slate-500 block">Inicio</span><span className="text-slate-900">{parte.hora_inicio || "—"}</span></div>
           <div><span className="font-semibold text-slate-500 block">Fin</span><span className="text-slate-900">{parte.hora_fin || "—"}</span></div>
-          <div><span className="font-semibold text-slate-500 block">Cliente</span><span className="text-slate-900 font-medium">{parte.cliente}</span></div>
-          <div><span className="font-semibold text-slate-500 block">Dirección</span><span className={`${getTrabajoColorClass(parte.direccion_color)} text-slate-900`}>{parte.direccion || "—"}</span></div>
+          <div><span className="font-semibold text-slate-500 block">Cliente</span><span className={`font-medium ${getTrabajoColorClass(parte.cliente_color)}`}>{parte.cliente}</span></div>
+          <div><span className="font-semibold text-slate-500 block">Dirección</span><span className={getTrabajoColorClass(parte.direccion_color)}>{parte.direccion || "—"}</span></div>
         </div>
 
         {/* TRABAJOS — always visible on screen if active tab, always visible in print */}
@@ -327,7 +330,7 @@ function ParteTrabajoDetail() {
                   return (
                     <tr key={m.id} className="border-t border-slate-100 print:border-t print:border-slate-200 print:break-inside-avoid break-inside-avoid">
                       <td className="px-1 py-1 text-slate-400">{idx + 1}</td>
-                      <td className="px-1 py-1 text-slate-800">{m.nombre_material && <span className="font-medium">{m.nombre_material}: </span>}{m.descripcion}</td>
+                      <td className={`px-1 py-1 ${getTrabajoColorClass(m.description_color)}`}>{m.nombre_material && <span className="font-medium">{m.nombre_material}: </span>}{m.descripcion}</td>
                       <td className="px-1 py-1 text-center text-slate-700">{m.cantidad || ""}</td>
                       <td className="px-1 py-1 text-center text-slate-600">{UNIDAD_LABELS[m.unidad] || m.unidad}</td>
                       <td className="px-1 py-1 text-right text-slate-700">{m.precio_unitario ? `${m.precio_unitario.toFixed(2)}` : ""}</td>

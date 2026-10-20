@@ -88,7 +88,7 @@ export async function PUT(
         cliente = ?, client_id = ?, direccion = ?, telefono = ?,
         persona_contacto = ?, observaciones = ?, estado = ?,
         iva_rate = ?, descuento = ?, budget_id = ?, visit_id = ?,
-        direccion_color = ?, observaciones_color = ?, updated_at = ?
+        direccion_color = ?, observaciones_color = ?, tecnico_color = ?, cliente_color = ?, updated_at = ?
         WHERE id = ?`,
       args: [
         body.fecha,
@@ -108,6 +108,8 @@ export async function PUT(
         body.visit_id || null,
         body.direccion_color || null,
         body.observaciones_color || null,
+        ["default","blue","red","green"].includes(body.tecnico_color) ? body.tecnico_color : "default",
+        ["default","blue","red","green"].includes(body.cliente_color) ? body.cliente_color : "default",
         now,
         id,
       ],
@@ -154,8 +156,8 @@ export async function PUT(
         const m = body.materiales[i];
         if (!m.descripcion?.trim() && !m.nombre_material?.trim()) continue;
         statements.push({
-          sql: `INSERT INTO parte_materiales (id, parte_id, nombre_material, referencia, descripcion, cantidad, unidad, precio_coste, precio_unitario, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          sql: `INSERT INTO parte_materiales (id, parte_id, nombre_material, referencia, descripcion, cantidad, unidad, precio_coste, precio_unitario, description_color, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           args: [
             uuidv4(),
             id,
@@ -166,6 +168,7 @@ export async function PUT(
             m.unidad || "unidad",
             safeNum(m.precio_coste),
             safeNum(m.precio_unitario),
+            ["default", "blue", "red", "green"].includes(m.description_color) ? m.description_color : "default",
             i,
           ],
         });

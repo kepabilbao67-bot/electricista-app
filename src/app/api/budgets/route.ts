@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
     const total = subtotal + taxAmount;
 
     await db.execute({
-      sql: `INSERT INTO budgets (id, number, client_id, date, valid_until, status, subtotal, tax_rate, tax_amount, total, notes, notes_color, work_name, work_address)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO budgets (id, number, client_id, date, valid_until, status, subtotal, tax_rate, tax_amount, total, notes, notes_color, work_name, work_address, work_name_color, work_address_color)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         number,
@@ -93,18 +93,22 @@ export async function POST(request: NextRequest) {
         data.notes_color || null,
         data.work_name || null,
         data.work_address || null,
+        data.work_name_color || 'default',
+        data.work_address_color || 'default',
       ],
     });
 
     for (let i = 0; i < data.items.length; i++) {
       const item = data.items[i];
       await db.execute({
-        sql: `INSERT INTO budget_items (id, budget_id, description, quantity, unit_price, total, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO budget_items (id, budget_id, description, description_color, zone_color, quantity, unit_price, total, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           uuidv4(),
           id,
           item.description,
+          item.description_color && ["default", "blue", "red", "green"].includes(item.description_color) ? item.description_color : "default",
+          item.zone_color && ["default", "blue", "red", "green"].includes(item.zone_color) ? item.zone_color : "default",
           item.quantity,
           item.unit_price,
           item.quantity * item.unit_price,

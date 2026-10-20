@@ -27,12 +27,14 @@ interface CatalogItem {
 
 interface BudgetItem {
   description: string;
+  description_color?: string;
   quantity: number;
   unit_price: number;
 }
 
 interface Zone {
   name: string;
+  color?: string;
   items: BudgetItem[];
   collapsed: boolean;
 }
@@ -59,6 +61,8 @@ export default function NuevoPresupuestoPage() {
   const [clientId, setClientId] = useState("");
   const [workName, setWorkName] = useState("");
   const [workAddress, setWorkAddress] = useState("");
+  const [workNameColor, setWorkNameColor] = useState("default");
+  const [workAddressColor, setWorkAddressColor] = useState("default");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [validUntil, setValidUntil] = useState(() => {
     const d = new Date();
@@ -337,6 +341,8 @@ export default function NuevoPresupuestoPage() {
         .filter((item) => item.description && item.unit_price > 0)
         .map((item) => ({
           description: `[${zone.name}] ${item.description}`,
+          description_color: item.description_color || "default",
+          zone_color: zone.color || "default",
           quantity: item.quantity,
           unit_price: item.unit_price,
         }))
@@ -359,6 +365,8 @@ export default function NuevoPresupuestoPage() {
         notes_color: notesColor,
         work_name: workName,
         work_address: workAddress,
+        work_name_color: workNameColor,
+        work_address_color: workAddressColor,
         tax_rate: 21,
         items: allItems,
       }),
@@ -395,7 +403,7 @@ export default function NuevoPresupuestoPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <BudgetWorkFields workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
+            <BudgetWorkFields workName={workName} workAddress={workAddress} workNameColor={workNameColor} workAddressColor={workAddressColor} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} onWorkNameColorChange={setWorkNameColor} onWorkAddressColorChange={setWorkAddressColor} />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente</label>
               <select
@@ -457,7 +465,7 @@ export default function NuevoPresupuestoPage() {
                 ) : (
                   <ChevronDown className="h-4 w-4 text-slate-400" />
                 )}
-                <h2 className="text-base font-semibold text-slate-900">{zone.name}</h2>
+                <h2 className={`text-base font-semibold ${getTextColorClass(zone.color)}`}>{zone.name}</h2><ColorSelect value={zone.color || "default"} onChange={(color) => setZones(zones.map((z, i) => i === zoneIndex ? { ...z, color } : z))} />
                 <span className="text-sm text-slate-500 ml-2">
                   ({zone.items.filter((i) => i.description).length} items)
                 </span>
@@ -516,8 +524,9 @@ export default function NuevoPresupuestoPage() {
                           placeholder="Descripcion"
                           value={item.description}
                           onChange={(e) => updateItem(zoneIndex, itemIndex, "description", e.target.value)}
-                          className="input-field"
+                          className={`input-field ${getTextColorClass(item.description_color)}`}
                         />
+                        <ColorSelect value={item.description_color || "default"} onChange={(color) => updateItem(zoneIndex, itemIndex, "description_color", color)} />
                       </div>
                       <div className="w-20">
                         <input

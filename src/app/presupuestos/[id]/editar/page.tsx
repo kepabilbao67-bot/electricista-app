@@ -13,8 +13,8 @@ import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client { id: string; name: string; }
 interface CatalogItem { id: string; name: string; unit_price: number; category: string; }
-interface BudgetItem { description: string; quantity: number; unit_price: number; }
-interface Zone { name: string; items: BudgetItem[]; collapsed: boolean; }
+interface BudgetItem { description: string; description_color?: string; quantity: number; unit_price: number; }
+interface Zone { name: string; color?: string; items: BudgetItem[]; collapsed: boolean; }
 
 const PREDEFINED_ZONES = [
   "Cuadro electrico", "Cocina", "Salon", "Habitacion 1", "Habitacion 2",
@@ -30,6 +30,8 @@ export default function EditarPresupuestoPage() {
   const [clientId, setClientId] = useState("");
   const [workName, setWorkName] = useState("");
   const [workAddress, setWorkAddress] = useState("");
+  const [workNameColor, setWorkNameColor] = useState("default");
+  const [workAddressColor, setWorkAddressColor] = useState("default");
   const [date, setDate] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
@@ -56,6 +58,8 @@ export default function EditarPresupuestoPage() {
           setValidUntil(data.valid_until || "");
           setNotes(data.notes || "");
           setNotesColor(data.notes_color || "default");
+      setWorkNameColor(data.work_name_color || "default");
+      setWorkAddressColor(data.work_address_color || "default");
           setBudgetNumber(data.number);
 
           // Parse items into zones
@@ -65,13 +69,13 @@ export default function EditarPresupuestoPage() {
             const zoneName = match ? match[1] : "General";
             const desc = match ? match[2] : item.description;
             if (!zoneMap.has(zoneName)) zoneMap.set(zoneName, []);
-            zoneMap.get(zoneName)!.push({ description: desc, quantity: item.quantity, unit_price: item.unit_price });
+            zoneMap.get(zoneName)!.push({ description: desc, description_color: item.description_color || "default", quantity: item.quantity, unit_price: item.unit_price });
           }
 
           if (zoneMap.size === 0) {
             setZones([{ name: "General", items: [{ description: "", quantity: 1, unit_price: 0 }], collapsed: false }]);
           } else {
-            setZones(Array.from(zoneMap.entries()).map(([name, items]) => ({ name, items, collapsed: false })));
+            setZones(Array.from(zoneMap.entries()).map(([name, items]) => ({ name, items, color: data.items.find((item: { description: string; zone_color?: string }) => (item.description.match(/^\[([^\]]+)\]/)?.[1] || "General") === name)?.zone_color || "default", collapsed: false })));
           }
 
           setLoading(false);
@@ -174,6 +178,8 @@ export default function EditarPresupuestoPage() {
         .filter((i) => i.description && i.unit_price > 0)
         .map((i) => ({
           description: zones.length > 1 || zone.name !== "General" ? `[${zone.name}] ${i.description}` : i.description,
+          description_color: i.description_color || "default",
+          zone_color: zone.color || "default",
           quantity: i.quantity,
           unit_price: i.unit_price,
         }))
@@ -190,6 +196,8 @@ export default function EditarPresupuestoPage() {
         notes_color: notesColor,
         work_name: workName,
         work_address: workAddress,
+        work_name_color: workNameColor,
+        work_address_color: workAddressColor,
         tax_rate: 21,
         items: allItems,
       }),
@@ -229,7 +237,7 @@ export default function EditarPresupuestoPage() {
         <div className="card">
           <h2 className="text-base font-semibold text-slate-900 mb-4">Datos generales</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <BudgetWorkFields workName={workName} workAddress={workAddress} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} />
+            <BudgetWorkFields workName={workName} workAddress={workAddress} workNameColor={workNameColor} workAddressColor={workAddressColor} onWorkNameChange={setWorkName} onWorkAddressChange={setWorkAddress} onWorkNameColorChange={setWorkNameColor} onWorkAddressColorChange={setWorkAddressColor} />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Cliente *</label>
               <select required value={clientId} onChange={(e) => setClientId(e.target.value)} className="input-field">
@@ -288,7 +296,7 @@ export default function EditarPresupuestoPage() {
                 <button type="button" onClick={() => toggleZone(zoneIndex)} className="text-slate-400 hover:text-slate-600">
                   {zone.collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </button>
-                <h3 className="font-semibold text-slate-900 flex-1">{zone.name}</h3>
+                <h3 className={`font-semibold flex-1 ${getTextColorClass(zone.color)}`}>{zone.name}</h3><ColorSelect value={zone.color || "default"} onChange={(color) => setZones(zones.map((z, i) => i === zoneIndex ? { ...z, color } : z))} />
                 <span className="text-sm font-medium text-indigo-600">{getZoneSubtotal(zone).toFixed(2)} EUR</span>
                 <button type="button" onClick={() => duplicateZone(zoneIndex)} className="rounded p-1 text-slate-400 hover:bg-blue-50 hover:text-blue-600" title="Duplicar estancia">
                   <Copy className="h-4 w-4" />
@@ -317,7 +325,7 @@ export default function EditarPresupuestoPage() {
                   <div className="space-y-2">
                     {zone.items.map((item, itemIndex) => (
                       <div key={itemIndex} className="flex gap-2 items-center">
-                        <input type="text" placeholder="Descripcion" value={item.description} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "description", e.target.value)} className="input-field flex-1 !py-1.5 text-sm" />
+                        <input type="text" placeholder="Descripcion" value={item.description} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "description", e.target.value)} className={`input-field flex-1 !py-1.5 text-sm ${getTextColorClass(item.description_color)}`} /><ColorSelect value={item.description_color || "default"} onChange={(color) => updateItemInZone(zoneIndex, itemIndex, "description_color", color)} />
                         <input type="number" min="1" step="1" value={item.quantity} onChange={(e) => updateItemInZone(zoneIndex, itemIndex, "quantity", parseFloat(e.target.value) || 0)} className="input-field w-16 !py-1.5 text-sm text-center" />
                         <DecimalInput min="0" value={item.unit_price} onValueChange={(value) => updateItemInZone(zoneIndex, itemIndex, "unit_price", value)} className="input-field w-20 !py-1.5 text-sm text-center" />
                         <span className="text-xs font-medium text-slate-600 w-20 text-right">{(item.quantity * item.unit_price).toFixed(2)}€</span>

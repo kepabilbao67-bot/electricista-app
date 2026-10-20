@@ -28,6 +28,7 @@ interface InvoiceDetail {
   tax_amount: number;
   total: number;
   notes: string;
+  notes_color?: string;
   payment_method: string | null;
   ticketbai_id: string | null;
   ticketbai_qr: string | null;
@@ -37,6 +38,7 @@ interface InvoiceDetail {
   items: Array<{
     id: string;
     description: string;
+    description_color?: string;
     quantity: number;
     unit_price: number;
     total: number;
@@ -421,7 +423,7 @@ export default function FacturaDetailPage() {
         {invoice.notes && (
           <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 print:border-slate-300 print:break-inside-avoid">
             <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">Descripcion</p>
-            <p className="text-sm text-blue-800">{invoice.notes}</p>
+            <p className="text-sm" style={{ color: invoice.notes_color === "blue" ? "#1d4ed8" : invoice.notes_color === "red" ? "#b91c1c" : invoice.notes_color === "green" ? "#15803d" : "#111827" }}>{invoice.notes}</p>
           </div>
         )}
 
@@ -465,7 +467,7 @@ export default function FacturaDetailPage() {
                       <tbody className="divide-y divide-slate-50 print:divide-slate-200">
                         {group.items.map((item) => (
                           <tr key={item.id} className="print:break-inside-avoid break-inside-avoid">
-                            <td className="py-2 text-slate-700">{item.description}</td>
+                            <td className="py-2" style={{ color: item.description_color === "blue" ? "#1d4ed8" : item.description_color === "red" ? "#b91c1c" : item.description_color === "green" ? "#15803d" : "#111827" }}>{item.description}</td>
                             <td className="py-2 text-right text-slate-600">{item.quantity}</td>
                             <td className="py-2 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
                             <td className="py-2 text-right font-medium text-slate-900">{item.total.toFixed(2)} EUR</td>
@@ -499,7 +501,7 @@ export default function FacturaDetailPage() {
                       : "-";
                     return (
                       <tr key={item.id} className="print:break-inside-avoid break-inside-avoid">
-                        <td className="px-4 py-3 text-slate-700">{item.description}</td>
+                        <td className="px-4 py-3" style={{ color: item.description_color === "blue" ? "#1d4ed8" : item.description_color === "red" ? "#b91c1c" : item.description_color === "green" ? "#15803d" : "#111827" }}>{item.description}</td>
                         <td className="px-4 py-3 text-right text-slate-600">{item.quantity.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right text-slate-600">{item.unit_price.toFixed(2)} EUR</td>
                         <td className="px-4 py-3 text-right text-slate-400">{discountDisplay}</td>

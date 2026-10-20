@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const budgetItemSchema = z.object({
+  description_color: z.enum(["default", "blue", "red", "green"]).optional(),
+  zone_color: z.enum(["default", "blue", "red", "green"]).optional(),
   description: z
     .string()
     .trim()
@@ -16,6 +18,8 @@ export const budgetItemSchema = z.object({
 export const budgetWorkSchema = z.object({
   work_name: z.string().trim().max(200).nullable().optional(),
   work_address: z.string().trim().max(500).nullable().optional(),
+  work_name_color: z.enum(["default", "blue", "red", "green"]).optional(),
+  work_address_color: z.enum(["default", "blue", "red", "green"]).optional(),
 });
 
 export const budgetSchema = z.object({

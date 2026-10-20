@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ArrowLeft, Shield, FileCode } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import WritingColorSelect, { type WritingColor } from "@/components/WritingColorSelect";
+import { getTextColorClass } from "@/lib/text-colors";
 
 interface Client {
   id: string;
@@ -20,6 +22,7 @@ interface CatalogItem {
 
 interface InvoiceItem {
   description: string;
+  description_color: WritingColor;
   quantity: number;
   unit_price: number;
   discount: number;
@@ -33,14 +36,16 @@ export default function NuevaFacturaPage() {
   const [clientId, setClientId] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
+  const [notesColor, setNotesColor] = useState<WritingColor>("default");
   const [paymentMethod, setPaymentMethod] = useState("transferencia");
   const [items, setItems] = useState<InvoiceItem[]>([
-    { description: "", quantity: 1, unit_price: 0, discount: 0, discount_type: "percent" },
+    { description: "", description_color: "default", quantity: 1, unit_price: 0, discount: 0, discount_type: "percent" },
   ]);
   const [submitting, setSubmitting] = useState(false);
 
   // TicketBAI fields
   const [ticketbaiDescription, setTicketbaiDescription] = useState("Servicios electricos");
+  const [ticketbaiDescriptionColor, setTicketbaiDescriptionColor] = useState<WritingColor>("default");
   const [ticketbaiTipoOperacion, setTicketbaiTipoOperacion] = useState("prestacion_servicios");
   const [autoGenerateTbai, setAutoGenerateTbai] = useState(false);
 
@@ -50,7 +55,7 @@ export default function NuevaFacturaPage() {
   }, []);
 
   const addItem = () => {
-    setItems([...items, { description: "", quantity: 1, unit_price: 0, discount: 0, discount_type: "percent" }]);
+    setItems([...items, { description: "", description_color: "default", quantity: 1, unit_price: 0, discount: 0, discount_type: "percent" }]);
   };
 
   const removeItem = (index: number) => {
@@ -81,6 +86,7 @@ export default function NuevaFacturaPage() {
         const newItems = [...items];
         newItems[newItems.length - 1] = {
           description: catalogItem.name,
+          description_color: "default",
           quantity: 1,
           unit_price: catalogItem.unit_price,
           discount: 0,
@@ -90,7 +96,7 @@ export default function NuevaFacturaPage() {
       } else {
         setItems([
           ...items,
-          { description: catalogItem.name, quantity: 1, unit_price: catalogItem.unit_price, discount: 0, discount_type: "percent" },
+          { description: catalogItem.name, description_color: "default", quantity: 1, unit_price: catalogItem.unit_price, discount: 0, discount_type: "percent" },
         ]);
       }
     }
@@ -121,16 +127,19 @@ export default function NuevaFacturaPage() {
         client_id: clientId,
         date,
         notes,
+        notes_color: notesColor,
         tax_rate: 21,
         payment_method: paymentMethod,
         items: items.filter((i) => i.description && i.unit_price > 0).map((i) => ({
           description: i.description,
+          description_color: i.description_color,
           quantity: i.quantity,
           unit_price: i.unit_price,
           discount: i.discount,
           discount_type: i.discount_type,
         })),
         ticketbai_description: ticketbaiDescription,
+        ticketbai_description_color: ticketbaiDescriptionColor,
         ticketbai_tipo_operacion: ticketbaiTipoOperacion,
         auto_generate_tbai: autoGenerateTbai,
       }),
@@ -201,12 +210,12 @@ export default function NuevaFacturaPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Notas</label>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5"><label className="block text-sm font-medium text-slate-700">Notas</label><WritingColorSelect value={notesColor} onChange={setNotesColor} /></div>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="input-field"
+                className={`input-field ${getTextColorClass(notesColor)}`}
               />
             </div>
           </div>
@@ -260,8 +269,9 @@ export default function NuevaFacturaPage() {
                     placeholder="Descripcion"
                     value={item.description}
                     onChange={(e) => updateItem(index, "description", e.target.value)}
-                    className="input-field"
+                    className={`input-field ${getTextColorClass(item.description_color)}`}
                   />
+                  <div className="mt-1"><WritingColorSelect value={item.description_color} onChange={(color) => updateItem(index, "description_color", color)} /></div>
                 </div>
                 <div className="w-16">
                   <input
@@ -344,8 +354,9 @@ export default function NuevaFacturaPage() {
                 value={ticketbaiDescription}
                 onChange={(e) => setTicketbaiDescription(e.target.value)}
                 placeholder="Servicios electricos"
-                className="input-field"
+                className={`input-field ${getTextColorClass(ticketbaiDescriptionColor)}`}
               />
+              <WritingColorSelect value={ticketbaiDescriptionColor} onChange={setTicketbaiDescriptionColor} />
               <p className="text-xs text-slate-400 mt-1">Se incluira en el XML de TicketBAI como descripcion de la factura</p>
             </div>
             <div>

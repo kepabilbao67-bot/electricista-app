@@ -83,7 +83,7 @@ export async function PUT(
       await db.execute({
         sql: `UPDATE budgets SET 
           client_id = ?, date = ?, valid_until = ?, notes = ?, notes_color = ?,
-          work_name = COALESCE(?, work_name), work_address = COALESCE(?, work_address),
+          work_name = COALESCE(?, work_name), work_address = COALESCE(?, work_address), work_name_color = COALESCE(?, work_name_color), work_address_color = COALESCE(?, work_address_color),
           subtotal = ?, tax_rate = ?, tax_amount = ?, total = ?,
           updated_at = datetime('now')
           WHERE id = ?`,
@@ -95,6 +95,8 @@ export async function PUT(
           body.notes_color || null,
           body.work_name === undefined ? null : (work.data.work_name ?? ""),
           body.work_address === undefined ? null : (work.data.work_address ?? ""),
+          body.work_name_color === undefined ? null : (work.data.work_name_color || "default"),
+          body.work_address_color === undefined ? null : (work.data.work_address_color || "default"),
           subtotal,
           taxRate,
           taxAmount,
@@ -112,12 +114,14 @@ export async function PUT(
       for (let i = 0; i < body.items.length; i++) {
         const item = body.items[i];
         await db.execute({
-          sql: `INSERT INTO budget_items (id, budget_id, description, quantity, unit_price, total, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          sql: `INSERT INTO budget_items (id, budget_id, description, description_color, zone_color, quantity, unit_price, total, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           args: [
             uuidv4(),
             id,
             item.description,
+            ["default", "blue", "red", "green"].includes(item.description_color) ? item.description_color : "default",
+            item.zone_color && ["default", "blue", "red", "green"].includes(item.zone_color) ? item.zone_color : "default",
             item.quantity,
             item.unit_price,
             item.quantity * item.unit_price,

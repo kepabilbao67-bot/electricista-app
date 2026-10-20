@@ -11,6 +11,8 @@ import { APP_CONFIG } from "@/config/app-config";
 interface BudgetItem {
   id: string;
   description: string;
+  description_color?: string;
+  zone_color?: string;
   quantity: number;
   unit_price: number;
   total: number;
@@ -37,6 +39,9 @@ interface BudgetDetail {
   tax_amount: number;
   total: number;
   notes: string;
+  notes_color?: string;
+  work_name_color?: string;
+  work_address_color?: string;
   converted_invoice_id: string | null;
   items: BudgetItem[];
 }
@@ -321,9 +326,9 @@ export default function PresupuestoDetailPage() {
 
           <div className="mb-8 p-4 border border-gray-200 rounded-lg break-inside-avoid">
             <p className="text-sm font-medium text-gray-500 mb-1">Obra / trabajo a realizar:</p>
-            <p className="font-semibold">{budget.work_name || "Obra sin indicar"}</p>
+            <p className="font-semibold" style={{ color: budget.work_name_color === "red" ? "#b91c1c" : budget.work_name_color === "blue" ? "#1d4ed8" : budget.work_name_color === "green" ? "#15803d" : "#111827" }}>{budget.work_name || "Obra sin indicar"}</p>
             <p className="text-sm font-medium text-gray-500 mt-3 mb-1">Dirección de la obra:</p>
-            <p className="text-sm text-gray-700 whitespace-pre-line">{budget.work_address || "Dirección de obra sin indicar"}</p>
+            <p className="text-sm whitespace-pre-line" style={{ color: budget.work_address_color === "red" ? "#b91c1c" : budget.work_address_color === "blue" ? "#1d4ed8" : budget.work_address_color === "green" ? "#15803d" : "#111827" }}>{budget.work_address || "Dirección de obra sin indicar"}</p>
           </div>
 
           {zoneGroups ? (
@@ -331,7 +336,7 @@ export default function PresupuestoDetailPage() {
               {zoneGroups.map((group) => (
                 <div key={group.name}>
                   <div className="flex items-center justify-between mb-2 pb-1 border-b border-blue-100">
-                    <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wide">{group.name}</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-wide" style={{ color: group.items[0]?.zone_color === "red" ? "#b91c1c" : group.items[0]?.zone_color === "blue" ? "#1d4ed8" : group.items[0]?.zone_color === "green" ? "#15803d" : "#111827" }}>{group.name}</h3>
                     <span className="text-sm font-medium text-blue-600">{group.subtotal.toFixed(2)} EUR</span>
                   </div>
                   <table className="w-full text-sm">
@@ -348,7 +353,7 @@ export default function PresupuestoDetailPage() {
                         const { desc } = parseZoneFromDescription(item.description);
                         return (
                           <tr key={item.id}>
-                            <td className="py-1.5">{desc}</td>
+                            <td className="py-1.5" style={{ color: item.description_color === "red" ? "#b91c1c" : item.description_color === "blue" ? "#1d4ed8" : item.description_color === "green" ? "#15803d" : "#111827" }}>{desc}</td>
                             <td className="py-1.5 text-right">{item.quantity}</td>
                             <td className="py-1.5 text-right">{item.unit_price.toFixed(2)} EUR</td>
                             <td className="py-1.5 text-right">{item.total.toFixed(2)} EUR</td>
@@ -373,7 +378,7 @@ export default function PresupuestoDetailPage() {
               <tbody className="divide-y divide-gray-100">
                 {budget.items.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-2">{item.description}</td>
+                    <td className="py-2" style={{ color: item.description_color === "red" ? "#b91c1c" : item.description_color === "blue" ? "#1d4ed8" : item.description_color === "green" ? "#15803d" : "#111827" }}>{item.description}</td>
                     <td className="py-2 text-right">{item.quantity}</td>
                     <td className="py-2 text-right">{item.unit_price.toFixed(2)} EUR</td>
                     <td className="py-2 text-right">{item.total.toFixed(2)} EUR</td>
@@ -391,7 +396,7 @@ export default function PresupuestoDetailPage() {
 
           {budget.notes && (
             <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500">{budget.notes}</p>
+              <p className="text-sm" style={{ color: budget.notes_color === "red" ? "#b91c1c" : budget.notes_color === "blue" ? "#1d4ed8" : budget.notes_color === "green" ? "#15803d" : "#111827" }}>{budget.notes}</p>
             </div>
           )}
         </div>
