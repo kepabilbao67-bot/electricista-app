@@ -39,6 +39,8 @@ interface BudgetDetail {
   total: number;
   notes: string;
   notes_color?: string;
+  work_name_color?: string;
+  work_address_color?: string;
   converted_invoice_id: string | null;
   items: BudgetItem[];
 }
@@ -323,9 +325,9 @@ export default function PresupuestoDetailPage() {
 
           <div className="mb-8 p-4 border border-gray-200 rounded-lg break-inside-avoid">
             <p className="text-sm font-medium text-gray-500 mb-1">Obra / trabajo a realizar:</p>
-            <p className="font-semibold">{budget.work_name || "Obra sin indicar"}</p>
+            <p className="font-semibold" style={{ color: budget.work_name_color === "red" ? "#b91c1c" : budget.work_name_color === "blue" ? "#1d4ed8" : budget.work_name_color === "green" ? "#15803d" : "#111827" }}>{budget.work_name || "Obra sin indicar"}</p>
             <p className="text-sm font-medium text-gray-500 mt-3 mb-1">Dirección de la obra:</p>
-            <p className="text-sm text-gray-700 whitespace-pre-line">{budget.work_address || "Dirección de obra sin indicar"}</p>
+            <p className="text-sm whitespace-pre-line" style={{ color: budget.work_address_color === "red" ? "#b91c1c" : budget.work_address_color === "blue" ? "#1d4ed8" : budget.work_address_color === "green" ? "#15803d" : "#111827" }}>{budget.work_address || "Dirección de obra sin indicar"}</p>
           </div>
 
           {zoneGroups ? (
@@ -350,7 +352,7 @@ export default function PresupuestoDetailPage() {
                         const { desc } = parseZoneFromDescription(item.description);
                         return (
                           <tr key={item.id}>
-                            <td className="py-1.5">{desc}</td>
+                            <td className="py-1.5" style={{ color: item.description_color === "red" ? "#b91c1c" : item.description_color === "blue" ? "#1d4ed8" : item.description_color === "green" ? "#15803d" : "#111827" }}>{desc}</td>
                             <td className="py-1.5 text-right">{item.quantity}</td>
                             <td className="py-1.5 text-right">{item.unit_price.toFixed(2)} EUR</td>
                             <td className="py-1.5 text-right">{item.total.toFixed(2)} EUR</td>
