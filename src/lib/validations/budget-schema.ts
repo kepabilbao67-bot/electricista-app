@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const budgetItemSchema = z.object({
   description_color: z.enum(["default", "blue", "red", "green"]).optional(),
+  zone_color: z.enum(["default", "blue", "red", "green"]).optional(),
   description: z
     .string()
     .trim()
