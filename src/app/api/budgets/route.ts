@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
           uuidv4(),
           id,
           item.description,
-          ["default", "blue", "red", "green"].includes(item.description_color) ? item.description_color : "default",
+          item.description_color && ["default", "blue", "red", "green"].includes(item.description_color) ? item.description_color : "default",
           item.quantity,
           item.unit_price,
           item.quantity * item.unit_price,
