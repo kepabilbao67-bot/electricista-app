@@ -221,6 +221,7 @@ async function migrateSchema(db: Client): Promise<void> {
   ]);
 
   await ensureColumns(db, "parte_materiales", [
+    { name: "description_color", def: "TEXT DEFAULT 'default'" },
     { name: "sort_order", def: "INTEGER DEFAULT 0" },
     { name: "nombre_material", def: "TEXT" },
     { name: "unidad", def: "TEXT DEFAULT 'unidad'" },
