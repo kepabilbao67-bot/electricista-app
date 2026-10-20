@@ -166,6 +166,7 @@ export async function PUT(
             m.unidad || "unidad",
             safeNum(m.precio_coste),
             safeNum(m.precio_unitario),
+            ["default", "blue", "red", "green"].includes(m.description_color) ? m.description_color : "default",
             i,
           ],
         });
