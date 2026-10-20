@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
     const safeColor = (value: unknown) => typeof value === "string" && validColors.has(value) ? value : "default";
 
     await db.execute({
-      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, notes_color, payment_method, ticketbai_description, ticketbai_tipo_operacion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO invoices (id, number, client_id, date, due_date, status, subtotal, tax_rate, tax_amount, total, notes, notes_color, payment_method, ticketbai_description, ticketbai_description_color, ticketbai_tipo_operacion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         id,
         number,
@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
         safeColor(body.notes_color),
         paymentMethod,
         ticketbaiDescription,
+        safeColor(body.ticketbai_description_color),
         ticketbaiTipoOperacion,
       ],
     });
