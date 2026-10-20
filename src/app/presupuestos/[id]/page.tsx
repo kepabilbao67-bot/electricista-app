@@ -12,6 +12,7 @@ interface BudgetItem {
   id: string;
   description: string;
   description_color?: string;
+  zone_color?: string;
   quantity: number;
   unit_price: number;
   total: number;
@@ -335,7 +336,7 @@ export default function PresupuestoDetailPage() {
               {zoneGroups.map((group) => (
                 <div key={group.name}>
                   <div className="flex items-center justify-between mb-2 pb-1 border-b border-blue-100">
-                    <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wide">{group.name}</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-wide" style={{ color: group.items[0]?.zone_color === "red" ? "#b91c1c" : group.items[0]?.zone_color === "blue" ? "#1d4ed8" : group.items[0]?.zone_color === "green" ? "#15803d" : "#111827" }}>{group.name}</h3>
                     <span className="text-sm font-medium text-blue-600">{group.subtotal.toFixed(2)} EUR</span>
                   </div>
                   <table className="w-full text-sm">
