@@ -1,13 +1,17 @@
 {
-  "name": "Gestión Profesional 360",
-  "short_name": "Gestión 360",
-  "description": "Software de gestión integral para autónomos, profesionales y empresas",
+  "name": "Electricista 360",
+  "short_name": "Electricista 360",
+  "description": "Gestión profesional para electricistas",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#F8FAFC",
   "theme_color": "#2563EB",
-  "categories": ["business", "finance", "productivity"],
+  "categories": [
+    "business",
+    "finance",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/logo-generic.svg",
@@ -27,5 +31,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "id": "/"
 }
