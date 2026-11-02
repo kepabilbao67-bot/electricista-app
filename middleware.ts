@@ -22,7 +22,7 @@ async function sessionValid(request: NextRequest): Promise<boolean> {
   } catch { return false; }
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (path === "/acceso" || path === "/api/session-login") return NextResponse.next();
 
