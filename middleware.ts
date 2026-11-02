@@ -1,73 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * Protege TODA la app (paginas y APIs) con Basic Auth (SEC-004B).
- *
- * Motivo: Vercel Authentication no esta protegiendo de forma fiable todos
- * los dominios del proyecto (electricista-app-two sigue accesible sin login
- * en incognito). Esta proteccion vive dentro del propio codigo, es
- * independiente de la configuracion de la plataforma y protege cualquier
- * dominio que apunte a este deployment.
- *
- * - Si APP_BASIC_AUTH_USER o APP_BASIC_AUTH_PASSWORD no estan configuradas,
- *   se bloquea el acceso (fail-closed): no se puede entrar a nada hasta que
- *   se configuren ambas variables en Vercel.
- * - Si estan configuradas, se exige Basic Auth valido (usuario y contrasena)
- *   en cada peticion a paginas y a APIs.
- * - No se modifica ningun endpoint ni pagina existente: esta capa se ejecuta
- *   antes de que la peticion llegue a cualquier route.ts o page.tsx.
- */
-export function middleware(request: NextRequest) {
-  const expectedUser = process.env.APP_BASIC_AUTH_USER;
-  const expectedPassword = process.env.APP_BASIC_AUTH_PASSWORD;
+const COOKIE_NAME = "electricista360_session";
+const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60;
 
-  if (!expectedUser || !expectedPassword) {
-    return new NextResponse("Acceso no disponible: falta configuracion.", {
-      status: 503,
-      headers: { "Cache-Control": "no-store" },
-    });
-  }
+async function sessionValid(request: NextRequest): Promise<boolean> {
+  const token = request.cookies.get(COOKIE_NAME)?.value;
+  const user = process.env.APP_BASIC_AUTH_USER;
+  const password = process.env.APP_BASIC_AUTH_PASSWORD;
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!token || !user || !password || !sessionSecret) return false;
+  const [issued, signature, extra] = token.split(".");
+  if (!issued || !signature || extra) return false;
+  const issuedAt = Number(issued);
+  const now = Math.floor(Date.now() / 1000);
+  if (!Number.isSafeInteger(issuedAt) || issuedAt > now + 60 || now - issuedAt > SESSION_DURATION_SECONDS) return false;
+  try {
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(sessionSecret),
+      { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+    const bytes = Uint8Array.from(atob(signature.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+    return await crypto.subtle.verify("HMAC", key, bytes, new TextEncoder().encode(issued + ":" + user));
+  } catch { return false; }
+}
 
-  const authHeader = request.headers.get("authorization");
+export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (path === "/acceso" || path === "/api/session-login") return NextResponse.next();
 
-  if (authHeader?.startsWith("Basic ")) {
-    const encoded = authHeader.slice("Basic ".length);
-    try {
-      const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
-      const decoded = new TextDecoder("utf-8").decode(bytes);
-      const separatorIndex = decoded.indexOf(":");
-      const providedUser = decoded.slice(0, separatorIndex);
-      const providedPassword = decoded.slice(separatorIndex + 1);
-
-      if (providedUser === expectedUser && providedPassword === expectedPassword) {
-        if (
-          process.env.DEMO_MODE === "true" &&
-          request.nextUrl.pathname.startsWith("/api/") &&
-          !["GET", "HEAD", "OPTIONS"].includes(request.method)
-        ) {
-          return NextResponse.json(
-            { error: "DEMO / SIN VALIDEZ FISCAL: modo de solo lectura" },
-            { status: 403, headers: { "Cache-Control": "no-store" } }
-          );
-        }
-        return NextResponse.next();
-      }
-    } catch {
-      // Cabecera mal formada: se trata igual que "no autenticado".
+  let authenticated = await sessionValid(request);
+  if (!authenticated) {
+    const user = process.env.APP_BASIC_AUTH_USER;
+    const password = process.env.APP_BASIC_AUTH_PASSWORD;
+    const auth = request.headers.get("authorization");
+    if (user && password && auth?.startsWith("Basic ")) {
+      try { authenticated = atob(auth.slice(6)) === user + ":" + password; } catch { authenticated = false; }
     }
   }
 
-  return new NextResponse("Autenticacion requerida.", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="ElectricistApp"',
-      "Cache-Control": "no-store",
-    },
-  });
+  if (authenticated) {
+    if (process.env.DEMO_MODE === "true" && path.startsWith("/api/") &&
+        !["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+      return NextResponse.json({ error: "DEMO / SIN VALIDEZ FISCAL: modo de solo lectura" },
+        { status: 403, headers: { "Cache-Control": "no-store" } });
+    }
+    return NextResponse.next();
+  }
+
+  if (path.startsWith("/api/")) {
+    return NextResponse.json({ error: "Acceso requerido", login: "/acceso" },
+      { status: 401, headers: { "Cache-Control": "no-store" } });
+  }
+  const login = request.nextUrl.clone();
+  login.pathname = "/acceso";
+  login.search = "";
+  login.searchParams.set("next", path);
+  return NextResponse.redirect(login, 307);
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|_vercel|favicon.ico|manifest.json).*)",
+    "/((?!_next/static|_next/image|_vercel|favicon.ico|manifest.json|sw.js|icon-192.png|icon-512.png|logo-generic.svg).*)",
   ],
 };
