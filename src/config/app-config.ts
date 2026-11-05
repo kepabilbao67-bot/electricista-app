@@ -68,6 +68,19 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
  */
 export function getAppConfig(): AppConfig {
   const getEnv = (key: string) => process.env[key]?.trim();
+  const isKepaTecnologia = process.env.APP_VERTICAL === "tecnologia";
+  const kepaFallback = {
+    tradeName: "Kepa Tecnología",
+    legalName: "", // Do not invent a fiscal/legal name
+    ownerName: "Kepa Bilbao Martínez",
+    nif: "",
+    addressLine1: "",
+    addressLine2: "Bilbao, Bizkaia",
+    phone: "",
+    email: "kepabilbao67@gmail.com",
+    iban: "",
+    bankName: "",
+  };
 
   return {
     app: {
@@ -96,43 +109,43 @@ export function getAppConfig(): AppConfig {
       tradeName:
         getEnv("NEXT_PUBLIC_COMPANY_TRADE_NAME") ||
         getEnv("COMPANY_TRADE_NAME") ||
-        DEFAULT_APP_CONFIG.company.tradeName,
+        (isKepaTecnologia ? kepaFallback.tradeName : DEFAULT_APP_CONFIG.company.tradeName),
       legalName:
         getEnv("NEXT_PUBLIC_COMPANY_LEGAL_NAME") ||
         getEnv("COMPANY_LEGAL_NAME") ||
-        DEFAULT_APP_CONFIG.company.legalName,
+        (isKepaTecnologia ? kepaFallback.legalName : DEFAULT_APP_CONFIG.company.legalName),
       ownerName:
         getEnv("NEXT_PUBLIC_COMPANY_OWNER_NAME") ||
         getEnv("COMPANY_OWNER_NAME") ||
-        DEFAULT_APP_CONFIG.company.ownerName,
+        (isKepaTecnologia ? kepaFallback.ownerName : DEFAULT_APP_CONFIG.company.ownerName),
       nif:
         getEnv("NEXT_PUBLIC_COMPANY_NIF") ||
         getEnv("COMPANY_NIF") ||
-        DEFAULT_APP_CONFIG.company.nif,
+        (isKepaTecnologia ? kepaFallback.nif : DEFAULT_APP_CONFIG.company.nif),
       addressLine1:
         getEnv("NEXT_PUBLIC_COMPANY_ADDRESS_1") ||
         getEnv("COMPANY_ADDRESS_1") ||
-        DEFAULT_APP_CONFIG.company.addressLine1,
+        (isKepaTecnologia ? kepaFallback.addressLine1 : DEFAULT_APP_CONFIG.company.addressLine1),
       addressLine2:
         getEnv("NEXT_PUBLIC_COMPANY_ADDRESS_2") ||
         getEnv("COMPANY_ADDRESS_2") ||
-        DEFAULT_APP_CONFIG.company.addressLine2,
+        (isKepaTecnologia ? kepaFallback.addressLine2 : DEFAULT_APP_CONFIG.company.addressLine2),
       phone:
         getEnv("NEXT_PUBLIC_COMPANY_PHONE") ||
         getEnv("COMPANY_PHONE") ||
-        DEFAULT_APP_CONFIG.company.phone,
+        (isKepaTecnologia ? kepaFallback.phone : DEFAULT_APP_CONFIG.company.phone),
       email:
         getEnv("NEXT_PUBLIC_COMPANY_EMAIL") ||
         getEnv("COMPANY_EMAIL") ||
-        DEFAULT_APP_CONFIG.company.email,
+        (isKepaTecnologia ? kepaFallback.email : DEFAULT_APP_CONFIG.company.email),
       iban:
         getEnv("NEXT_PUBLIC_COMPANY_IBAN") ||
         getEnv("COMPANY_IBAN") ||
-        DEFAULT_APP_CONFIG.company.iban,
+        (isKepaTecnologia ? kepaFallback.iban : DEFAULT_APP_CONFIG.company.iban),
       bankName:
         getEnv("NEXT_PUBLIC_COMPANY_BANK") ||
         getEnv("COMPANY_BANK") ||
-        DEFAULT_APP_CONFIG.company.bankName,
+        (isKepaTecnologia ? kepaFallback.bankName : DEFAULT_APP_CONFIG.company.bankName),
       logo:
         getEnv("NEXT_PUBLIC_COMPANY_LOGO") ||
         getEnv("COMPANY_LOGO") ||
