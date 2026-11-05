@@ -43,12 +43,12 @@ export function loadVerticalConfig(): VerticalConfig {
         ...electricistaConfig,
         id: "tecnologia",
         brand: {
-          tradeName: "Kepa360",
-          shortName: "Kepa360",
+          tradeName: "Kepa Tecnología",
+          shortName: "Kepa Tecnología",
           description: "Gestión profesional de servicios tecnológicos",
           themeColor: "#0f172a",
           iconKey: "cpu",
-          initials: "K3",
+          initials: "KT",
         },
         modules: [
           "dashboard", "assistant", "clients", "crm", "leads",
