@@ -13,14 +13,14 @@ function withEnv(vars: Partial<Record<(typeof envKeys)[number], string | undefin
     for (const key of envKeys) {
       const next = vars[key];
       if (next === undefined) delete process.env[key];
-      else process.env[key] = next;
+      else Reflect.set(process.env, key, next);
     }
     run();
   } finally {
     for (const key of envKeys) {
       const value = previous[key];
       if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
+      else Reflect.set(process.env, key, value);
     }
   }
 }
