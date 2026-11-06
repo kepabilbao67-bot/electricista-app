@@ -30,7 +30,13 @@ export function resolveDatabaseUrl(): string {
   // Kepa Tecnologia must use its own CRM database, never Electricista's.
   if (process.env.APP_VERTICAL === "tecnologia") {
     const kepaUrl = process.env.KEPA_TURSO_DATABASE_URL?.trim();
-    if (kepaUrl) return kepaUrl;
+    if (kepaUrl) {
+      const electricistaUrl = process.env.TURSO_DATABASE_URL?.trim();
+      if (electricistaUrl && kepaUrl === electricistaUrl) {
+        throw new Error("Kepa Tecnologia and Electricista360 cannot share a database URL.");
+      }
+      return kepaUrl;
+    }
     if (process.env.NODE_ENV === "production") {
       throw new Error("KEPA_TURSO_DATABASE_URL is required for Kepa Tecnologia in production.");
     }
