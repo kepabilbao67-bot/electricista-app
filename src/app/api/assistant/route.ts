@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { localAnswer, type CatalogItem } from "@/lib/ai-engine";
+import { containsHighRiskData } from "@/lib/sensitive-text-filter";
+import { askApis360, isApis360Ready, isLocalAiPermitted } from "@/lib/apis360-local";
 import {
   buildSystemPrompt,
   answerAboutApp,
@@ -85,6 +87,26 @@ async function callLLM(
   }
 }
 
+function isLocalQa(request: NextRequest, requireOrigin = false): boolean {
+  try {
+    const host = request.headers.get("host");
+    const url = new URL(request.url);
+    if (!isLocalAiPermitted(process.env.NODE_ENV,
+      process.env.ELECTRICISTA360_ENABLE_LOCAL_AI, host) || url.host !== host) return false;
+    if (!requireOrigin) return true;
+    const origin = new URL(request.headers.get("origin") || "");
+    return origin.host === host && ["http:", "https:"].includes(origin.protocol);
+  } catch { return false; }
+}
+
+export async function GET(request: NextRequest) {
+  const available = isLocalQa(request) && await isApis360Ready();
+  return NextResponse.json({
+    available, cloud: false, mode: "local", project: "electricista360",
+    actionsEnabled: false, accessesCrm: false,
+  }, { headers: { "Cache-Control": "no-store" } });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Protección: Basic Auth global (middleware.ts) protege este endpoint.
@@ -105,6 +127,36 @@ export async function POST(request: NextRequest) {
         source: "safety",
         knowledgeVersion: KNOWLEDGE_VERSION,
       });
+    }
+
+    // Modo informativo opcional local. No consulta catálogos ni ejecuta acciones.
+    if (body?.mode === "apis360-local") {
+      const noCache = { "Cache-Control": "no-store" };
+      if (Object.keys(body).some(key => !["query", "mode"].includes(key)) ||
+          query.length > 1200 || containsHighRiskData(query)) {
+        return NextResponse.json({
+          error: "Consulta no válida o contiene datos protegidos; usa una pregunta genérica.",
+        }, { status: 400, headers: noCache });
+      }
+      if (!isLocalQa(request, true)) {
+        return NextResponse.json({ error: "IA360 local no habilitada." },
+          { status: 403, headers: noCache });
+      }
+      if (!(await isApis360Ready())) {
+        return NextResponse.json({ error: "APIs360 local no disponible." },
+          { status: 503, headers: noCache });
+      }
+      try {
+        const answer = await askApis360(query);
+        return NextResponse.json({
+          answer, source: "apis360-local", costUsd: 0,
+          actionsExecuted: false, accessesCrm: false,
+          knowledgeVersion: KNOWLEDGE_VERSION,
+        }, { headers: noCache });
+      } catch {
+        return NextResponse.json({ error: "No se confirmó una respuesta local." },
+          { status: 503, headers: noCache });
+      }
     }
 
     const catalog = await loadCatalog();
