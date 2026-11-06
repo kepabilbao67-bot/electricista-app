@@ -28,3 +28,6 @@ jobs:
 
       - name: Run Linter
         run: npm run lint
+
+      - name: Verify Kepa CRM database isolation
+        run: npx --no-install tsx --test src/lib/__tests__/kepa-db-isolation.test.ts
