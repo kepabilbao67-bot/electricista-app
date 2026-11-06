@@ -23,7 +23,7 @@ let client: Client;
  *   instances or preserved across deployments. Configure TURSO_DATABASE_URL for
  *   durable storage.
  */
-function resolveDatabaseUrl(): string {
+export function resolveDatabaseUrl(): string {
   if (process.env.DEMO_MODE === "true") {
     return `file:${join(tmpdir(), "autonomo360-demo.db")}`;
   }
