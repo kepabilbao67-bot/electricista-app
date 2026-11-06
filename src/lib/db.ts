@@ -24,9 +24,6 @@ let client: Client;
  *   durable storage.
  */
 export function resolveDatabaseUrl(): string {
-  if (process.env.DEMO_MODE === "true") {
-    return `file:${join(tmpdir(), "autonomo360-demo.db")}`;
-  }
   // Kepa Tecnologia must use its own CRM database, never Electricista's.
   if (process.env.APP_VERTICAL === "tecnologia") {
     const kepaUrl = process.env.KEPA_TURSO_DATABASE_URL?.trim();
@@ -41,6 +38,11 @@ export function resolveDatabaseUrl(): string {
       throw new Error("KEPA_TURSO_DATABASE_URL is required for Kepa Tecnologia in production.");
     }
     return "file:kepa-tecnologia.db";
+  }
+
+  // Demo storage is available only after Kepa's isolated vertical has been resolved.
+  if (process.env.DEMO_MODE === "true") {
+    return `file:${join(tmpdir(), "autonomo360-demo.db")}`;
   }
 
   const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
