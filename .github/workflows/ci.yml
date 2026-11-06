@@ -31,3 +31,6 @@ jobs:
 
       - name: Verify Kepa CRM database isolation
         run: npx --no-install tsx --test src/lib/__tests__/kepa-db-isolation.test.ts
+
+      - name: Verify central CRM configuration guard
+        run: npx --no-install tsx --test src/lib/__tests__/central-crm-config.test.ts
