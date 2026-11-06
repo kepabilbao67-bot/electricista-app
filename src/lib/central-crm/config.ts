@@ -6,7 +6,7 @@ export type CentralCrmConfiguration =
   | { ready: false; reason: "disabled" | "missing_configuration" | "unsafe_url" }
   | { ready: true; origin: string; tenantId: string; token: string };
 
-export function centralCrmConfiguration(env: NodeJS.ProcessEnv = process.env): CentralCrmConfiguration {
+export function centralCrmConfiguration(env: Record<string, string | undefined> = process.env): CentralCrmConfiguration {
   if (env.APP_VERTICAL !== "tecnologia" || env.CENTRAL_CRM_ENABLED !== "true") {
     return { ready: false, reason: "disabled" };
   }
