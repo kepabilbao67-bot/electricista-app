@@ -64,6 +64,15 @@ describe("Kepa Tecnologia: database isolation", () => {
     });
   });
 
+  test("demo mode cannot bypass Kepa production isolation", () => {
+    withEnv({
+      APP_VERTICAL: "tecnologia", NODE_ENV: "production",
+      DEMO_MODE: "true", TURSO_DATABASE_URL: "libsql://electricista.example",
+    }, () => {
+      assert.throws(() => resolveDatabaseUrl(), /KEPA_TURSO_DATABASE_URL/);
+    });
+  });
+
   test("preserves Electricista's configured database", () => {
     withEnv({
       APP_VERTICAL: "electricista", NODE_ENV: "production",
