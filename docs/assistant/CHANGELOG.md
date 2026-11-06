@@ -1,6 +1,6 @@
 # Changelog del Asistente
 
-## 2026-11-06-v4 — APIs360 local en Normativa (PR en borrador, número pendiente)
+## 2026-11-06-v4 — APIs360 local en Normativa (PR #68 en borrador)
 - Consulta optativa por APIs360 local, solo QA; sin ejecución de herramientas, sin CRM, sin cloud y sin acceso a datos privados.
 - Conserva el asistente anterior, su fallback offline y la barrera de seguridad eléctrica.
 - Base de conocimiento y versión actualizadas. No cambia presupuestos, facturas ni TicketBAI.
