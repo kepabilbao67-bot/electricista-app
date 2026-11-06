@@ -36,6 +36,16 @@ describe("Kepa Tecnologia: database isolation", () => {
     });
   });
 
+  test("rejects using the Electricista database as Kepa database", () => {
+    withEnv({
+      APP_VERTICAL: "tecnologia", NODE_ENV: "production",
+      KEPA_TURSO_DATABASE_URL: "libsql://shared.example",
+      TURSO_DATABASE_URL: "libsql://shared.example",
+    }, () => {
+      assert.throws(() => resolveDatabaseUrl(), /cannot share a database URL/);
+    });
+  });
+
   test("fails closed in production when Kepa database is missing", () => {
     withEnv({
       APP_VERTICAL: "tecnologia", NODE_ENV: "production",
