@@ -22,7 +22,7 @@ const ORIGINAL_NAV_ELECTRICISTA = [
   { href: "/gastos", label: "Gastos" },
   { href: "/comunicaciones", label: "Comunicaciones" },
   { href: "/agenda", label: "Agenda" },
-  { href: "/catalogo", label: "Servicios" },
+  { href: "/catalogo", label: "Materiales y servicios" },
   { href: "/normativa", label: "Normativa" },
   { href: "/ayuda", label: "Ayuda y Sugerencias" },
   { href: "/exportar", label: "Exportar" },

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthRevision } from "@/lib/electricista-auth";
 
 const COOKIE_NAME = "electricista360_session";
 const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60;
@@ -18,20 +19,26 @@ async function sessionValid(request: NextRequest): Promise<boolean> {
     const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(sessionSecret),
       { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
     const bytes = Uint8Array.from(atob(signature.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
-    return await crypto.subtle.verify("HMAC", key, bytes, new TextEncoder().encode(issued + ":" + user));
+    const revision = await getAuthRevision(user);
+    return await crypto.subtle.verify("HMAC", key, bytes,
+      new TextEncoder().encode(issued + ":" + user + (revision ? ":" + revision : "")));
   } catch { return false; }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (path === "/acceso" || path === "/api/session-login") return NextResponse.next();
+  if (path === "/acceso" || path === "/api/session-login" ||
+      path === "/restablecer" || path === "/api/password-recovery") return NextResponse.next();
 
   let authenticated = await sessionValid(request);
   if (!authenticated) {
     const user = process.env.APP_BASIC_AUTH_USER;
     const password = process.env.APP_BASIC_AUTH_PASSWORD;
     const auth = request.headers.get("authorization");
-    if (user && password && auth?.startsWith("Basic ")) {
+    let legacyBasicAllowed = false;
+    try { legacyBasicAllowed = Boolean(user) && (await getAuthRevision(user!)) === ""; }
+    catch { return NextResponse.json({ error: "Acceso temporalmente no disponible" }, { status: 503 }); }
+    if (legacyBasicAllowed && user && password && auth?.startsWith("Basic ")) {
       try { authenticated = atob(auth.slice(6)) === user + ":" + password; } catch { authenticated = false; }
     }
   }
