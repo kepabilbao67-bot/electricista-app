@@ -26,7 +26,7 @@ Copia local en el portátil KEPA, rama feat/electricista360-apis360-local-202611
 - Pruebas específicas: 29 correctas, 0 fallos. TypeScript exit 0. Build optimizada de esta revisión: exit 0, confirmada ruta /restablecer.
 
 ## Pendientes BLOQUEANTES
-- Recuperación autoservicio implementada en QA, **sin activar para cliente** por ausencia de la dirección autorizada, claves de Resend y verificación de entrega real del correo. La contraseña de producción NO ha sido modificada.
+- Vercel verificado 2026-11-09: `AUTH_RECOVERY_EMAIL` configurada de forma cifrada para producción y preview con kepabilbao67@gmail.com; `APP_PUBLIC_URL` configurada para producción con https://electricista-app-two.vercel.app. El correo de recuperación queda **inactivo**, ya que `RESEND_API_KEY` y `RESEND_FROM_EMAIL` no están configuradas. No se ha enviado ningún correo ni cambiado la contraseña de producción.
 - No se ha probado Documentos 360 desde navegador real con carga y descarga de archivos.
 - No se ha publicado ni verificado ningún despliegue de cliente y deben comprobarse las migraciones y aislamiento de datos antes de activar nuevas rutas.
 - No confirmar operación de reconocimiento o síntesis de voz en dispositivos del cliente sin prueba real.
