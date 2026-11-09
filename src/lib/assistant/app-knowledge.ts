@@ -239,12 +239,14 @@ export const APP_MODULES: AppModule[] = [
       "Integración con catálogo del usuario para consultas de precios",
       "Sugerencias rápidas de temas",
       "Historial de conversación en sesión",
+      "Modo APIs360 local optativo para texto informativo (QA; sin consultar CRM, sin acciones)",
     ],
     limitations: [
       "Sin clave de IA, solo responde el motor offline (respuestas predefinidas por tema)",
       "No puede realizar acciones en la app, solo informar",
+      "APIs360 local solo en desarrollo del mismo equipo y con ELECTRICISTA360_ENABLE_LOCAL_AI=1; bloqueado en producción y Vercel",
     ],
-    usage: "Ve a /normativa. Escribe tu pregunta o usa las sugerencias rápidas. El asistente responde con información de normativa, precios del catálogo y consejos de negocio.",
+    usage: "Ve a /normativa y escribe tu consulta. La casilla APIs360 local permite únicamente texto informativo genérico en el equipo QA; el motor de negocio existente continúa cuando no se selecciona.",
   },
   {
     name: "Ayuda y Sugerencias",

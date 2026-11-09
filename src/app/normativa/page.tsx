@@ -36,8 +36,19 @@ export default function NormativaPage() {
   const [input, setInput] = useState("");
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [sending, setSending] = useState(false);
+  const [localAiReady, setLocalAiReady] = useState(false);
+  const [useLocalAi, setUseLocalAi] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/assistant", { cache: "no-store" })
+      .then(response => response.ok ? response.json() : { available: false })
+      .then(data => { if (mounted) setLocalAiReady(data.available === true && data.cloud === false); })
+      .catch(() => { if (mounted) setLocalAiReady(false); });
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     fetch("/api/catalog")
@@ -74,17 +85,30 @@ export default function NormativaPage() {
       const res = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, history }),
+        body: JSON.stringify(useLocalAi
+          ? { query, mode: "apis360-local" }
+          : { query, history }),
       });
       if (!res.ok) throw new Error("bad response");
       const data = await res.json();
-      answer =
-        typeof data?.answer === "string" && data.answer.trim()
-          ? data.answer
-          : localAnswer(query, catalog);
+      if (useLocalAi) {
+        const safe = data?.source === "safety" &&
+          typeof data?.answer === "string" && data.answer.trim();
+        const verified = data?.source === "apis360-local" &&
+          data.costUsd === 0 && data.actionsExecuted === false &&
+          data.accessesCrm === false && typeof data.answer === "string" &&
+          data.answer.trim();
+        if (!safe && !verified) throw new Error("IA360 local no verificable");
+        answer = data.answer;
+      } else {
+        answer = typeof data?.answer === "string" && data.answer.trim()
+          ? data.answer : localAnswer(query, catalog);
+      }
     } catch {
-      // Sin conexión o error: responder con motor local mejorado.
-      if (isDangerousElectricalQuery(query)) {
+      // Modo IA360 seleccionado: no inventar respuesta ni pasar al proveedor cloud.
+      if (useLocalAi) {
+        answer = "APIs360 local no disponible. No se ha generado una respuesta de IA.";
+      } else if (isDangerousElectricalQuery(query)) {
         answer = DANGEROUS_QUERY_RESPONSE;
       } else {
         const appAns = answerAboutApp(query);
@@ -189,6 +213,15 @@ export default function NormativaPage() {
       </div>
 
       {/* Input */}
+      <label className="flex items-center flex-wrap gap-2 py-2 text-xs text-slate-600">
+        <input type="checkbox" disabled={!localAiReady || sending}
+          checked={useLocalAi && localAiReady}
+          onChange={event => setUseLocalAi(event.target.checked)} />
+        Consultar APIs360 local (solo texto, sin CRM ni acciones)
+        <span className="text-slate-400">
+          {localAiReady ? "Disponible" : "No disponible en este dispositivo"}
+        </span>
+      </label>
       <div className="flex-shrink-0 flex gap-2 border-t border-slate-200 pt-3">
         <input
           ref={inputRef}

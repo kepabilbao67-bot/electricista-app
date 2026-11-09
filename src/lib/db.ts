@@ -521,6 +521,39 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       FOREIGN KEY (parte_id) REFERENCES partes_trabajo(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS electricista_auth_credentials (
+      username TEXT PRIMARY KEY,
+      password_salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      revision TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS electricista_password_resets (
+      token_hash TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      consumed_at INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_electricista_password_resets_user ON electricista_password_resets(username, created_at);
+
+    CREATE TABLE IF NOT EXISTS faltantes_obra (
+      id TEXT PRIMARY KEY,
+      parte_id TEXT NOT NULL,
+      producto TEXT NOT NULL,
+      cantidad REAL DEFAULT 1,
+      unidad TEXT DEFAULT 'ud',
+      estado TEXT NOT NULL DEFAULT 'pendiente',
+      origen_texto TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (parte_id) REFERENCES partes_trabajo(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_faltantes_obra_parte ON faltantes_obra(parte_id);
+
     CREATE TABLE IF NOT EXISTS parte_materiales (
       id TEXT PRIMARY KEY,
       parte_id TEXT NOT NULL,
