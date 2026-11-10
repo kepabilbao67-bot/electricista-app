@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   if (!user || !password || !secret) {
     return NextResponse.json({ error: "Acceso no configurado" }, { status: 503 });
   }
-  let input: { username?: string; password?: string };
+  let input: { username?: string; password?: string; remember?: boolean };
   try { input = await request.json(); } catch {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   response.cookies.set(COOKIE, issued + "." + encoded, {
     httpOnly: true, secure: process.env.NODE_ENV === "production",
-    sameSite: "lax", path: "/", maxAge: DURATION
+    sameSite: "lax", path: "/", ...(input.remember === false ? {} : { maxAge: DURATION })
   });
   return response;
 }
