@@ -12,11 +12,14 @@ const verticalConfig = loadVerticalConfig();
 const companyProfile = loadCompanyProfile();
 const activeModules = getActiveModules(verticalConfig.modules);
 
-const navItems = activeModules.map((m) => ({
-  href: m.href,
-  label: m.label,
-  iconKey: m.iconKey,
-}));
+const navItems = [
+  ...activeModules.map((m) => ({ href: m.href, label: m.label, iconKey: m.iconKey })),
+  ...(verticalConfig.id === "electricista" ? [
+    { href: "/faltantes", label: "Faltantes de obra", iconKey: "package" },
+    { href: "/documentos", label: "Documentos 360", iconKey: "file-text" },
+    { href: "/voz", label: "Voz 360", iconKey: "bot" },
+  ] : []),
+];
 
 const sidebarBrand = {
   tradeName: verticalConfig.brand.tradeName,
