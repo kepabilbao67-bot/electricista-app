@@ -1,0 +1,372 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Documentos 360</title><style>
+:root{font-family:Inter,'Segoe UI',Arial,sans-serif;color:#e8efff;background:#0b1220}*{box-sizing:border-box}body{margin:0}header{display:flex;align-items:center;gap:12px;padding:16px 24px;background:#121e33;border-bottom:1px solid #293b58}h1{font-size:20px;margin:0}small{color:#9db0cc}.brand{background:#4263eb;padding:12px;border-radius:12px}.layout{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 75px)}aside{background:#101b2f;padding:18px;border-right:1px solid #293b58}main{padding:20px;min-width:0}.menu{display:block;width:100%;margin:9px 0;text-align:left}.active{background:#344f97}button,.btn{background:#233756;border:1px solid #445f82;border-radius:9px;padding:10px 13px;color:white;cursor:pointer;font:inherit}button:hover,.btn:hover{background:#34517d}button.primary{background:#315ce0;border-color:#6c86f8}button:disabled{opacity:.45;cursor:not-allowed}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.sheet{background:#fff;color:#182337;max-width:830px;min-height:650px;padding:55px;margin:auto;box-shadow:0 8px 40px #0005;border-radius:3px;line-height:1.6;outline:0}.sheet img{max-width:100%}.viewer{background:#fff;width:100%;height:75vh;border:0;border-radius:8px}select,input[type=color]{padding:9px;border-radius:8px;background:#223756;color:white;border:1px solid #587093}.note{color:#abc0da;font-size:13px;line-height:1.5}.hidden{display:none!important}.status{margin-left:auto;color:#aabbd1;font-size:12px}.pane{background:#16243b;padding:14px;border:1px solid #304665;border-radius:12px;margin-bottom:15px}.sign{background:white;border-radius:8px;max-width:100%;touch-action:none;border:2px solid #5f7bdc}.filebox{border:2px dashed #587093;padding:25px;text-align:center;border-radius:12px}.mediaViewer{display:block;width:100%;max-height:72vh;background:#0b1220;border-radius:10px}.filebox.drag{border-color:#9bb4ff;background:#203d69}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pill{font-size:12px;background:#243858;border-radius:30px;padding:5px 10px}h2{font-size:16px}.flex{display:flex;align-items:center;gap:10px;flex-wrap:wrap}#content{min-height:300px}#filename{max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@media(max-width:720px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid #293b58;display:flex;flex-wrap:wrap;gap:8px}aside h2,aside p{width:100%}.menu{width:auto;margin:0}.sheet{padding:22px;min-height:400px}header{padding:12px}main{padding:12px}}
+</style></head><body><header><div class="brand">📄</div><div><h1>Documentos 360 <span class="pill">Versión 0.6</span></h1><small>Documentos, imágenes, vídeo, audio, firma y voz · Archivos locales</small></div><span class="status" id="status">Listo</span></header><div class="layout"><aside><h2>Herramientas</h2><button class="menu active" id="navEdit">✍️ Editor</button><button class="menu" id="navView">📂 Abrir archivos</button><button class="menu" id="navSign">🖊️ Firmar</button><button class="menu" id="navPdf">📑 Editar PDF</button><button class="menu" id="navHelp">ℹ️ Ayuda y límites</button><p class="note">Privacidad: esta versión no sube documentos a servidores. El editor recupera automáticamente su borrador local; descarga el archivo definitivo.</p></aside><main><section id="edit"><div class="toolbar"><button id="newDoc">Nuevo</button><button id="openDoc">Abrir</button><button id="bold" title="Negrita"><b>B</b></button><button id="italic" title="Cursiva"><i>I</i></button><button id="underline"><u>U</u></button><label class="flex">Color <input aria-label="Color de texto" type="color" id="color" value="#172a46"></label><select id="fontSize" aria-label="Tamaño"><option value="3">Normal</option><option value="4">Mediano</option><option value="5">Grande</option><option value="6">Título</option></select><button id="voice">🎙️ Dictar</button><button id="saveHtml" class="primary">Guardar archivo</button><button id="print">Imprimir / PDF</button></div><div class="pane flex"><label>Documento: <input id="docName" value="Documento sin título" style="padding:8px;border-radius:8px;border:1px solid #abc;max-width:230px"></label><span class="note">Ctrl+Z para deshacer · Elige color antes de escribir o selecciona texto</span></div><article class="sheet" id="content" contenteditable="true" spellcheck="true" aria-label="Editor de documentos"><h2>Documento sin título</h2><p>Escribe aquí tu documento. Puedes usar diferentes colores, insertar una firma y exportarlo.</p></article></section><section id="view" class="hidden"><h2>Visor de archivos</h2><div class="filebox"><p>Arrastra un archivo aquí o selecciónalo: PDF, imágenes, vídeos, audio y documentos.</p><button id="chooseFile">Seleccionar archivo</button><p class="note">Word DOCX y Excel XLSX admiten vista previa parcial con Internet; PowerPoint y formatos especiales pueden requerir una aplicación externa. No se modifica el archivo original.</p></div><div id="fileInfo" class="pane hidden"></div><div id="fileActions" class="actions hidden"><button id="downloadOriginal">⬇️ Descargar original</button><button id="openExternal">↗️ Abrir en otra pestaña</button></div><iframe title="Visor PDF" id="pdfViewer" class="viewer hidden"></iframe><img id="imageViewer" alt="Imagen importada" class="hidden" style="max-width:100%;max-height:75vh;object-fit:contain"><video id="videoViewer" class="mediaViewer hidden" controls playsinline preload="metadata"></video><audio id="audioViewer" class="hidden" controls preload="metadata" style="width:100%"></audio><div id="officeViewer" class="pane hidden" style="background:white;color:#172a46;max-height:75vh;overflow:auto"></div><pre id="textViewer" class="pane hidden" style="white-space:pre-wrap"></pre></section><section id="sign" class="hidden"><h2>Firma manuscrita</h2><p class="note">Dibuja con ratón, dedo o lápiz. Se puede insertar la imagen de tu firma en el documento del editor. Una firma dibujada no equivale automáticamente a una firma electrónica cualificada.</p><canvas id="signature" class="sign" width="640" height="230"></canvas><div class="toolbar" style="margin-top:12px"><button id="clearSign">Borrar firma</button><button class="primary" id="insertSign">Insertar firma en documento</button><button id="downloadSign">Descargar firma PNG</button></div></section><section id="pdf" class="hidden"><h2>Anotar y firmar PDF</h2><p class="note">Carga un PDF en «Abrir archivos». Escribe texto o coloca una firma en una página haciendo clic sobre la vista previa de la página, o usando coordenadas PDF. La vista previa necesita Internet para cargar PDF.js. Se genera una copia nueva: el original no se modifica. Esta función requiere Internet para cargar pdf-lib.</p><div class="pane"><div id="pdfPreviewNotice" class="note" aria-live="polite">Selecciona un PDF para visualizarlo aquí.</div><div id="pdfPreviewWrap" class="hidden" style="position:relative;max-width:850px;margin:12px auto"><canvas id="pdfPageCanvas" style="display:block;width:100%;height:auto;border:2px solid #6d85b3;cursor:crosshair;border-radius:7px" aria-label="Pulsa para colocar la anotación"></canvas><div id="pdfPin" class="hidden" style="position:absolute;width:13px;height:13px;border:2px solid white;background:#e65050;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #172a46"></div></div><div class="toolbar"><button id="pdfPrevPage">◀ Página anterior</button><button id="pdfNextPage">Página siguiente ▶</button><button id="pdfUndo">↶ Deshacer última</button><button id="pdfClear">Limpiar anotaciones</button></div><div class="toolbar"><label>Página <input id="pdfPage" type="number" min="1" value="1" style="width:72px"></label><label>X <input id="pdfX" type="number" min="0" value="45" style="width:76px"></label><label>Y <input id="pdfY" type="number" min="0" value="70" style="width:76px"></label><label>Tamaño <input id="pdfTextSize" type="number" min="6" max="72" value="14" style="width:72px"></label><label>Color <input type="color" id="pdfTextColor" value="#172a46"></label></div><label style="display:block;margin-bottom:10px">Texto para insertar <textarea id="pdfText" rows="3" style="display:block;width:100%;padding:10px;margin-top:5px;border-radius:8px" placeholder="Texto de anotación"></textarea></label><div class="toolbar"><button id="pdfAddText">Añadir texto</button><button id="pdfAddSignature">Añadir firma dibujada</button><button id="pdfExport" class="primary">Descargar PDF anotado</button></div><div id="pdfQueue" class="note" aria-live="polite">No hay anotaciones preparadas.</div></div><p class="note">La firma dibujada es una imagen; no es una firma digital certificada. Comprueba visualmente la posición de la firma en el PDF exportado antes de usarlo.</p></section><section id="help" class="hidden"><h2>Acerca de esta versión</h2><div class="pane"><p><b>Funciona:</b> editar textos con formato y colores y autorrecuperación local, dictar si el navegador y el micrófono lo permiten, crear firmas manuscritas, ver PDF, imágenes, vídeo y audio compatibles con el navegador, importar textos, guardar HTML y exportar mediante impresión.</p><p><b>Limitaciones:</b> ningún navegador abre todos los formatos o códecs. Algunos vídeos (por ejemplo MKV/AVI) o imágenes (HEIC/RAW) pueden requerir software externo. Los DOCX muestran una vista previa de texto sin maquetación y los XLSX una tabla parcial de valores, si las bibliotecas externas cargan. PPTX y formatos especiales requieren programas externos. La vista previa no equivale a edición de Office. La herramienta PDF permite superponer texto y firma y exportar; no edita el texto original del PDF. Pendiente: firma certificada, OCR, almacenamiento central e integración con Electricista 360.</p><p><b>Seguridad:</b> no se sube el contenido a un servidor. No introduzcas información sensible en equipos compartidos. Los comandos de voz dependen de la implementación de reconocimiento de voz del navegador y pueden transmitir audio al proveedor del reconocimiento.</p></div></section><input class="hidden" type="file" id="fileInput" accept="*/*"></main></div><script>
+const $=id=>document.getElementById(id);const sections=['edit','view','sign','pdf','help'];let fileUrl=null;let currentFile=null;let recognition=null;let speaking=false;function status(s){$('status').textContent=s}function show(s){sections.forEach(t=>{$(t).classList.toggle('hidden',t!==s);$('nav'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active',t===s)})}sections.forEach(s=>$('nav'+s[0].toUpperCase()+s.slice(1)).onclick=()=>show(s));function exec(cmd,value){show('edit');$('content').focus();document.execCommand(cmd,false,value)}['bold','italic','underline'].forEach(id=>$(id).onclick=()=>exec(id));$('color').oninput=e=>exec('foreColor',e.target.value);$('fontSize').onchange=e=>exec('fontSize',e.target.value);$('newDoc').onclick=()=>{if(confirm('¿Crear documento nuevo? Guarda antes el actual si deseas conservarlo.')){$('content').innerHTML='<h2>Documento nuevo</h2><p>Empieza a escribir...</p>';$('docName').value='Documento nuevo';saveDraft();status('Documento nuevo')}};function dl(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}const safeName=()=>($('docName').value.trim()||'documento').replace(/[\\/:*?"<>|]/g,'-');$('saveHtml').onclick=()=>{const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>'+safeName().replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</title></head><body>'+ $('content').innerHTML+'</body></html>';dl(new Blob([html],{type:'text/html;charset=utf-8'}),safeName()+'.html');status('Archivo descargado')};$('print').onclick=()=>{const w=window.open('','_blank');if(!w){alert('Autoriza ventanas emergentes para imprimir');return}w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Documento 360</title><style>@page{size:A4;margin:20mm}body{font:16px Arial;margin:0}img{max-width:100%}.page-break,[style*="break-before: page"],[style*="page-break-before: always"]{break-before:page;page-break-before:always}.page-break{border:0!important;margin:0!important;padding:0!important;font-size:0!important;color:transparent!important}@media print{table{break-inside:avoid}h1,h2,h3{break-after:avoid}}</style></head><body>'+$('content').innerHTML+'</body></html>');w.document.close();w.onload=()=>w.print()};function openChooser(){$('fileInput').click()}$('openDoc').onclick=openChooser;$('chooseFile').onclick=openChooser;$('fileInput').onchange=async e=>{const f=e.target.files?.[0];if(f)await displayFile(f);e.target.value=''};
+const isImage=n=>/\.(png|jpg|jpeg|gif|webp|svg|bmp|avif|ico|tiff?|heic|heif)$/i.test(n);
+const isVideo=n=>/\.(mp4|webm|ogv|ogg|mov|m4v|mkv|avi|wmv|flv|ts)$/i.test(n);
+const isAudio=n=>/\.(mp3|wav|m4a|aac|flac|oga|ogg|opus|weba|wma)$/i.test(n);
+const isText=n=>/\.(txt|md|csv|json|xml|log|ini|yaml|yml|css|js|ts|py|html?|rtf)$/i.test(n);
+async function displayFile(f){
+  if(fileUrl){URL.revokeObjectURL(fileUrl);fileUrl=null}
+  currentFile=f;pdfAnnotations=[];refreshPdfQueue();show('view');
+  for(const id of ['pdfViewer','imageViewer','videoViewer','audioViewer','textViewer','officeViewer'])$(id).classList.add('hidden');
+  $('videoViewer').pause();$('audioViewer').pause();$('videoViewer').removeAttribute('src');$('audioViewer').removeAttribute('src');$('pdfViewer').removeAttribute('src');$('imageViewer').removeAttribute('src');
+  $('fileInfo').replaceChildren();$('fileInfo').classList.remove('hidden');$('fileActions').classList.remove('hidden');
+  const n=f.name.toLowerCase();const head=document.createElement('strong');head.textContent=f.name;const meta=document.createElement('p');meta.className='note';meta.textContent=(f.size/1024/1024).toFixed(2)+' MB · '+(f.type||'tipo no identificado');$('fileInfo').append(head,meta);
+  fileUrl=URL.createObjectURL(f);pdfAnnotations=[];refreshPdfQueue();pdfLoadedFile=null;pdfDocument=null;pdfPageView=null;++pdfRenderToken;$('pdfPreviewWrap').classList.add('hidden');$('pdfPreviewNotice').textContent='Abre la herramienta PDF para cargar la vista previa.';
+  if(f.type==='application/pdf'||n.endsWith('.pdf')){$('pdfViewer').src=fileUrl;$('pdfViewer').classList.remove('hidden');const b=document.createElement('button');b.textContent='✍️ Anotar o firmar PDF';b.onclick=()=>{show('pdf');renderPdfPage()};$('fileInfo').append(b)}
+  else if(f.type.startsWith('image/')||isImage(n)){$('imageViewer').src=fileUrl;$('imageViewer').classList.remove('hidden');$('imageViewer').onerror=()=>setUnsupported('Esta imagen necesita un códec o visor externo. Descarga el original.')}
+  else if(f.type.startsWith('video/')||isVideo(n)){$('videoViewer').src=fileUrl;$('videoViewer').classList.remove('hidden');$('videoViewer').onerror=()=>setUnsupported('No se puede reproducir este vídeo: el formato o códec no está soportado. Conserva el original.')}
+  else if(f.type.startsWith('audio/')||isAudio(n)){$('audioViewer').src=fileUrl;$('audioViewer').classList.remove('hidden');$('audioViewer').onerror=()=>setUnsupported('No se puede reproducir este audio con el navegador.')}
+  else if(/\.docx$/i.test(n)){await previewDocx(f)}
+  else if(/\.xlsx$/i.test(n)){await previewXlsx(f)}
+  else if(isText(n)||f.type.startsWith('text/')){if(f.size>10*1024*1024){setUnsupported('Archivo de texto demasiado grande para previsualización segura (límite 10 MB).')}else {const t=await f.text();$('textViewer').textContent=t;$('textViewer').classList.remove('hidden');if(/\.(txt|md|csv|log)$/i.test(n)){const b=document.createElement('button');b.textContent='Editar este texto';b.onclick=()=>{$('content').textContent=t;$('docName').value=f.name.replace(/\.[^.]+$/,'');show('edit');saveDraft()};$('fileInfo').append(b)}}}
+  else setUnsupported('Este formato no dispone de visor integrado. Utiliza «Descargar original» y ábrelo con su programa compatible.');
+  status('Archivo seleccionado: '+f.name);
+}
+let officeLibs={};
+function loadOfficeLibrary(key,url,globalName){
+  if(window[globalName])return Promise.resolve(window[globalName]);
+  if(officeLibs[key])return officeLibs[key];
+  officeLibs[key]=new Promise((resolve,reject)=>{const el=document.createElement('script');el.src=url;el.onload=()=>window[globalName]?resolve(window[globalName]):reject(Error('Biblioteca no disponible'));el.onerror=()=>reject(Error('No se pudo descargar el visor. Comprueba Internet.'));document.head.appendChild(el)}).catch(err=>{delete officeLibs[key];throw err});return officeLibs[key];
+}
+async function previewDocx(file){
+  if(file.size>12*1024*1024){setUnsupported('DOCX demasiado grande para vista previa (máximo 12 MB).');return}
+  const v=$('officeViewer');v.replaceChildren();v.classList.remove('hidden');v.textContent='Cargando vista previa Word…';
+  try{const mammoth=await loadOfficeLibrary('word','https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js','mammoth');
+    const result=await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()},{convertImage:mammoth.images.imgElement(async image=>({src:'data:'+image.contentType+';base64,'+await image.read('base64')}))});
+    if(currentFile!==file)return;
+    v.replaceChildren();const h=document.createElement('h3');h.textContent='Vista previa Word (formato compatible)';const pre=document.createElement('div');const allowed=new Set(['P','DIV','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','H5','H6','UL','OL','LI','TABLE','TBODY','THEAD','TR','TD','TH','IMG','A','S','STRIKE','BLOCKQUOTE']);const clean=node=>{if(node.nodeType===3)return document.createTextNode(node.textContent);if(node.nodeType!==1)return document.createDocumentFragment();const tag=node.tagName;const safe=allowed.has(tag)?document.createElement(tag.toLowerCase()):document.createDocumentFragment();if(safe.nodeType===1){const align=(node.getAttribute('align')||'').toLowerCase();if(['left','right','center','justify'].includes(align))safe.style.textAlign=align;const style=node.style;if(style){const color=style.color,background=style.backgroundColor,size=style.fontSize,textAlign=style.textAlign;if(color&&(/^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))$/i.test(color)))safe.style.color=color;if(background&&/^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))$/i.test(background))safe.style.backgroundColor=background;if(size&&/^\d{1,2}(\.\d{1,2})?(px|pt)$/i.test(size))safe.style.fontSize=size;if(['left','right','center','justify'].includes(textAlign))safe.style.textAlign=textAlign}}if(tag==='A'&&safe.nodeType===1){const href=node.getAttribute('href')||'';if(/^https?:\/\//i.test(href)||/^mailto:/i.test(href)){safe.setAttribute('href',href);safe.setAttribute('rel','noopener noreferrer');safe.setAttribute('target','_blank')}}if(tag==='IMG'&&safe.nodeType===1){const src=node.getAttribute('src')||'';if(/^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(src))safe.setAttribute('src',src);else return document.createDocumentFragment()}if(['TD','TH'].includes(tag)&&safe.nodeType===1){for(const key of ['colspan','rowspan']){const n=Number(node.getAttribute(key));if(Number.isInteger(n)&&n>=1&&n<=30)safe.setAttribute(key,String(n))}}if(tag!=='IMG')for(const child of node.childNodes)safe.appendChild(clean(child));return safe};const parsed=new DOMParser().parseFromString(result.value||'','text/html');for(const child of parsed.body.childNodes)pre.appendChild(clean(child));const extractedContent=!!pre.textContent.trim()||!!pre.querySelector('img');if(!extractedContent)pre.textContent='(sin contenido extraíble)';v.append(h,pre);
+    const b=document.createElement('button');b.textContent='Editar texto extraído';b.onclick=()=>{if(currentFile!==file)return;if(!extractedContent){status('El Word no contiene contenido extraíble');return}if(!confirm('¿Sustituir el borrador actual por el contenido del Word? Guarda o exporta tu trabajo antes de continuar.'))return;$('content').replaceChildren(...Array.from(pre.childNodes,el=>el.cloneNode(true)));$('docName').value=file.name.replace(/\.docx$/i,'');show('edit');saveDraft()};$('fileInfo').append(b);
+    setUnsupported('Vista previa con formato parcial: algunos estilos y diseños de Word pueden perderse. El DOCX original no cambia.');
+  }catch(e){if(currentFile!==file)return;v.classList.add('hidden');setUnsupported('No se pudo visualizar DOCX: '+e.message)}
+}
+async function previewXlsx(file){
+  if(file.size>8*1024*1024){setUnsupported('XLSX demasiado grande para vista previa (máximo 8 MB).');return}
+  const v=$('officeViewer');v.replaceChildren();v.classList.remove('hidden');v.textContent='Cargando vista previa Excel…';
+  try{const XLSX=await loadOfficeLibrary('excel','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js','XLSX');const book=XLSX.read(await file.arrayBuffer(),{type:'array',bookVBA:false,cellHTML:false,cellFormula:false});if(currentFile!==file)return;
+    v.replaceChildren();const note=document.createElement('p');note.textContent='Vista previa limitada a 200 filas y 30 columnas por hoja. No ejecuta macros ni modifica Excel.';v.append(note);
+    for(const name of book.SheetNames.slice(0,8)){const title=document.createElement('h3');title.textContent=name;v.append(title);const ws=book.Sheets[name];const table=document.createElement('table');table.style.cssText='border-collapse:collapse;width:100%;font-size:13px';let ref=ws['!ref'];if(!ref)continue;let range=XLSX.utils.decode_range(ref);range.e.r=Math.min(range.e.r,range.s.r+199);range.e.c=Math.min(range.e.c,range.s.c+29);for(let r=range.s.r;r<=range.e.r;r++){let tr=document.createElement('tr');for(let c=range.s.c;c<=range.e.c;c++){const td=document.createElement('td');const cell=ws[XLSX.utils.encode_cell({r,c})];td.textContent=cell?.w??String(cell?.v??'');td.style.cssText='border:1px solid #ccd;padding:5px;max-width:240px;overflow-wrap:anywhere';tr.append(td)}table.append(tr)}v.append(table)}
+    setUnsupported('Excel: solo vista previa de valores; fórmulas, estilos, gráficos y macros no son editables en esta versión.');
+  }catch(e){if(currentFile!==file)return;v.classList.add('hidden');setUnsupported('No se pudo visualizar XLSX: '+e.message)}
+}
+function setUnsupported(message){const p=document.createElement('p');p.className='note';p.textContent=message;$('fileInfo').append(p)}
+$('downloadOriginal').onclick=()=>{if(currentFile)dl(currentFile,currentFile.name)};
+$('openExternal').onclick=()=>{if(fileUrl)window.open(fileUrl,'_blank','noopener,noreferrer')};
+const dropbox=document.querySelector('.filebox');
+['dragenter','dragover'].forEach(type=>dropbox.addEventListener(type,e=>{e.preventDefault();dropbox.classList.add('drag')}));
+['dragleave','drop'].forEach(type=>dropbox.addEventListener(type,e=>{e.preventDefault();dropbox.classList.remove('drag')}));
+dropbox.addEventListener('drop',e=>{const f=e.dataTransfer?.files?.[0];if(f)displayFile(f)});
+const draftKey='electricista360.documentos.editor.v02';function saveDraft(){try{localStorage.setItem(draftKey,JSON.stringify({html:$('content').innerHTML,name:$('docName').value}));status('Borrador guardado en este navegador')}catch(e){status('No se pudo guardar borrador: descarga el documento')}}
+let saveDelay;function scheduleSave(){clearTimeout(saveDelay);saveDelay=setTimeout(saveDraft,700)}
+$('content').addEventListener('input',scheduleSave);$('docName').addEventListener('input',scheduleSave);
+try{const draft=JSON.parse(localStorage.getItem(draftKey)||'null');if(draft&&typeof draft.html==='string'&&typeof draft.name==='string'){$('content').innerHTML=draft.html;$('docName').value=draft.name;status('Borrador local recuperado')}}catch(e){status('Editor listo')}
+window.addEventListener('beforeunload',()=>{if(saveDelay)saveDraft()});const c=$('signature'),ctx=c.getContext('2d');ctx.lineWidth=3;ctx.lineCap='round';ctx.strokeStyle='#152c59';let drawing=false;function pos(e){const r=c.getBoundingClientRect();return{x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}}c.onpointerdown=e=>{drawing=true;c.setPointerCapture(e.pointerId);const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};c.onpointermove=e=>{if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};c.onpointerup=c.onpointercancel=()=>drawing=false;$('clearSign').onclick=()=>ctx.clearRect(0,0,c.width,c.height);$('insertSign').onclick=()=>{const img=document.createElement('img');img.src=c.toDataURL('image/png');img.alt='Firma manuscrita';img.style.width='280px';img.style.maxWidth='100%';$('content').appendChild(document.createElement('p'));$('content').appendChild(img);show('edit');saveDraft();status('Firma insertada')};$('downloadSign').onclick=()=>c.toBlob(b=>b&&dl(b,'firma-documentos-360.png'));
+let pdfAnnotations=[];let pdfLibLoad=null;
+let pdfJsPromise=null,pdfDocument=null,pdfPageView=null,pdfRenderToken=0,pdfLoadedFile=null;
+function getPdfJs(){if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);if(pdfJsPromise)return pdfJsPromise;pdfJsPromise=new Promise((resolve,reject)=>{const tag=document.createElement('script');tag.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';tag.onload=()=>{if(!window.pdfjsLib)return reject(Error('PDF.js no disponible'));window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve(window.pdfjsLib)};tag.onerror=()=>reject(Error('No se pudo cargar PDF.js'));document.head.appendChild(tag)}).catch(e=>{pdfJsPromise=null;throw e});return pdfJsPromise}
+async function renderPdfPage(){const token=++pdfRenderToken;const note=$('pdfPreviewNotice');$('pdfPreviewWrap').classList.add('hidden');$('pdfPin').classList.add('hidden');if(!isPdfSelected()){note.textContent='Abre primero un archivo PDF.';return}note.textContent='Cargando vista previa del PDF…';try{if(pdfLoadedFile!==currentFile){pdfDocument=await (await getPdfJs()).getDocument({data:new Uint8Array(await currentFile.arrayBuffer())}).promise;pdfLoadedFile=currentFile}if(token!==pdfRenderToken)return;const number=Number($('pdfPage').value);if(!Number.isInteger(number)||number<1||number>pdfDocument.numPages)throw Error('Página fuera de rango (1–'+pdfDocument.numPages+')');const pg=await pdfDocument.getPage(number);const size=pg.getViewport({scale:1});const scale=Math.min(1.7,800/size.width);const viewport=pg.getViewport({scale});const canvas=$('pdfPageCanvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);pdfPageView={width:pg.view[2]-pg.view[0],height:pg.view[3]-pg.view[1],offsetX:pg.view[0],offsetY:pg.view[1]};await pg.render({canvasContext:canvas.getContext('2d'),viewport}).promise;if(token!==pdfRenderToken)return;$('pdfPreviewWrap').classList.remove('hidden');note.textContent='Página '+number+' de '+pdfDocument.numPages+'. Pulsa sobre el documento para marcar la posición.';updatePdfPin()}catch(e){if(token===pdfRenderToken)note.textContent='Vista previa no disponible: '+e.message+'. Puedes seguir utilizando las coordenadas manuales.'}}
+function updatePdfPin(){if(!pdfPageView)return;const x=Number($('pdfX').value),y=Number($('pdfY').value);const px=(x-pdfPageView.offsetX)/pdfPageView.width*100;const py=(1-(y-pdfPageView.offsetY)/pdfPageView.height)*100;const pin=$('pdfPin');if(px>=0&&px<=100&&py>=0&&py<=100){pin.style.left=px+'%';pin.style.top=py+'%';pin.classList.remove('hidden')}else pin.classList.add('hidden')}
+$('pdfPageCanvas').addEventListener('click',e=>{if(!pdfPageView)return;const rect=e.currentTarget.getBoundingClientRect();const rx=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));const ry=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));$('pdfX').value=Math.round(pdfPageView.offsetX+rx*pdfPageView.width);$('pdfY').value=Math.round(pdfPageView.offsetY+(1-ry)*pdfPageView.height);updatePdfPin();status('Posición seleccionada. Pulsa Añadir texto o Añadir firma.')});
+document.querySelectorAll('[data-section="pdf"]').forEach(b=>b.addEventListener('click',renderPdfPage));$('pdfPage').addEventListener('change',renderPdfPage);['pdfX','pdfY'].forEach(id=>$(id).addEventListener('input',updatePdfPin));
+$('pdfPrevPage').onclick=()=>{const n=Number($('pdfPage').value);if(n>1){$('pdfPage').value=n-1;renderPdfPage()}};
+$('pdfNextPage').onclick=()=>{const n=Number($('pdfPage').value);if(pdfDocument&&n<pdfDocument.numPages){$('pdfPage').value=n+1;renderPdfPage()}};
+$('pdfUndo').onclick=()=>{pdfAnnotations.pop();refreshPdfQueue();status('Última anotación retirada')};
+$('pdfClear').onclick=()=>{if(pdfAnnotations.length&&confirm('¿Eliminar todas las anotaciones pendientes?')){pdfAnnotations=[];refreshPdfQueue()}};
+function refreshPdfQueue(){$('pdfQueue').textContent=pdfAnnotations.length?pdfAnnotations.map((a,i)=>`${i+1}. Página ${a.page}: ${a.type==='text'?'texto':'firma'} (${a.x}, ${a.y})`).join(' · '):'No hay anotaciones preparadas.'}function pdfCoords(){const page=Number($('pdfPage').value),x=Number($('pdfX').value),y=Number($('pdfY').value);if(!Number.isInteger(page)||page<1||![x,y].every(v=>Number.isFinite(v)&&v>=0)){alert('Indica página y coordenadas válidas.');return null}return{page,x,y}}function isPdfSelected(){return currentFile&&(currentFile.type==='application/pdf'||/\.pdf$/i.test(currentFile.name))}function addPdfItem(type){if(!isPdfSelected()){alert('Primero abre un PDF desde «Abrir archivos».');return}const coords=pdfCoords();if(!coords)return;if(type==='text'){const text=$('pdfText').value.trim();if(!text){alert('Escribe el texto que quieres insertar.');return}pdfAnnotations.push({...coords,type,text,size:Number($('pdfTextSize').value)||14,color:$('pdfTextColor').value})}else{if(!ctx.getImageData(0,0,c.width,c.height).data.some((v,i)=>i%4===3&&v>0)){alert('Dibuja la firma primero en «Firmar».');return}pdfAnnotations.push({...coords,type,png:c.toDataURL('image/png'),width:Number(document.getElementById('d360SignWidth')?.value)||200})}refreshPdfQueue();status('Anotación preparada')} $('pdfAddText').onclick=()=>addPdfItem('text');$('pdfAddSignature').onclick=()=>addPdfItem('signature');function getPdfLib(){if(window.PDFLib)return Promise.resolve(window.PDFLib);if(pdfLibLoad)return pdfLibLoad;pdfLibLoad=new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';sc.onload=()=>window.PDFLib?resolve(window.PDFLib):reject(Error('Biblioteca PDF no disponible'));sc.onerror=()=>reject(Error('No se pudo cargar pdf-lib. Comprueba Internet.'));document.head.appendChild(sc)}).catch(e=>{pdfLibLoad=null;throw e});return pdfLibLoad} $('pdfExport').onclick=async()=>{if(!isPdfSelected()){alert('Primero selecciona un PDF.');return}if(!pdfAnnotations.length){alert('Añade texto o una firma antes de exportar.');return}const button=$('pdfExport');button.disabled=true;status('Generando PDF...');try{const lib=await getPdfLib();const pdf=await lib.PDFDocument.load(await currentFile.arrayBuffer());const pages=pdf.getPages();for(const a of pdfAnnotations){if(!a||!Number.isInteger(a.page)||a.page<1||a.page>pages.length||!Number.isFinite(a.x)||!Number.isFinite(a.y)||a.x<0||a.y<0||!['text','signature'].includes(a.type))throw Error('Anotación inválida: revisa página, posición y tipo antes de exportar');if(a.x>=pages[a.page-1].getWidth()||a.y>=pages[a.page-1].getHeight())throw Error('Anotación fuera de la página: cambia su posición antes de exportar')}const font=await pdf.embedFont(lib.StandardFonts.Helvetica);for(const a of pdfAnnotations){if(a.page>pages.length)throw Error('La página '+a.page+' no existe (total '+pages.length+').');const page=pages[a.page-1];if(a.x>page.getWidth()||a.y>page.getHeight())throw Error('Coordenadas fuera de la página '+a.page);if(a.type==='text'){if(!/^#[0-9a-fA-F]{6}$/.test(a.color))throw Error('Color no válido');const rgb=[1,3,5].map(i=>parseInt(a.color.slice(i,i+2),16)/255);{const size=Math.max(6,Math.min(72,a.size||14));const margin=Math.max(8,Math.min(90,Number(a.margin)||20));const maxWidth=page.getWidth()-a.x-margin;const lineHeight=size*1.4;const paraGap=Math.max(0,Math.min(36,Number(a.paragraphGap)||0));if(maxWidth<size||a.y<0||a.y>page.getHeight()-size)throw Error('El texto no cabe en esta posición: mueve la anotación hacia dentro de la página');const lines=[];for(const para of a.text.replace(/\r\n?/g,'\n').split('\n')){let line='';for(const word of para.split(/(\s+)/).filter(Boolean)){const candidate=line+word;if(font.widthOfTextAtSize(candidate,size)<=maxWidth){line=candidate;continue}if(line.trim()){lines.push(line.trimEnd());line=''}for(const char of word){if(font.widthOfTextAtSize(line+char,size)>maxWidth){if(line)lines.push(line);line=''}if(font.widthOfTextAtSize(char,size)>maxWidth)throw Error('Texto demasiado ancho para esta página');line+=char}}lines.push(line)}let cursor=a.y;for(const line of lines){if(cursor<size)throw Error('El texto tiene '+lines.length+' líneas y no cabe en la página. Reduce el tamaño o cambia su posición');if(line)page.drawText(line,{x:a.x,y:cursor,size,font,color:lib.rgb(...rgb)});cursor-=lineHeight+(line===''?paraGap:0)}}}else{const raw=Uint8Array.from(atob(a.png.split(',')[1]),c=>c.charCodeAt(0));const image=await pdf.embedPng(raw);const wanted=a.width||200;const aspect=image.height/image.width;const freeW=page.getWidth()-a.x;const freeH=page.getHeight()-a.y;const width=Math.min(wanted,freeW,freeH/aspect);if(!Number.isFinite(width)||width<=0)throw Error('No queda espacio para la firma en esta posición');page.drawImage(image,{x:a.x,y:a.y,width,height:width*aspect})}}const bytes=await pdf.save();const blob=new Blob([bytes],{type:'application/pdf'});const name=currentFile.name.replace(/\.pdf$/i,'')+'-anotado.pdf';if(window.__d360ExportResolver){const resolve=window.__d360ExportResolver;window.__d360ExportResolver=null;window.__d360ExportReject=null;resolve({blob,name});status('PDF preparado para integración')}else{dl(blob,name);status('PDF anotado descargado')}}catch(e){if(window.__d360ExportReject){const reject=window.__d360ExportReject;window.__d360ExportReject=null;window.__d360ExportResolver=null;reject(e)}status('Error de PDF: '+e.message);if(!window.__d360SilentExport)alert('No se pudo exportar: '+e.message)}finally{window.__d360SilentExport=false;button.disabled=false}};
+$('voice').onclick=()=>{const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){alert('Este navegador no admite reconocimiento de voz. Prueba con Chrome actualizado y permisos de micrófono.');return}if(recognition&&speaking){recognition.stop();return}recognition=new R();recognition.lang='es-ES';recognition.continuous=true;recognition.interimResults=false;recognition.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(!e.results[i].isFinal)continue;const said=e.results[i][0].transcript.trim();const low=said.toLowerCase().replace(/[.,;!?]/g,'');if(low==='nuevo documento'){status('Orden detectada: nuevo documento');$('newDoc').click()}else if(low==='guardar documento'){status('Orden detectada: guardar');$('saveHtml').click()}else if(low==='abrir documento'){status('Orden detectada: abrir');openChooser()}else if(low==='imprimir documento'){status('Orden detectada: imprimir');$('print').click()}else{show('edit');$('content').appendChild(document.createTextNode(' '+said+' '));status('Dictado: '+said.slice(0,45))}}};recognition.onerror=e=>status('Voz no disponible: '+e.error);recognition.onend=()=>{speaking=false;$('voice').textContent='🎙️ Dictar'};try{recognition.start();speaking=true;$('voice').textContent='⏹ Detener voz';status('Escuchando')}catch(e){status('Error al iniciar micrófono')}};
+</script><script>
+/* Documentos 360 v0.6 shortcuts */
+document.addEventListener('keydown', function(e) {
+ if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+ const k=e.key.toLowerCase();
+ if(k==='o'){e.preventDefault();document.getElementById('fileInput').click();}
+ if(k==='s'){e.preventDefault();document.getElementById('saveHtml').click();}
+});
+document.addEventListener('dragover', function(e) {
+ if(e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files'))e.preventDefault();
+});
+document.addEventListener('drop', function(e) {
+ const f=e.dataTransfer && e.dataTransfer.files;
+ if(!f || !f.length)return;
+ e.preventDefault();
+ if(e.target.closest && e.target.closest('.filebox'))return;
+ displayFile(f[0]).catch(function(err){status('Error: '+err.message);});
+});
+</script><script>
+(async function(){
+ if(location.protocol!=='http:' || location.hostname!=='127.0.0.1')return;
+ try{
+  const r=await fetch('/opened-file?key='+encodeURIComponent(window.__documentos360key||''));if(!r.ok)return;
+  const name=decodeURIComponent(r.headers.get('X-File-Name')||'archivo');
+  const blob=await r.blob();
+  await displayFile(new File([blob],name,{type:blob.type}));
+ }catch(e){status('No se pudo abrir archivo: '+e.message)}
+})();
+</script><script>
+/* Firma con un clic: se activa solo al pulsar el botón */
+(function(){
+ let armed=false;
+ const canvas=document.getElementById('pdfPageCanvas');
+ const button=document.createElement('button');
+ button.id='pdfPlaceSignature';
+ button.textContent='Colocar firma con un clic';
+ button.setAttribute('aria-pressed','false');
+ document.getElementById('pdfAddSignature').insertAdjacentElement('afterend',button);
+ button.onclick=function(){armed=!armed;button.setAttribute('aria-pressed',String(armed));button.textContent=armed?'Pulsa en el PDF para firmar · Cancelar':'Colocar firma con un clic';};
+ canvas.addEventListener('click',function(e){
+  if(!armed)return;
+  e.stopImmediatePropagation();
+  if(!pdfPageView){status('Espera a que se cargue la pagina PDF');return;}
+  const r=canvas.getBoundingClientRect();
+  const rx=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  const ry=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
+  document.getElementById('pdfX').value=Math.round(pdfPageView.offsetX+rx*pdfPageView.width);
+  document.getElementById('pdfY').value=Math.round(pdfPageView.offsetY+(1-ry)*pdfPageView.height);
+  updatePdfPin();
+  const before=pdfAnnotations.length;
+  addPdfItem('signature');
+  if(pdfAnnotations.length>before){armed=false;button.textContent='Colocar firma con un clic';button.setAttribute('aria-pressed','false');}
+ },true);
+})();
+</script><script>// Preview-only annotations; the original PDF and export logic remain unchanged.
+(function(){
+ const wrap=document.getElementById('pdfPreviewWrap');
+ const canvas=document.getElementById('pdfPageCanvas');
+ if(!wrap||!canvas)return;
+ const layer=document.createElement('div');layer.id='d360AnnotationOverlay';
+ Object.assign(layer.style,{position:'absolute',inset:'0',pointerEvents:'none',overflow:'hidden'});
+ wrap.appendChild(layer);
+ function redraw(){
+  layer.replaceChildren();
+  if(wrap.classList.contains('hidden')||!pdfPageView)return;
+  const page=Number(document.getElementById('pdfPage').value);
+  for(const a of pdfAnnotations){
+   if(a.page!==page)continue;
+   const left=(a.x-pdfPageView.offsetX)/pdfPageView.width*100;
+   const bottom=(a.y-pdfPageView.offsetY)/pdfPageView.height*100;
+   const el=a.type==='signature'?document.createElement('img'):document.createElement('div');
+   if(a.type==='signature'){
+    el.src=a.png;el.alt='Vista previa de firma';
+    el.style.width=Math.min(a.width||200,pdfPageView.width-a.x)/pdfPageView.width*100+'%';
+   }else{
+    const scale=canvas.getBoundingClientRect().width/pdfPageView.width;const size=Math.max(6,Math.min(72,a.size||14));const margin=Math.max(8,Math.min(90,Number(a.margin)||20));const maxPts=pdfPageView.width-(a.x-pdfPageView.offsetX)-margin;const gap=Math.max(0,Math.min(36,Number(a.paragraphGap)||0));const ctx=canvas.getContext('2d');ctx.font=size*scale+'px Helvetica, Arial, sans-serif';const lines=[];for(const paragraph of a.text.replace(/\r\n?/g,'\n').split('\n')){let line='';for(const word of paragraph.split(/(\s+)/).filter(Boolean)){if(ctx.measureText(line+word).width<=maxPts*scale){line+=word;continue}if(line.trim()){lines.push(line.trimEnd());line=''}if(!word.trim())continue;for(const ch of word){if(line&&ctx.measureText(line+ch).width>maxPts*scale){lines.push(line);line=''}line+=ch}}lines.push(line)}el.replaceChildren();for(const line of lines){const part=document.createElement('div');part.textContent=line||'\u00a0';part.setAttribute('data-preview-line','true');part.style.height=(size*1.4*scale+(line===''?gap*scale:0))+'px';part.style.whiteSpace='pre';if(el.childNodes.length)el.appendChild(document.createTextNode('\n'));el.appendChild(part)}el.style.fontSize=size*scale+'px';el.style.color=a.color;el.style.fontFamily='Helvetica, Arial, sans-serif';el.style.maxWidth=Math.max(0,maxPts*scale)+'px';el.style.lineHeight='1';
+   }
+   Object.assign(el.style,{position:'absolute',left:left+'%',bottom:bottom+'%',maxHeight:'50%',border:'1px dashed #1677ff',backgroundColor:a.type==='text'?'#ffffffb0':'transparent',pointerEvents:'none'});
+   if(a.type==='text'){el.style.bottom='auto';el.style.top=(100-bottom)+'%';el.style.maxHeight='none';}
+   layer.appendChild(el);
+  }
+ }
+ const observer=new MutationObserver(redraw);
+ observer.observe(document.getElementById('pdfQueue'),{childList:true,subtree:true,characterData:true});
+ observer.observe(wrap,{attributes:true,attributeFilter:['class']});
+ document.getElementById('pdfPage').addEventListener('change',()=>setTimeout(redraw,150));
+ window.addEventListener('resize',redraw);
+ redraw();
+})();
+</script><script>
+(function(){
+ const b=document.getElementById('pdfAddSignature');
+ const field=document.createElement('label');
+ field.textContent='Anchura firma (puntos PDF): ';
+ const input=document.createElement('input');input.id='d360SignWidth';input.type='number';input.min='30';input.max='500';input.value='200';input.style.width='70px';
+ field.appendChild(input);b.insertAdjacentElement('beforebegin',field);
+ input.addEventListener('change',()=>{let v=Number(input.value);input.value=String(Math.max(30,Math.min(500,Number.isFinite(v)?v:200)))});
+})();
+</script><script>(function(){
+ const wrap=document.getElementById('pdfPreviewWrap'),layer=document.getElementById('d360AnnotationOverlay');
+ if(!wrap||!layer)return;
+ const style=document.createElement('style');
+ style.textContent='#d360AnnotationOverlay img[data-sign-index]{pointer-events:auto!important;cursor:grab;border:2px dashed #1682e8!important;touch-action:none}#d360AnnotationOverlay img[data-sign-index]:active{cursor:grabbing}';
+ document.head.appendChild(style);
+ let active=null;
+ function relabel(){
+  const page=Number(document.getElementById('pdfPage').value);
+  const indices=pdfAnnotations.map((a,i)=>a.page===page?i:-1).filter(i=>i>=0);
+  Array.from(layer.children).forEach((el,j)=>{const i=indices[j];if(el.tagName==='IMG'&&i!==undefined)el.dataset.signIndex=String(i)});
+ }
+ function pointerPos(e){
+  const r=wrap.getBoundingClientRect();
+  return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))};
+ }
+ layer.addEventListener('pointerdown',e=>{
+  const el=e.target.closest('img[data-sign-index]');if(!el||!pdfPageView)return;
+  const index=Number(el.dataset.signIndex),a=pdfAnnotations[index];if(!a||a.type!=='signature')return;
+  e.preventDefault();e.stopPropagation();active={index,el};el.setPointerCapture(e.pointerId);
+ });
+ layer.addEventListener('pointermove',e=>{
+  if(!active||!pdfPageView)return;
+  const a=pdfAnnotations[active.index],p=pointerPos(e);
+  a.x=Math.round(pdfPageView.offsetX+p.x*pdfPageView.width);
+  a.y=Math.round(pdfPageView.offsetY+(1-p.y)*pdfPageView.height);
+  active.el.style.left=(p.x*100)+'%';
+  active.el.style.bottom=((1-p.y)*100)+'%';
+ });
+ function finish(e){if(!active)return;active=null;refreshPdfQueue();status('Firma recolocada; exporta para guardar el PDF')}
+ layer.addEventListener('pointerup',finish);layer.addEventListener('pointercancel',finish);
+ new MutationObserver(relabel).observe(layer,{childList:true});
+ relabel();
+})();</script><script>(function(){
+const layer=document.getElementById('d360AnnotationOverlay');
+if(!layer)return;
+const style=document.createElement('style');
+style.textContent='#d360AnnotationOverlay .d360-size-handle{position:absolute;right:-9px;top:-9px;width:19px;height:19px;background:#1677ee;border:2px solid white;border-radius:5px;cursor:ew-resize;pointer-events:auto;touch-action:none}';
+document.head.appendChild(style);
+let selected=null;
+function handles(){
+ layer.querySelectorAll('img[data-sign-index]').forEach(img=>{
+  if(img.dataset.resizeReady)return;img.dataset.resizeReady='1';
+  const handle=document.createElement('span');handle.className='d360-size-handle';
+  img.insertAdjacentElement('afterend',handle);
+  handle.style.left=img.style.left;handle.style.bottom=img.style.bottom;
+  handle.addEventListener('pointerdown',e=>{
+   e.preventDefault();e.stopPropagation();
+   const index=Number(img.dataset.signIndex),a=pdfAnnotations[index];if(!a||a.type!=='signature')return;
+   selected={a,handle,img,startX:e.clientX,startWidth:a.width||200};
+   handle.setPointerCapture(e.pointerId);
+  });
+  handle.addEventListener('pointermove',e=>{
+   if(!selected||!pdfPageView)return;
+   const r=document.getElementById('pdfPreviewWrap').getBoundingClientRect();
+   const newWidth=Math.max(30,Math.min(500,selected.startWidth+(e.clientX-selected.startX)*pdfPageView.width/r.width));
+   selected.a.width=Math.round(newWidth);
+   selected.img.style.width=(Math.min(newWidth,pdfPageView.width-selected.a.x)/pdfPageView.width*100)+'%';
+  });
+  handle.addEventListener('pointerup',()=>{if(!selected)return;selected=null;refreshPdfQueue();status('Tamaño de firma actualizado')});
+  handle.addEventListener('pointercancel',()=>selected=null);
+ });
+}
+new MutationObserver(()=>{handles()}).observe(layer,{childList:true});
+handles();
+})();</script><script>(function(){
+ const KEY='d360-drafts-v3', OLD='d360-drafts-v2', MAX=20;
+ const button=document.createElement('button');button.id='d360Recover';button.textContent='Recuperar anotaciones pendientes';button.hidden=true;button.style.margin='8px';
+ document.getElementById('pdfQueue').insertAdjacentElement('afterend',button);
+ const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'{}')||{}}catch(e){return {}}};
+ const write=d=>{try{localStorage.setItem(KEY,JSON.stringify(d));return true}catch(e){status('No hay espacio para guardar este borrador. Exporta tu PDF; no se ha eliminado ningún borrador anterior.');return false}};
+ let file=null,key=null,restore=null,restoring=false,version=0;
+ async function hash(f){const bytes=await f.arrayBuffer();const result=await crypto.subtle.digest('SHA-256',bytes);return 'sha256:'+Array.from(new Uint8Array(result),x=>x.toString(16).padStart(2,'0')).join('')}
+ function store(){if(!key||!currentFile||file!==currentFile||!pdfAnnotations.length||restoring)return;const d=read(KEY);d[key]={items:pdfAnnotations,time:Date.now(),name:file.name};Object.keys(d).sort((a,b)=>(d[b].time||0)-(d[a].time||0)).slice(MAX).forEach(k=>delete d[k]);write(d)}
+ const oldRefresh=refreshPdfQueue;refreshPdfQueue=function(){oldRefresh();store()};
+ async function changed(f){const n=++version;file=f;key=null;restore=null;button.hidden=true;if(!f)return;try{
+  const digest=await hash(f);if(n!==version||currentFile!==f)return;key=digest+'|'+f.name;
+  let d=read(KEY);restore=d[key];
+  if(!restore){const v2=read(OLD),oldKey=f.name+'|'+f.size+'|'+f.lastModified;const old=v2[oldKey];if(old&&Array.isArray(old.items)){restore=old;d[key]={items:old.items,time:old.time||Date.now(),name:f.name};if(write(d)){delete v2[oldKey];localStorage.setItem(OLD,JSON.stringify(v2))}}}
+  button.hidden=!(restore&&Array.isArray(restore.items)&&restore.items.length);if(pdfAnnotations.length)store();
+ }catch(e){status('No se pudo identificar el PDF para recuperar borradores')}}
+ button.addEventListener('click',()=>{if(!restore)return;restoring=true;pdfAnnotations=restore.items.filter(a=>Number.isInteger(a.page)&&a.page>0&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&['text','signature'].includes(a.type));restoring=false;button.hidden=true;refreshPdfQueue();status('Anotaciones recuperadas')});
+ setInterval(()=>{if(currentFile!==file)changed(currentFile)},400);
+ document.getElementById('pdfClear').addEventListener('click',()=>setTimeout(()=>{if(pdfAnnotations.length||!key)return;const d=read(KEY);delete d[key];write(d);restore=null;button.hidden=true},0));
+})();</script><script>(function(){
+ const key='d360-drafts-v3';
+ const anchor=document.getElementById('d360Recover');
+ if(!anchor)return;
+ const button=document.createElement('button');button.id='d360ExportDrafts';button.textContent='Guardar copia de borradores';button.style.margin='8px';
+ anchor.insertAdjacentElement('afterend',button);
+ button.onclick=()=>{
+  let drafts;try{drafts=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){alert('Datos de borradores incorrectos');return}
+  if(!drafts||typeof drafts!=='object'||Array.isArray(drafts)||!Object.keys(drafts).length){alert('No hay borradores para exportar');return}
+  const payload=JSON.stringify({format:'documentos360-drafts',version:1,created:new Date().toISOString(),drafts},null,2);
+  const blob=new Blob([payload],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Documentos360-borradores-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);status('Copia de borradores descargada');
+ };
+})();</script><script>(function(){
+const KEY='d360-drafts-v3',MAX=20;
+const exportButton=document.getElementById('d360ExportDrafts');if(!exportButton)return;
+const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.id='d360ImportInput';input.hidden=true;
+const button=document.createElement('button');button.id='d360ImportDrafts';button.textContent='Importar copia de borradores';
+exportButton.insertAdjacentElement('afterend',button);button.insertAdjacentElement('afterend',input);
+button.onclick=()=>input.click();
+input.onchange=async()=>{const file=input.files[0];input.value='';if(!file)return;
+ try{
+ if(file.size>12*1024*1024)throw Error('Archivo demasiado grande (máximo 12 MB)');
+ const payload=JSON.parse(await file.text());
+ if(payload.format!=='documentos360-drafts'||payload.version!==1||!payload.drafts||typeof payload.drafts!=='object'||Array.isArray(payload.drafts))throw Error('Formato de copia incompatible');
+ const incoming=Object.entries(payload.drafts);
+ if(incoming.length>20)throw Error('La copia supera el máximo de 20 borradores');
+ const clean={};
+ for(const [k,v] of incoming){
+  if(k.length>350||!v||!Array.isArray(v.items)||v.items.length>200)throw Error('Borrador inválido');
+  const items=[];
+  for(const a of v.items){
+   if(!a||!['text','signature'].includes(a.type)||!Number.isInteger(a.page)||a.page<1||a.page>10000||!Number.isFinite(a.x)||!Number.isFinite(a.y)||a.x<0||a.y<0)throw Error('Anotación inválida');
+   if(a.type==='text'&&(typeof a.text!=='string'||a.text.length>50000))throw Error('Texto inválido');
+   if(a.type==='signature'&&(typeof a.png!=='string'||!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(a.png)))throw Error('Firma inválida');
+   items.push(a);
+  }
+  clean[k]={name:String(v.name||'').slice(0,250),time:Number.isFinite(v.time)?v.time:Date.now(),items};
+ }
+ const saved=JSON.parse(localStorage.getItem(KEY)||'{}');
+ const merged={...saved,...clean};
+ Object.keys(merged).sort((a,b)=>(merged[b].time||0)-(merged[a].time||0)).slice(MAX).forEach(k=>delete merged[k]);
+ if(!confirm('Importar '+incoming.length+' borradores? Los que tengan la misma identidad sustituirán al borrador local.'))return;
+ localStorage.setItem(KEY,JSON.stringify(merged));
+ status('Copia importada: '+incoming.length+' borradores. Vuelve a abrir el PDF para recuperar sus anotaciones.');
+ }catch(e){status('Importación cancelada: '+e.message);alert('No se ha importado la copia: '+e.message)}
+};
+})();</script><script>(function(){
+const queue=document.getElementById('pdfQueue');if(!queue)return;
+const warning=document.createElement('div');warning.id='d360SizeWarning';warning.style.cssText='margin:10px 0;color:#9a4c09;font-weight:600';warning.setAttribute('role','status');queue.insertAdjacentElement('afterend',warning);
+function update(){
+ warning.textContent='';
+ if(!pdfPageView||!Array.isArray(pdfAnnotations))return;
+ const page=Number(document.getElementById('pdfPage').value);
+ const issues=pdfAnnotations.filter(a=>a.type==='signature'&&a.page===page).map(a=>{
+ const requested=a.width||200,available=Math.max(0,pdfPageView.width-(a.x-pdfPageView.offsetX));
+ const effective=Math.min(requested,available);
+ return effective<requested?'Firma en X='+a.x+': ancho solicitado '+requested+'; se exportará con '+Math.round(effective)+' puntos por el borde derecho.':'';
+ }).filter(Boolean);
+ warning.textContent=issues.join(' ');
+}
+new MutationObserver(update).observe(queue,{childList:true,characterData:true,subtree:true});
+document.getElementById('pdfPage').addEventListener('change',update);
+document.getElementById('pdfX').addEventListener('change',update);
+update();
+})();</script><script>(function(){
+const wrap=document.getElementById('pdfPreviewWrap'),layer=document.getElementById('d360AnnotationOverlay');
+if(!wrap||!layer)return;
+let active=null;
+const clamp=(v,min,max)=>Math.min(Math.max(v,min),Math.max(min,max));
+function point(e){const r=wrap.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height}}
+function onDown(e){const img=e.target.closest('img[data-sign-index]');if(!img||!pdfPageView)return;const i=Number(img.dataset.signIndex),a=pdfAnnotations[i];if(!a||a.type!=='signature')return;e.preventDefault();e.stopImmediatePropagation();active={i,img};img.setPointerCapture(e.pointerId)}
+function onMove(e){if(!active||!pdfPageView)return;e.stopImmediatePropagation();const a=pdfAnnotations[active.i],p=point(e);const w=pdfPageView.width,h=pdfPageView.height,ox=pdfPageView.offsetX,oy=pdfPageView.offsetY;
+const width=clamp(a.width||200,1,w);const natural=active.img.naturalWidth&&active.img.naturalHeight?active.img.naturalHeight/active.img.naturalWidth:0.36;
+const height=width*natural;
+const x=clamp(ox+p.x*w,ox,ox+w-width);
+const y=clamp(oy+(1-p.y)*h,oy,oy+h-height);
+a.x=Math.round(x);a.y=Math.round(y);active.img.style.left=((x-ox)/w*100)+'%';active.img.style.bottom=((y-oy)/h*100)+'%';
+}
+function onUp(e){if(!active)return;e.stopImmediatePropagation();active=null;refreshPdfQueue();status('Firma ajustada dentro de la página')}
+layer.addEventListener('pointerdown',onDown,true);layer.addEventListener('pointermove',onMove,true);layer.addEventListener('pointerup',onUp,true);layer.addEventListener('pointercancel',onUp,true);
+})();</script><script>(function(){
+const text=document.getElementById('pdfText');if(!text)return;
+const controls=document.createElement('div');controls.id='d360ParagraphControls';controls.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 12px';
+controls.innerHTML='<label>Margen derecho (pt) <input id="d360TextMargin" type="number" min="8" max="90" value="20" style="width:70px"></label><label>Espacio entre párrafos (pt) <input id="d360ParagraphGap" type="number" min="0" max="36" value="8" style="width:70px"></label>';
+text.insertAdjacentElement('afterend',controls);
+const original=addPdfItem;
+addPdfItem=function(type){const before=pdfAnnotations.length;original(type);if(type==='text'&&pdfAnnotations.length>before){const a=pdfAnnotations.at(-1);a.margin=Math.max(8,Math.min(90,Number(document.getElementById('d360TextMargin').value)||20));a.paragraphGap=Math.max(0,Math.min(36,Number(document.getElementById('d360ParagraphGap').value)||0));refreshPdfQueue()}};
+})();</script><script>(function(){
+const queue=document.getElementById('pdfQueue');if(!queue)return;
+const panel=document.createElement('section');panel.id='d360EditPanel';panel.style.cssText='border:1px solid #789;padding:12px;border-radius:10px;margin:12px 0';
+panel.innerHTML='<strong>Editar anotación pendiente</strong><div style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0"><label>Número <input id="d360EditIndex" type="number" min="1" value="1" style="width:62px"></label><label>Página <input id="d360EditPage" type="number" min="1" style="width:68px"></label><label>X <input id="d360EditX" type="number" min="0" style="width:78px"></label><label>Y <input id="d360EditY" type="number" min="0" style="width:78px"></label></div><label>Texto <textarea id="d360EditText" rows="2" style="width:100%"></textarea></label><div style="display:flex;gap:8px;margin-top:8px"><button id="d360EditLoad">Cargar anotación</button><button id="d360EditSave">Guardar cambios</button></div><p id="d360EditMessage" role="status"></p>';
+queue.insertAdjacentElement('afterend',panel);
+const get=id=>document.getElementById(id),notice=s=>get('d360EditMessage').textContent=s;
+const selected=()=>{const i=Number(get('d360EditIndex').value)-1;return Number.isInteger(i)&&i>=0&&i<pdfAnnotations.length?i:-1};
+get('d360EditLoad').onclick=()=>{const i=selected();if(i<0){notice('Número de anotación no válido');return}const a=pdfAnnotations[i];get('d360EditPage').value=a.page;get('d360EditX').value=a.x;get('d360EditY').value=a.y;get('d360EditText').value=a.type==='text'?a.text:'';get('d360EditText').disabled=a.type!=='text';notice('Anotación '+(i+1)+' cargada')};
+get('d360EditSave').onclick=()=>{const i=selected();if(i<0){notice('Selecciona una anotación existente');return}const page=Number(get('d360EditPage').value),x=Number(get('d360EditX').value),y=Number(get('d360EditY').value);if(!Number.isInteger(page)||page<1||!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0){notice('Página o coordenadas no válidas');return}const a=pdfAnnotations[i];if(a.type==='text'&&!get('d360EditText').value.trim()){notice('El texto no puede estar vacío');return}Object.assign(a,{page,x,y});if(a.type==='text')a.text=get('d360EditText').value;refreshPdfQueue();notice('Anotación '+(i+1)+' actualizada. Exporta el PDF para aplicar los cambios.')};
+})();</script><script>(function(){
+'use strict';
+const VERSION='1.0.0';
+function validFile(file){return typeof File!=='undefined'&&file instanceof File&&file.size<=100*1024*1024}
+function snapshot(){return Object.freeze({version:VERSION,documentName:currentFile?.name||null,annotationCount:pdfAnnotations.length,hasDocument:!!currentFile})}
+const api=Object.freeze({
+ version:VERSION,
+ capabilities:Object.freeze(['openFile','getStatus','getAnnotations','exportPdf']),
+ getStatus:()=>snapshot(),
+ getAnnotations:()=>pdfAnnotations.map(a=>({...a})),
+ async openFile(file){if(!validFile(file))throw Error('Se requiere un archivo local de hasta 100 MB');await displayFile(file);return snapshot()},
+ async exportPdf(){if(!currentFile||!pdfAnnotations.length)throw Error('Abre un PDF y añade anotaciones');const b=document.getElementById('pdfExport');if(b.disabled||window.__d360ExportResolver)throw Error('Exportación ocupada');return new Promise((resolve,reject)=>{window.__d360ExportResolver=resolve;window.__d360ExportReject=reject;window.__d360SilentExport=true;b.click()})}
+});
+Object.defineProperty(window,'Documentos360Integration',{value:api,writable:false,configurable:false});
+})();</script><script src="/documentos360/voice360-common.js"></script><script src="/documentos360/drop-multifile.js"></script><script src="/documentos360/docx.umd.js"></script><script src="/documentos360/export-docx.js"></script></body></html>

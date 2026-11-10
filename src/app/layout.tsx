@@ -18,7 +18,8 @@ const navItems = activeModules.map((m) => ({
   iconKey: m.iconKey,
 }));
 
-const sidebarBrand = {
+navItems.push({ href: "/documentos", label: "Documentos 360", iconKey: "file-text" });
+  const sidebarBrand = {
   tradeName: verticalConfig.brand.tradeName,
   iconKey: verticalConfig.brand.iconKey,
   initials: verticalConfig.brand.initials,
