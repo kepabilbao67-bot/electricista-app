@@ -59,6 +59,7 @@ function LoginForm() {
           {busy ? "Comprobando…" : "Entrar"}
         </button>
       </form>
+      <a href="/restablecer" className="mt-5 inline-block text-sm text-sky-300 underline">¿Has olvidado la contraseña?</a>
     </section>
   </main>;
 }

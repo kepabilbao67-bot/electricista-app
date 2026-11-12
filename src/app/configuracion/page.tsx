@@ -114,6 +114,7 @@ export default function ConfiguracionPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pb-12">
       <Breadcrumbs items={[{ label: "Configuración", href: "/configuracion" }]} />
+      <a href="/cambiar-contrasena" className="inline-block rounded-lg border border-blue-600 px-4 py-2 font-semibold text-blue-700 hover:bg-blue-50">Cambiar contraseña de acceso</a>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">

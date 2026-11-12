@@ -564,6 +564,25 @@ export async function initializeDatabase(client?: Client): Promise<void> {
       status TEXT NOT NULL DEFAULT 'recibido',
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS electricista_auth_credentials (
+      username TEXT PRIMARY KEY,
+      password_salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      revision TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS electricista_password_resets (
+      token_hash TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      consumed_at INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_electricista_password_resets_user
+      ON electricista_password_resets(username, created_at);
   `);
 
   // Migracion: anade columnas que puedan faltar en tablas creadas por versiones
