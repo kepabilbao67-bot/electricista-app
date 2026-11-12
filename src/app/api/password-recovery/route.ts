@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { getDbClient, initializeDatabase } from "@/lib/db";
 import { createRecoveryToken, tokenHash, hashNewPassword, constantTimeEqual } from "@/lib/electricista-auth";
+import { recoveryMailConfigured, sendRecoveryMail } from "@/lib/recovery-mail";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,9 +31,7 @@ export async function POST(request: NextRequest) {
     }
     // Never let an arbitrary sender or request hostname determine the recovery link.
     const origin = process.env.APP_PUBLIC_URL;
-    const from = process.env.RESEND_FROM_EMAIL;
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!recoveryEmail || !origin || !from || !apiKey || !/^https:\/\/[^/]+\/?$/.test(origin)) {
+    if (!recoveryEmail || !origin || !recoveryMailConfigured() || !/^https:\/\/[^/]+\/?$/.test(origin)) {
       return respond({ error: "Recuperación por correo no configurada todavía" }, 503);
     }
     if (!constantTimeEqual(email, recoveryEmail)) return respond({ message: generic });
@@ -53,17 +52,8 @@ export async function POST(request: NextRequest) {
       const url = new URL("/restablecer", origin);
       // URL fragment is not sent in HTTP requests or Referer headers.
       url.hash = "token=" + encodeURIComponent(token);
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from, to: [recoveryEmail], subject: "Recuperar acceso — Electricista 360",
-          text: "Para cambiar tu contraseña, abre este enlace (válido 15 minutos y un solo uso):\n" + url.toString() +
-            "\nSi no solicitaste el cambio, ignora este mensaje.",
-        }),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!response.ok) {
+      const sent = await sendRecoveryMail(recoveryEmail, url.toString());
+      if (!sent) {
         await db.execute({ sql: "UPDATE electricista_password_resets SET consumed_at = ? WHERE token_hash = ?", args: [now(), hashed] });
         return respond({ error: "No se pudo enviar el correo de recuperación" }, 503);
       }
