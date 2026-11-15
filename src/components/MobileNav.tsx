@@ -40,13 +40,26 @@ export function MobileNav({ navItems, brand }: MobileNavProps) {
           </button>
         </div>
       </div>
+      {navItems.some(item => item.href === "/faltantes") && (
+        <nav aria-label="Accesos rápidos de obra" className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+          {[
+            { href: "/faltantes", label: "Faltantes de obra" },
+            { href: "/documentos", label: "Documentos 360" },
+            { href: "/mediciones", label: "Mediciones 360" },
+          ].filter(item => navItems.some(nav => nav.href === item.href)).map(item => (
+            <Link key={item.href} href={item.href} className={`whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold ${pathname === item.href ? "border-blue-700 bg-blue-700 text-white" : "border-slate-300 text-slate-800 dark:border-slate-600 dark:text-slate-100"}`}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
       {isOpen && (
         <>
           <div
             className="fixed inset-0 top-14 z-40 bg-slate-950/40 backdrop-blur-xs"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute inset-x-2 top-16 z-50 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain border border-slate-200/80 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl shadow-2xl rounded-2xl p-3 animate-scale-in">
+          <div className="absolute inset-x-2 top-28 z-50 max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain border border-slate-200/80 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl shadow-2xl rounded-2xl p-3 animate-scale-in">
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = resolveIcon(item.iconKey);
