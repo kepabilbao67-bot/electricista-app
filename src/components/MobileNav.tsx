@@ -40,15 +40,16 @@ export function MobileNav({ navItems, brand }: MobileNavProps) {
           </button>
         </div>
       </div>
-      {navItems.some(item => item.href === "/faltantes") && (
-        <nav aria-label="Accesos rápidos de obra" className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+      {navItems.some(item => ["/faltantes", "/documentos", "/mediciones"].includes(item.href)) && (
+        <nav aria-label="Accesos rápidos de obra" className="grid grid-cols-3 gap-1.5 border-b border-slate-200 bg-white px-2 py-2 dark:border-slate-800 dark:bg-slate-900">
           {[
-            { href: "/faltantes", label: "Faltantes de obra" },
-            { href: "/documentos", label: "Documentos 360" },
-            { href: "/mediciones", label: "Mediciones 360" },
+            { href: "/faltantes", label: "Faltantes de obra", short: "Faltantes" },
+            { href: "/documentos", label: "Documentos 360", short: "Documentos" },
+            { href: "/mediciones", label: "Mediciones 360", short: "Mediciones" },
           ].filter(item => navItems.some(nav => nav.href === item.href)).map(item => (
-            <Link key={item.href} href={item.href} className={`whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold ${pathname === item.href ? "border-blue-700 bg-blue-700 text-white" : "border-slate-300 text-slate-800 dark:border-slate-600 dark:text-slate-100"}`}>
-              {item.label}
+            <Link key={item.href} href={item.href} aria-label={item.label} aria-current={pathname === item.href ? "page" : undefined}
+              className={`flex min-h-12 items-center justify-center rounded-lg border px-1.5 py-2 text-center text-xs font-semibold leading-tight ${pathname === item.href ? "border-blue-700 bg-blue-700 text-white" : "border-slate-300 text-slate-800 dark:border-slate-600 dark:text-slate-100"}`}>
+              {item.short}
             </Link>
           ))}
         </nav>

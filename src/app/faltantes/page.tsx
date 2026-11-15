@@ -68,7 +68,14 @@ export default function FaltantesPage() {
       <button className="rounded-xl bg-blue-700 px-4 py-3 font-semibold text-white sm:col-span-2" disabled={!cargado}>Añadir material faltante</button>
     </form>
     <div className="flex items-center justify-between gap-3"><h2 className="font-semibold">Pendientes ({lista.length})</h2>
-      <button type="button" onClick={exportar} disabled={!lista.length} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50">Exportar CSV</button></div>
+      <div className="flex flex-wrap gap-2">
+        {lista.length > 0 && (
+          <a href={`https://wa.me/?text=${encodeURIComponent(["Materiales faltantes de obra:", ...lista.slice(0, 20).map(f => `• ${f.obra}: ${f.material} — ${f.cantidad} ${f.unidad}`), ...(lista.length > 20 ? ["(Lista abreviada; exporta CSV para ver todos los materiales)"] : [])].join("\n"))}`}
+            target="_blank" rel="noopener noreferrer" className="rounded-lg bg-green-700 px-3 py-2 text-sm font-semibold text-white"
+            aria-label="Compartir materiales faltantes por WhatsApp">Compartir por WhatsApp</a>
+        )}
+        <button type="button" onClick={exportar} disabled={!lista.length} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50">Exportar CSV</button>
+      </div></div>
     {mensaje && <p role="status" className="text-sm">{mensaje}</p>}
     <div className="space-y-2">{lista.map(f => <article key={f.id} className="flex items-start justify-between gap-3 rounded-xl border p-3">
       <div className="min-w-0"><p className="font-semibold break-words">{f.material}</p><p className="text-sm">{f.cantidad} {f.unidad} · {f.obra}</p>

@@ -12,7 +12,7 @@ export default function MedicionesPage() {
   const pictureRef = useRef<HTMLImageElement | null>(null);
   const [points, setPoints] = useState<Point[]>([]);
   const [reference, setReference] = useState("100");
-  const [unit, setUnit] = useState("cm");
+  const [unit, setUnit] = useState("mm");
   const [name, setName] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [error, setError] = useState("");
@@ -82,6 +82,7 @@ export default function MedicionesPage() {
 
   function mark(event: React.PointerEvent<HTMLCanvasElement>) {
     if (!hasPhoto || points.length >= 4) return;
+    event.preventDefault();
     const rect = event.currentTarget.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     setPoints(prev => [...prev, {
@@ -113,7 +114,7 @@ export default function MedicionesPage() {
     <p className="text-sm">Mide distancias sobre una foto con una referencia conocida. No requiere instalar otra aplicación.</p>
     <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">La medida es una estimación geométrica: referencia y objeto deben estar en el mismo plano, sin perspectiva apreciable. Para medidas exactas usa un instrumento calibrado. No se pueden obtener dimensiones reales de una foto sin escala conocida.</p>
     <label className="block rounded-xl border p-3 font-semibold">1. Sacar foto o elegir imagen
-      <input className="mt-2 block w-full text-sm" aria-label="Fotografía para medir" type="file" accept="image/*" capture="environment" onChange={e => { void loadPhoto(e.target.files?.[0]); }} />
+      <input className="mt-2 block w-full text-sm" aria-label="Fotografía para medir" type="file" accept="image/*" onChange={e => { void loadPhoto(e.target.files?.[0]); }} />
     </label>
     <label className="block font-semibold">2. Longitud real de un objeto visible en la foto
       <input className={cls + " mt-2"} type="text" inputMode="decimal" value={reference} onChange={e=>setReference(e.target.value)} aria-label="Longitud de referencia" />
@@ -122,7 +123,7 @@ export default function MedicionesPage() {
       <select className={cls + " mt-2"} value={unit} onChange={e=>setUnit(e.target.value)}><option value="cm">Centímetros</option><option value="m">Metros</option><option value="mm">Milímetros</option></select>
     </label>
     <p className="text-sm font-semibold">3. Toca cuatro puntos: los dos extremos de la referencia (verde) y los dos de la medida deseada (rojo). {points.length}/4 puntos.</p>
-    <canvas ref={canvasRef} onPointerDown={mark} aria-label="Fotografía para marcar extremos de la referencia y la medida" className="w-full h-auto rounded-xl border border-slate-400 touch-manipulation" style={{display:hasPhoto?"block":"none",cursor:"crosshair"}} />
+    <canvas ref={canvasRef} onPointerDown={mark} aria-label="Fotografía para marcar extremos de la referencia y la medida" className="w-full h-auto rounded-xl border border-slate-400 touch-none" style={{display:hasPhoto?"block":"none",cursor:"crosshair"}} />
     {!hasPhoto && <p className="rounded-xl border p-4 text-sm text-slate-500">La fotografía aparecerá aquí.</p>}
     <div className="flex flex-wrap gap-2">
       <button type="button" className="rounded-xl border px-4 py-3" disabled={!points.length} onClick={()=>setPoints(p=>p.slice(0,-1))}>Deshacer punto</button>
