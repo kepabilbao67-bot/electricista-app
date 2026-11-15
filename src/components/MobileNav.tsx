@@ -46,7 +46,7 @@ export function MobileNav({ navItems, brand }: MobileNavProps) {
             className="fixed inset-0 top-14 z-40 bg-slate-950/40 backdrop-blur-xs"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute inset-x-2 top-16 z-50 border border-slate-200/80 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl shadow-2xl rounded-2xl p-3 animate-scale-in">
+          <div className="absolute inset-x-2 top-16 z-50 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain border border-slate-200/80 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl shadow-2xl rounded-2xl p-3 animate-scale-in">
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = resolveIcon(item.iconKey);
