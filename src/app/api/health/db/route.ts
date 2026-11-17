@@ -34,18 +34,29 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const url = process.env.TURSO_DATABASE_URL;
-  const token = process.env.TURSO_AUTH_TOKEN;
+  const isKepa = process.env.APP_VERTICAL === "tecnologia";
+  const url = isKepa ? process.env.KEPA_TURSO_DATABASE_URL : process.env.TURSO_DATABASE_URL;
+  const token = isKepa ? process.env.KEPA_TURSO_AUTH_TOKEN : process.env.TURSO_AUTH_TOKEN;
 
   const diagnostics: Record<string, unknown> = {
-    tieneTURSO_DATABASE_URL: Boolean(url && url.trim()),
-    tieneTURSO_AUTH_TOKEN: Boolean(token && token.trim()),
+    vertical: isKepa ? "tecnologia" : "electricista",
+    tieneBaseConfigurada: Boolean(url && url.trim()),
+    tieneTokenConfigurado: Boolean(token && token.trim()),
     esquemaUrl: url ? url.trim().split("://")[0] : null,
     urlTieneEspaciosOSaltos: url ? /\s/.test(url) : false,
     tokenTieneEspaciosOSaltos: token ? /\s/.test(token.trim()) : false,
   };
 
-  const db = getDbClient();
+  let db: ReturnType<typeof getDbClient>;
+  try {
+    db = getDbClient();
+  } catch {
+    return NextResponse.json({
+      estado: "ERROR",
+      mensaje: "No se puede establecer la conexión de datos para la vertical seleccionada.",
+      ...diagnostics,
+    }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
 
   // 1) LECTURA
   try {

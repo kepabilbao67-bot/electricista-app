@@ -23,10 +23,28 @@ let client: Client;
  *   instances or preserved across deployments. Configure TURSO_DATABASE_URL for
  *   durable storage.
  */
-function resolveDatabaseUrl(): string {
+export function resolveDatabaseUrl(): string {
+  // Kepa Tecnologia must use its own CRM database, never Electricista's.
+  if (process.env.APP_VERTICAL === "tecnologia") {
+    const kepaUrl = process.env.KEPA_TURSO_DATABASE_URL?.trim();
+    if (kepaUrl) {
+      const electricistaUrl = process.env.TURSO_DATABASE_URL?.trim();
+      if (electricistaUrl && kepaUrl === electricistaUrl) {
+        throw new Error("Kepa Tecnologia and Electricista360 cannot share a database URL.");
+      }
+      return kepaUrl;
+    }
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("KEPA_TURSO_DATABASE_URL is required for Kepa Tecnologia in production.");
+    }
+    return "file:kepa-tecnologia.db";
+  }
+
+  // Demo storage is available only after Kepa's isolated vertical has been resolved.
   if (process.env.DEMO_MODE === "true") {
     return `file:${join(tmpdir(), "autonomo360-demo.db")}`;
   }
+
   const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
   if (tursoUrl) {
     return tursoUrl;
@@ -50,7 +68,9 @@ export function getDbClient(): Client {
   if (!client) {
     client = createClient({
       url: resolveDatabaseUrl(),
-      authToken: process.env.TURSO_AUTH_TOKEN,
+      authToken: process.env.APP_VERTICAL === "tecnologia"
+        ? process.env.KEPA_TURSO_AUTH_TOKEN
+        : process.env.TURSO_AUTH_TOKEN,
     });
   }
   return client;
