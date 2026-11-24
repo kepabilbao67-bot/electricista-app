@@ -1,0 +1,1 @@
+Electricista360 Android QA wrapper over https://electricista360-nuevo-kepa.vercel.app/acceso. Independent installation, same live backend. No credentials or data embedded. QA debug signing used on non-debuggable release. Not a long-term production signing strategy. Verify customer records before uninstalling old app.\n

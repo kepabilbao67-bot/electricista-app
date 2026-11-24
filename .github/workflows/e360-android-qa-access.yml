@@ -1,0 +1,48 @@
+name: Build Electricista Android QA
+on:
+  push:
+    branches: [qa/e360-android-access-20261124]
+    paths:
+      - 'android-access/**'
+      - '.github/workflows/e360-android-qa-access.yml'
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Android SDK
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+      - name: Build
+        run: gradle -p android-access --no-daemon :app:assembleRelease
+      - name: Verify APK
+        run: |
+          set -euo pipefail
+          file=android-access/app/build/outputs/apk/release/app-release.apk
+          test -s "$file"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$file"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$file" | head -n 5
+          sha256sum "$file"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Electricista360-Acceso-Android-QA
+          path: android-access/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+      - name: Publish QA APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp android-access/app/build/outputs/apk/release/app-release.apk Electricista360-Acceso-QA.apk
+          gh release create e360-acceso-android-qa-20261124 Electricista360-Acceso-QA.apk --target "$GITHUB_SHA" --title "Electricista 360 Acceso Android QA" --notes "Instalador independiente de prueba, sin datos ni credenciales. No desinstalar la anterior hasta comprobar acceso a clientes. Sin huella." --prerelease
