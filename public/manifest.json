@@ -14,9 +14,9 @@
   ],
   "icons": [
     {
-      "src": "/logo-generic.svg",
+      "src": "/logo-sh-ivan-original.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {

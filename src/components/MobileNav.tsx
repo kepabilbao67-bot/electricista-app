@@ -18,14 +18,13 @@ export interface MobileNavProps {
 export function MobileNav({ navItems, brand }: MobileNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const BrandIcon = resolveIcon(brand.iconKey);
 
   return (
     <div className="md:hidden sticky top-0 z-40">
       <div className="flex h-14 items-center justify-between border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 shadow-sm">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 shadow-sm">
-            <BrandIcon className="h-4 w-4 text-amber-400" />
+            <img src="/logo-sh-ivan-original.png" alt="S&H Eléctricas Iván" className="h-8 w-8 rounded-xl bg-white object-contain" />
           </div>
           <span className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">{brand.tradeName}</span>
         </div>

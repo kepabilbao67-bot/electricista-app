@@ -19,14 +19,13 @@ export interface SidebarProps {
 
 export function Sidebar({ navItems, brand }: SidebarProps) {
   const pathname = usePathname();
-  const BrandIcon = resolveIcon(brand.iconKey);
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800/80 shadow-2xl">
       {/* Brand Logo */}
       <div className="flex h-16 items-center gap-3 px-5 border-b border-slate-800/80 bg-slate-950/40">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 shadow-md shadow-blue-900/50 ring-1 ring-blue-400/30">
-          <BrandIcon className="h-5 w-5 text-amber-400 animate-pulse" />
+          <img src="/logo-sh-ivan-original.png" alt="S&H Eléctricas Iván" className="h-9 w-9 rounded-xl bg-white object-contain" />
         </div>
         <div className="flex flex-col">
           <span className="text-sm font-bold text-slate-100 tracking-tight leading-none">{brand.tradeName}</span>

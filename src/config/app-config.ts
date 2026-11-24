@@ -53,6 +53,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     email: "contacto@miempresa.com",
     iban: "ES00 0000 0000 0000 0000 0000",
     bankName: "Entidad Bancaria",
+    logo: "/logo-sh-ivan-original.png",
   },
   billing: {
     invoiceSeriesPrefix: "FAC-",
@@ -136,7 +137,7 @@ export function getAppConfig(): AppConfig {
       logo:
         getEnv("NEXT_PUBLIC_COMPANY_LOGO") ||
         getEnv("COMPANY_LOGO") ||
-        undefined,
+        DEFAULT_APP_CONFIG.company.logo,
     },
     billing: {
       invoiceSeriesPrefix:
